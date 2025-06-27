@@ -3,4 +3,7 @@ timetables/*
 *.ics
 cron/logs.txt
 
+database/*
+*.db
+
 !.gitkeep
