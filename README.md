@@ -21,8 +21,8 @@ For automatic timetables fetching, schedule the task with cron
 crontab -e
 ```
 
-And add the following line at the end:
+And add the following line at the end (note: replace with absolute path to repo, e.g. use pwd):
 
 ```
-* 6 * * * /home/paul/Documents/artebot/cron/auto_update.sh
+* 6 * * * cd /path/to/repo/ && ./cron/auto_update.sh
 ```

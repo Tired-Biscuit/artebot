@@ -1,5 +1,6 @@
 .env
 timetables/*
 *.ics
+cron/logs.txt
 
 !.gitkeep
