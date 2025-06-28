@@ -1,5 +1,6 @@
 import sqlite3
 import time
+import os
 import python.driveutils as driveutils
 db = sqlite3.connect("./database/database.db")
 
@@ -45,9 +46,49 @@ def init():
 #    Database operations    #
 # # # # # # # # # # # # # # #
 
-def update_timetables():
-    return
+def duration(start: str, end:str) -> int:
+    """
+    Returns the duration between two ICS timestamps in minutes.
+    """
+    start_time = time.strptime(start, "%Y%m%dT%H%M%SZ")
+    end_time = time.strptime(end, "%Y%m%dT%H%M%SZ")
+    start_seconds = time.mktime(start_time)
+    end_seconds = time.mktime(end_time)
+    return int((end_seconds - start_seconds) / 60)
 
+def update_timetables():
+
+    command = "INSERT OR REPLACE INTO SchoolEvent VALUES"
+
+    for filename in os.listdir("./timetables"):
+        if filename.endswith(".ics"):
+
+            group = filename[:-4] # Remove the .ics extension
+            filepath = os.path.join("./timetables", filename)
+
+            with open(filepath, "r") as file:
+                for line in file:
+
+                    if line.startswith("BEGIN:VEVENT"):
+                        event = {}
+
+                    elif line.startswith("END:VEVENT"):
+
+                        if event and "uuid" in event and "start_time" in event and "end_time" in event:
+                            command += f"('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{duration(event['start_time'], event['end_time'])}'),"
+                        else:
+                            print("Incomplete event data, skipping insertion.")
+
+                    elif line.startswith("UID:"):
+                        event["uuid"] = line.split(":", 1)[1].strip()
+                    elif line.startswith("DTSTART:"):
+                        event["start_time"] = line.split(":", 1)[1].strip()
+                    elif line.startswith("DTEND:"):
+                        event["end_time"] = line.split(":", 1)[1].strip()
+
+    command = command[:-1] + ";" # Remove the last comma and add a semicolon
+
+    return run(command)
 
 
 # # # # # # # # # # # # # # #
