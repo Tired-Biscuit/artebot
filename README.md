@@ -22,7 +22,7 @@ If you want to setup a virtual environment, do not forget to activate it before!
 
 ## Setup (automation for Linux only)
 
-In the root of the project, create a .env file with the following content:
+In the root of the project, create a .env file (or remove the .example at the end of the commited file) with the following content:
 
 ```
 DISCORD_TOKEN=JHK....JDFML5432ndf # Token for the production-ready bot here
