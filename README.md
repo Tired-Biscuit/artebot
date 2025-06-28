@@ -6,7 +6,21 @@ The aim of this project is to help members of the Bureau Des Arts, particularly 
 
 The bot should offer time slots for rehearsals while taking into account the scholar schedule of each member, their personal availability, the school's opening hours, and the rehearsals room's availability.
 
-## Setup (Linux only)
+## Requirements
+
+Python 3.11 minimum (venv recommended)
+
+run the following to install any dependency in requirements.txt:
+
+```
+pip install -r requirements.txt
+```
+
+If you want to setup a virtual environment, do not forget to activate it before!
+
+
+
+## Setup (automation for Linux only)
 
 In the root of the project, create a .env file with the following content:
 
