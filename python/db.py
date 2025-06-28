@@ -45,7 +45,8 @@ def init():
 #    Database operations    #
 # # # # # # # # # # # # # # #
 
-
+def update_timetables():
+    return
 
 
 
