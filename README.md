@@ -20,23 +20,11 @@ If you want to setup a virtual environment, do not forget to activate it before!
 
 
 
-## Setup (automation for Linux only)
+## Setup
 
 In the root of the project, create a .env file (or remove the .example at the end of the commited file) with the following content:
 
 ```
 DISCORD_TOKEN=JHK....JDFML5432ndf # Token for the production-ready bot here
 DEV_TOKEN=SDLKJf.....21df3dsf # Token for the beta bot here
-```
-
-For automatic timetables fetching, schedule the task with cron
-
-```
-crontab -e
-```
-
-And add the following line at the end (note: replace with absolute path to repo, e.g. use pwd):
-
-```
-* 6 * * * cd /path/to/repo/ && ./cron/auto_update.sh
 ```
