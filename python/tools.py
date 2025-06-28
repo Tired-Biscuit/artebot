@@ -1,5 +1,5 @@
 import subprocess
-import db
+import python.db as db
 import time
 
 DELTA_TIME = 14400
