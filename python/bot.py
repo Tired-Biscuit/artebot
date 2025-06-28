@@ -8,30 +8,49 @@ import tools
 from tools import DELTA_TIME, UPDATE_TIME
 import db
 
-DEBUG = True
+DEBUG = True # Toggle the dev or production bot
 
-lines = tools.update_lines()
-tools.FIELDS = lines[0]
 # reset()
 # init()
 # register_lines(lines)
 
+# For metering purposes
 logs_data = {"update": {"successful":0, "failed":0}, "info":{"successful":0, "failed":0}, "logs":0}
 
+# Get tokens
 load_dotenv()
 if DEBUG:
     TOKEN = os.getenv('DEV_TOKEN')
 else:
     TOKEN = os.getenv('DISCORD_TOKEN')
 
+# Setup bot config
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+# Set command prefix
 if DEBUG:
     bot = commands.Bot(command_prefix='!', intents=intents)
 else:
     bot = commands.Bot(command_prefix='$', intents=intents)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @bot.command()
 async def info(ctx, *, name=""):

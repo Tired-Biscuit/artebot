@@ -1,9 +1,11 @@
 import sqlite3
 import time
-import driveutils
-import tools
-from tools import trim_space, get_song_infos, update_lines
-db = sqlite3.connect("data.db")
+import python.driveutils as driveutils
+db = sqlite3.connect("./database/database.db")
+
+# # # # # # # # # # # # # # #
+#      Basic functions      #
+# # # # # # # # # # # # # # #
 
 def run(command):
     cursor = db.cursor()
@@ -17,15 +19,40 @@ def run(command):
         cursor.close()
     return result
 
+def runscript(script):
+    cursor = db.cursor()
+    try:
+        cursor.executescript(script)
+        db.commit()
+        result = cursor.fetchall()
+    except Exception as e:
+        result = e
+    finally:
+        cursor.close()
+    return result
+
 def reset():
-    with open("reset.sql", "r") as f:
+    with open("./sql/reset.sql", "r") as f:
         content = f.read()
-    run(content)
+    return runscript(content)
 
 def init():
-    with open("init.sql", "r") as f:
+    with open("./sql/init.sql", "r") as f:
         content = f.read()
-    run(content)
+    return runscript(content)
+
+# # # # # # # # # # # # # # #
+#    Database operations    #
+# # # # # # # # # # # # # # #
+
+
+
+
+
+# # # # # # # # # # # # # # #
+#     Outdated content      #
+# # # # # # # # # # # # # # #
+
 
 def insert_name(name):
     name = name.replace("'", " ")
