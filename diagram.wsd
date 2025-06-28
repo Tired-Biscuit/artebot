@@ -6,22 +6,22 @@ User : str email
 User : int group_id
 
 class Song
-Song : str titre
-Song : str artiste
-Song : int duree
-Song : str responsable
-Song : str voix
-Song : str guitare
-Song : str clavier
-Song : str batterie
-Song : str basse
-Song : str violon
-Song : str violoncelle
-Song : str contrebasse
-Song : str accordeon
+Song : str title
+Song : str artist
+Song : int length
+Song : str supervisor
+Song : str voice
+Song : str guitar
+Song : str keys
+Song : str drums
+Song : str bass
+Song : str violin
+Song : str cello
+Song : str contrabass
+Song : str accordion
 Song : str flute
 Song : str saxophone
-Song : str cornet
+Song : str horn
 Song : str notes
 
 class SchoolEvent
