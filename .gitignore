@@ -5,4 +5,4 @@ cron/logs.txt
 env/
 !.gitkeep
 __pycache__
-./main.py
+main.py
