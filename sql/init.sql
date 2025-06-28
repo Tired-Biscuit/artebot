@@ -1,0 +1,35 @@
+CREATE TABLE Song(
+    title TEXT,
+    artist TEXT,
+    length TIME,
+    supervisor TEXT,
+    voice TEXT,
+    guitar TEXT,
+    keys TEXT,
+    drums TEXT,
+    bass TEXT,
+    violin TEXT,
+    cello TEXT,
+    contrabass TEXT,
+    accordion TEXT,
+    flute TEXT,
+    saxophone TEXT,
+    horn TEXT,
+    notes TEXT
+);
+
+CREATE TABLE User(
+    uuid INTEGER UNIQUE,
+    email TEXT,
+    group_id INTEGER
+);
+
+CREATE TABLE SchoolEvent(
+    uuid INTEGER,
+    group_id INTEGER,
+    start_time TIME,
+    end_time TIME,
+    duration TIME,
+
+    CONSTRAINT pk_school_event UNIQUE (uuid, group_id)
+);
