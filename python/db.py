@@ -74,8 +74,9 @@ def update_timetables():
 
                     elif line.startswith("END:VEVENT"):
 
-                        if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            command += f"('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{duration(event['start_time'], event['end_time'])}'),"
+                        if event and "uuid" in event and "start_time" in event and "end_time" in event and "subject" in event:
+                            """ Hey, "Quoi?" 'test' """
+                            command += f"""('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{duration(event['start_time'], event['end_time'])}', "{event['subject']}"),"""
                         else:
                             print("Incomplete event data, skipping insertion.")
 
@@ -85,6 +86,8 @@ def update_timetables():
                         event["start_time"] = line.split(":", 1)[1].strip()
                     elif line.startswith("DTEND:"):
                         event["end_time"] = line.split(":", 1)[1].strip()
+                    elif line.startswith("SUMMARY:"):
+                        event["subject"] = line.split(":", 1)[1].strip()
 
     command = command[:-1] + ";" # Remove the last comma and add a semicolon
 

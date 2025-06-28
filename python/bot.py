@@ -47,10 +47,9 @@ else:
 
 
 
-
-
-
-
+# # # # # # # # # # # # # # #
+#     Outdated content      #
+# # # # # # # # # # # # # # #
 
 @bot.command()
 async def info(ctx, *, name=""):

@@ -1,5 +1,7 @@
 @startuml Diagram
 
+'Needs the PlantUML extension to be seen
+
 class User
 User : int uuid
 User : str email
@@ -30,5 +32,6 @@ SchoolEvent : int group_id
 SchoolEvent : int start_time
 SchoolEvent : int end_time
 SchoolEvent : int duration
+SchoolEvent : str subject
 
 @enduml
