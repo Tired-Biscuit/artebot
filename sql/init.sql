@@ -30,6 +30,7 @@ CREATE TABLE SchoolEvent(
     start_time TIME,
     end_time TIME,
     duration TIME,
+    subject TEXT,
 
     CONSTRAINT pk_school_event UNIQUE (uuid, group_id)
 );
