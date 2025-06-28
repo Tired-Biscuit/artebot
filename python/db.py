@@ -1,0 +1,113 @@
+import sqlite3
+import time
+import driveutils
+import tools
+from tools import trim_space, get_song_infos, update_lines
+db = sqlite3.connect("data.db")
+
+def run(command):
+    cursor = db.cursor()
+    try:
+        cursor.execute(command)
+        db.commit()
+        result = cursor.fetchall()
+    except Exception as e:
+        result = e
+    finally:
+        cursor.close()
+    return result
+
+def reset():
+    with open("reset.sql", "r") as f:
+        content = f.read()
+    run(content)
+
+def init():
+    with open("init.sql", "r") as f:
+        content = f.read()
+    run(content)
+
+def insert_name(name):
+    name = name.replace("'", " ")
+    run(f"INSERT INTO Musique(Nom) VALUES('{name}');")
+
+def add_field(field, value, name):
+    value = value.replace("'", " ")
+    name = name.replace("'", " ")
+    run(f"UPDATE Musique SET {field} = '{value}' WHERE Nom == '{name}';")
+
+def register_lines(lines):
+    fields = lines[0]
+    for line in lines:
+        for i in range(len(line)):
+            if i != 3:
+                if i == 0:
+                    insert_name(line[0])
+                else:
+                    add_field(fields[i], line[i], line[0])
+
+def get_song(name):
+    name = name.replace("'", " ")
+    return run(f"SELECT * FROM Musique WHERE Nom == '{name}';")
+
+def get_songs(name):
+    songs = {}
+    songs[trim_space(name)] = []
+    try:
+        result = run(f"SELECT * FROM Musique WHERE Chant LIKE '%{name}%' OR Guitare LIKE '%{name}%' OR Clavier LIKE '%{name}%' OR Batterie LIKE '%{name}%' OR Basse LIKE '%{name}%' OR Violon LIKE '%{name}%' OR Flûte LIKE '%{name}%' OR Saxo LIKE '%{name}%';")
+        possible_matchs = []
+        for song in result:
+            for field in song:
+                if (trim_space(name) == trim_space(field)):
+                    if song not in songs[trim_space(name)]:
+                        songs[trim_space(name)].append(song)
+                elif (name in field) and (trim_space(field) != trim_space(name)) and ("&" not in field and "+" not in field):
+                    if trim_space(field) not in songs.keys():
+                        songs[trim_space(field)] = []
+                    if song not in songs[trim_space(field)]:
+                        songs[trim_space(field)].append(song)
+                    if trim_space(field) not in possible_matchs:
+                        possible_matchs.append(trim_space(field))
+                elif ("&" in field):
+                    for people in field.split("&"):
+                        if (name in people) and (trim_space(people) != trim_space(name)):
+                            if trim_space(people) not in songs.keys():
+                                songs[trim_space(people)] = []
+                            if song not in songs[trim_space(people)]:
+                                songs[trim_space(people)].append(song)
+                            if trim_space(people) not in possible_matchs:
+                                possible_matchs.append(trim_space(people))
+                elif ("+" in field):
+                    for people in field.split("+"):
+                        if (name in people) and (trim_space(people) != trim_space(name)):
+                            if trim_space(people) not in songs.keys():
+                                songs[trim_space(people)] = []
+                            if song not in songs[trim_space(people)]:
+                                songs[trim_space(people)].append(song)
+                            if trim_space(people) not in possible_matchs:
+                                possible_matchs.append(trim_space(people))
+        text = ""
+        for key in songs.keys():
+            if len(songs[key]) > 0:
+                text += f"{len(songs[key])} morceaux pour **{key}**:\n"
+                for song in songs[key]:
+                    text += get_song_infos(song, key)
+                    text += "\n"
+            text += "\n\n"
+        result = text
+        
+    except Exception as e:
+        result = str(e)
+    return result
+
+def update_db(force):
+    if time.time() - tools.UPDATE_TIME < tools.DELTA_TIME and not force:
+        return False
+    else:
+        driveutils.download_file_from_google_drive()
+        reset()
+        init()
+        lines = update_lines()
+        register_lines(lines)
+        tools.UPDATE_TIME = time.time()
+        return True
