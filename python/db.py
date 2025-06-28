@@ -46,18 +46,21 @@ def init():
 #    Database operations    #
 # # # # # # # # # # # # # # #
 
-def duration(start: str, end:str) -> int:
+def ics_to_unixepoch(ics_time: str) -> int:
     """
-    Returns the duration between two ICS timestamps in minutes.
+    Converts an ICS timestamp to a Unix epoch timestamp.
     """
-    start_time = time.strptime(start, "%Y%m%dT%H%M%SZ")
-    end_time = time.strptime(end, "%Y%m%dT%H%M%SZ")
-    start_seconds = time.mktime(start_time)
-    end_seconds = time.mktime(end_time)
-    return int((end_seconds - start_seconds) / 60)
+    time_struct = time.strptime(ics_time, "%Y%m%dT%H%M%SZ")
+    return int(time.mktime(time_struct))
 
 def update_timetables():
-
+    """
+    Updates the database with the latest timetables from .ics files in ./timetables.
+    """
+    if not os.path.exists("./timetables"):
+        print("Timetables directory does not exist. Please create it and add .ics files.")
+        return False
+    
     command = "INSERT OR REPLACE INTO SchoolEvent VALUES"
 
     for filename in os.listdir("./timetables"):
@@ -75,16 +78,16 @@ def update_timetables():
                     elif line.startswith("END:VEVENT"):
 
                         if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            command += f"('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{duration(event['start_time'], event['end_time'])}'),"
+                            command += f"('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{(event['end_time'] - event['start_time'])/60}'),"
                         else:
                             print("Incomplete event data, skipping insertion.")
 
                     elif line.startswith("UID:"):
                         event["uuid"] = line.split(":", 1)[1].strip()
                     elif line.startswith("DTSTART:"):
-                        event["start_time"] = line.split(":", 1)[1].strip()
+                        event["start_time"] = ics_to_unixepoch(line.split(":", 1)[1].strip())
                     elif line.startswith("DTEND:"):
-                        event["end_time"] = line.split(":", 1)[1].strip()
+                        event["end_time"] = ics_to_unixepoch(line.split(":", 1)[1].strip())
 
     command = command[:-1] + ";" # Remove the last comma and add a semicolon
 

@@ -26,10 +26,10 @@ CREATE TABLE User(
 
 CREATE TABLE SchoolEvent(
     uuid INTEGER,
-    group_id INTEGER,
-    start_time TIME,
-    end_time TIME,
-    duration TIME,
+    group_id TEXT,
+    start_time DATETIME,
+    end_time DATETIME,
+    duration INT,
 
     CONSTRAINT pk_school_event UNIQUE (uuid, group_id)
 );
