@@ -1,0 +1,34 @@
+@startuml Diagram
+
+class User
+User : int uuid
+User : str email
+User : int group_id
+
+class Song
+Song : str titre
+Song : str artiste
+Song : int duree
+Song : str responsable
+Song : str voix
+Song : str guitare
+Song : str clavier
+Song : str batterie
+Song : str basse
+Song : str violon
+Song : str violoncelle
+Song : str contrebasse
+Song : str accordeon
+Song : str flute
+Song : str saxophone
+Song : str cornet
+Song : str notes
+
+class SchoolEvent
+SchoolEvent : int uuid
+SchoolEvent : int group_id
+SchoolEvent : int start_time
+SchoolEvent : int end_time
+SchoolEvent : int duration
+
+@enduml
