@@ -3,6 +3,7 @@ import python.db as db
 import time
 import os
 import json
+import python.googleutils as googleutils
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
@@ -24,6 +25,9 @@ def update_timetables():
         db.update_timetables()
 
 def add_calendar(calendar_id):
+    """
+    Adds calendar to data.json
+    """
     if os.path.exists("data.json"):
         data = {}
         with open("data.json", "r") as f:
@@ -38,6 +42,9 @@ def add_calendar(calendar_id):
                 f.write(json.dumps(data))
 
 def delete_calendar(calendar_id):
+    """
+    Removes calendar from data.json
+    """
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
             data = json.loads(f.read())
@@ -45,3 +52,22 @@ def delete_calendar(calendar_id):
             if calendar_id in data["calendar_ids"]:
                 data["calendar_ids"].remove(calendar_id)
                 f.write(json.dumps(data))
+
+def update_calendars():
+    """
+    Downloads Google Calendars in data.json and updates the database
+    """
+    if not os.path.exists("./data.json"):
+        print("No calendars added.")
+        return False
+
+    with open("./data.json") as f:
+        calendar_ids = json.loads(f.read())["calendar_ids"]
+        if len(calendar_ids) == 0:
+            print("Empty calendar list")
+            return False
+    
+    for calendar_id in calendar_ids:
+        result = googleutils.download_calendar(calendar_id)
+        if result[0]:
+            print(db.update_calendar(result[1]))

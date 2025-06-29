@@ -4,6 +4,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient import errors
 from googleapiclient.discovery import build
 
+import requests
+import json
+
 import os
 
 # If modifying these scopes, delete the file token.json.
@@ -71,3 +74,41 @@ def execute_api_function(function_name: str, opt_param=None):
     except errors.HttpError as error:
         # The API encountered a problem.
         return (False, error.content)
+
+def download_calendar(calendar_id):
+    """
+    Fetch the calendar
+
+    Returns: (bool, str/list) if bool is True, it's a success and the second item is a list of event,
+                else, it's a string of the error message
+    """
+    creds = refresh_token()
+
+    url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
+
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json"
+    }
+
+    params = {
+        # "timeMin": "2025-06-01T00:00:00Z",
+        # "timeMax": "2025-06-30T23:59:59Z",
+        "singleEvents": True,
+        "orderBy": "startTime"
+    }
+
+    response = requests.get(url, headers=headers)#, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        
+        with open("temp_cal.json", "w") as f:
+            
+            f.write(json.dumps(data))
+        return (True, data["items"])
+        # for event in data.get("items", []):
+        #     print(event["summary"], event.get("start"), event.get("end"))
+    else:
+        print("Erreur:", response.status_code, response.text)
+        return (False, response.text)
