@@ -2,7 +2,12 @@ import sqlite3
 import time
 import os
 import python.driveutils as driveutils
-db = sqlite3.connect("./database/database.db")
+
+if os.path.exists("./database/database.db"):
+    db = sqlite3.connect("./database/database.db")
+else:
+    with open("./database/database.db", "w") as f:
+        f.close()
 
 # # # # # # # # # # # # # # #
 #      Basic functions      #
