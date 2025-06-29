@@ -34,3 +34,14 @@ CREATE TABLE SchoolEvent(
 
     CONSTRAINT pk_school_event UNIQUE (uuid, group_id)
 );
+
+CREATE TABLE GoogleEvent(
+    uuid TEXT,
+    calendar_id TEXT,
+    musicians TEXT,
+    start_time DATETIME,
+    end_time DATETIME,
+    name TEXT,
+
+    CONSTRAINT pk_google_event UNIQUE (uuid, calendar_id)
+);

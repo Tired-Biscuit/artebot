@@ -27,11 +27,19 @@ Song : str horn
 Song : str notes
 
 class SchoolEvent
-SchoolEvent : int uuid
-SchoolEvent : int group_id
+SchoolEvent : str uuid
+SchoolEvent : str group_id
 SchoolEvent : int start_time
 SchoolEvent : int end_time
 SchoolEvent : int duration
 SchoolEvent : str subject
+
+class GoogleEvent
+GoogleEvent : str uuid
+GoogleEvent : str calendar_id
+GoogleEvent : str musicians
+GoogleEvent : int start_time
+GoogleEvent : int end_time
+GoogleEvent : str name
 
 @enduml

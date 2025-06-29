@@ -1,7 +1,10 @@
 import sqlite3
 import time
 import os
+import json
 import python.driveutils as driveutils
+
+# TODO faire des tests d'injection sur les champs de type : nom du morceau
 
 if os.path.exists("./database/database.db"):
     db = sqlite3.connect("./database/database.db")
@@ -58,6 +61,13 @@ def ics_to_unixepoch(ics_time: str) -> int:
     time_struct = time.strptime(ics_time, "%Y%m%dT%H%M%SZ")
     return int(time.mktime(time_struct))
 
+def cal_to_unixepoch(cal_time: str) -> int:
+    """
+    Converts a Google Calendar timestamp to a Unix epoch timestamp.
+    """
+    time_struct = time.strptime(cal_time[:-6], "%Y-%m-%dT%H:%M:%S")
+    return int(time.mktime(time_struct))
+
 def update_timetables():
     """
     Updates the database with the latest timetables from .ics files in ./timetables.
@@ -100,6 +110,29 @@ def update_timetables():
 
     return run(command)
 
+def update_calendar(calendar):
+    """
+    Updates the database with the latest calendar events from the google calendars in data.json
+    """
+    
+    command = "INSERT OR REPLACE INTO GoogleEvent VALUES"
+
+    for event in calendar:
+        keys = event.keys()
+        if event and "id" in keys and "organizer" in keys and "start" in keys and "end" in keys and "summary" in keys and "location" in keys:
+            if event["location"] in ["local", "Local", "LOCAL"]:
+                musicians = ""
+                if "attendees" in keys:
+                    for attendee in event['attendees']:
+                        musicians +=  f"""{attendee['email']} """
+                    musicians = musicians[:-1]
+                command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{cal_to_unixepoch(event['start']['dateTime'])}', '{cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
+        else:
+            print("Incomplete event data, skipping insertion.")
+
+    command = command[:-1] + ";" # Remove the last comma and add a semicolon
+
+    return run(command)
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #

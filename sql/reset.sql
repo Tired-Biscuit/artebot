@@ -1,3 +1,4 @@
 DROP TABLE Song;
 DROP TABLE User;
 DROP TABLE SchoolEvent;
+DROP TABLE GoogleEvent;
