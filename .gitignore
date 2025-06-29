@@ -8,3 +8,7 @@ env/
 !.gitkeep
 __pycache__
 main.py
+.idea
+credentials.json
+token.json
+data.json

@@ -1,6 +1,8 @@
 import subprocess
 import python.db as db
 import time
+import os
+import json
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
@@ -20,3 +22,26 @@ def update_timetables():
     """
     if download_timetables():
         db.update_timetables()
+
+def add_calendar(calendar_id):
+    if os.path.exists("data.json"):
+        data = {}
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        with open("data.json", "w") as f:
+            if calendar_id not in data["calendar_ids"]:
+                data["calendar_ids"].append(calendar_id)
+                f.write(json.dumps(data))
+    else:
+        data = {"calendar_ids":[calendar_id]}
+        with open("data.json", "w") as f:
+                f.write(json.dumps(data))
+
+def delete_calendar(calendar_id):
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        with open("data.json", "w") as f:
+            if calendar_id in data["calendar_ids"]:
+                data["calendar_ids"].remove(calendar_id)
+                f.write(json.dumps(data))
