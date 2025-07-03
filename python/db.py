@@ -134,6 +134,25 @@ def update_calendar(calendar):
 
     return run(command)
 
+def add_user(email, group_id):
+    """
+    Adds a user to the database.
+    
+    Args:
+        email (str): The email of the musician.
+        group_id (int): The group ID of the musician.
+    """
+
+    uuid_query = "SELECT MAX(uuid) FROM User;"
+    uuid = run(uuid_query)
+    if not uuid or len(uuid) == 0 or uuid[0][0] is None:
+        uuid = 1
+    else:
+        uuid = uuid[0][0] + 1
+
+    command = f"INSERT INTO User VALUES({uuid}, '{email}', {group_id});"
+    return run(command)
+
 def add_puncutal_constraint(musician, day, start_time, end_time):
     """
     Adds a constraint for a musician in the database.
