@@ -53,7 +53,7 @@ def execute_api_function(function_name: str, opt_param=None):
     try:
         service = build("script", "v1", credentials=creds)
         
-        script_id = os.getenv("API_ID")
+        script_id = os.getenv("SCRIPT_ID")
 
         print(script_id)
 

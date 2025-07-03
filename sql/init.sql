@@ -45,3 +45,15 @@ CREATE TABLE GoogleEvent(
 
     CONSTRAINT pk_google_event UNIQUE (uuid, calendar_id)
 );
+
+CREATE TABLE MusicianConstraint(
+    musician INTEGER,
+    
+    day DATE,
+    start_time TIME,
+    end_time TIME,
+    week_day INTEGER,
+
+    CONSTRAINT pk_musician_constraint UNIQUE (musician, day, start_time, end_time, week_day),
+    FOREIGN KEY (musician) REFERENCES User(uuid)
+)

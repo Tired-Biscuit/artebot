@@ -134,6 +134,42 @@ def update_calendar(calendar):
 
     return run(command)
 
+def add_puncutal_constraint(musician, day, start_time, end_time):
+    """
+    Adds a constraint for a musician in the database.
+    
+    Args:
+        musician (str): The UUID of the musician.
+        day (str): The day of the constraint in DD-MM-YYYY format.
+        start_time (str): THe start time of the constraint in HH:MM format.
+        end_time (str): The end time of the constraint in HH:MM format.
+    """
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician}', '{day}', '{start_time}', '{end_time}', 0);"
+    return run(command)
+
+def add_recurring_constraint(musician, start_time, end_time, week_day):
+    """
+    Adds a recurring constraint for a musician in the database.
+    
+    Args:
+        musician (str): The UUID of the musician.
+        start_time (str): THe start time of the constraint in HH:MM format.
+        end_time (str): The end time of the constraint in HH:MM format.
+        weekDay (int): The day of the week for the recurring event (1-8, where 1 is Monday, and 8 is every day).
+    """
+    days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    
+    if week_day == "Tous" or week_day == "tous" or week_day == "tous les jours" or week_day == "Tous les jours":
+        day = 8
+    else:
+        try:
+            day = days.index(str.capitalize(week_day)) + 1
+        except ValueError:
+            raise ValueError(f"Invalid week day: {week_day}. Must be one of {days}.")
+
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician}', '', '{start_time}', '{end_time}', {day});"
+    return run(command)
+
 # # # # # # # # # # # # # # #
 #     Outdated content      #
 # # # # # # # # # # # # # # #
