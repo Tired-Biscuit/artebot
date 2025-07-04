@@ -4,9 +4,10 @@ import time
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-import tools
-from tools import DELTA_TIME, UPDATE_TIME
-import db
+from discord import app_commands
+import python.tools as tools
+from python.tools import DELTA_TIME, UPDATE_TIME
+import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -31,39 +32,27 @@ intents.members = True
 
 # Set command prefix
 if DEBUG:
-    bot = commands.Bot(command_prefix='!', intents=intents)
+    bot = commands.Bot(command_prefix='/', intents=intents)
 else:
     bot = commands.Bot(command_prefix='$', intents=intents)
 
+# # # # # # # # # # # # # # #
+#        New content        #
+# # # # # # # # # # # # # # #
 
-
-
-
-
-
-
-
-
-
-
+@bot.command(help="help text", brief="brief text", usage="usage value")
+@app_commands.choices(choices=[
+        app_commands.Choice(name="name 1", value="value 1"),
+        app_commands.Choice(name="name 2", value="value 2"),
+        app_commands.Choice(name="name 3", value="value 3"),
+        ])
+async def test(ctx, i: discord.Interaction, name=app_commands.Choice[str]):
+    message = discord.Embed(title="hello"+name)
+    await ctx.author.send(embed=message)
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #
 # # # # # # # # # # # # # # #
-
-@bot.command()
-async def info(ctx, *, name=""):
-    if name == "":
-        message = discord.Embed(title="Erreur", description="Pas de prénom fourni!")
-    else:
-        try:
-            text = db.get_songs(name)
-            logs_data["info"]["successful"] += 1
-        except:
-            text = "Il y a eu une erreur, veuillez la signaler à Paul (@.tiredbiscuit)"
-            logs_data["info"]["failed"] += 1
-        message = discord.Embed(title="Résultats", description=(text if text != "  " else "Pas de résultats"))
-    await ctx.author.send(embed=message)
 
 @bot.command()
 async def update(ctx, opt=""):
