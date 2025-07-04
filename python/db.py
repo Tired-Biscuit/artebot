@@ -2,6 +2,8 @@ import sqlite3
 import time
 import os
 import json
+import python.googleutils as googleutils
+import python.tools as tools
 from fileinput import filename
 
 from urllib3 import request
@@ -65,20 +67,6 @@ def init():
 #    Database operations    #
 # # # # # # # # # # # # # # #
 
-def ics_to_unixepoch(ics_time: str) -> int:
-    """
-    Converts an ICS timestamp with format YYYYMMDDTHHMMSSZ to a Unix epoch timestamp.
-    """
-    time_struct = time.strptime(ics_time, "%Y%m%dT%H%M%SZ")
-    return int(time.mktime(time_struct))
-
-def cal_to_unixepoch(cal_time: str) -> int:
-    """
-    Converts a Google Calendar timestamp with format YYYY-MM-DDTHH:MM:SS+HH:MM to a Unix epoch timestamp (ignores time zone info).
-    """
-    time_struct = time.strptime(cal_time[:-6], "%Y-%m-%dT%H:%M:%S")
-    return int(time.mktime(time_struct))
-
 def update_timetables():
     """
     Updates the database with the latest timetables from .ics files in ./timetables.
@@ -111,9 +99,9 @@ def update_timetables():
                     elif line.startswith("UID:"):
                         event["uuid"] = line.split(":", 1)[1].strip()
                     elif line.startswith("DTSTART:"):
-                        event["start_time"] = ics_to_unixepoch(line.split(":", 1)[1].strip())
+                        event["start_time"] = tools.ics_to_unixepoch(line.split(":", 1)[1].strip())
                     elif line.startswith("DTEND:"):
-                        event["end_time"] = ics_to_unixepoch(line.split(":", 1)[1].strip())
+                        event["end_time"] = tools.ics_to_unixepoch(line.split(":", 1)[1].strip())
                     elif line.startswith("SUMMARY:"):
                         event["subject"] = line.split(":", 1)[1].strip()
 
@@ -137,7 +125,7 @@ def update_calendar(calendar):
                     for attendee in event['attendees']:
                         musicians +=  f"""{attendee['email']} """
                     musicians = musicians[:-1]
-                command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{cal_to_unixepoch(event['start']['dateTime'])}', '{cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
+                command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{tools.cal_to_unixepoch(event['start']['dateTime'])}', '{tools.cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
         else:
             field_names = ["id", "organizer", "start", "end", "summary", "location"]
             missing_fields = ""
@@ -149,6 +137,26 @@ def update_calendar(calendar):
     if command != "INSERT OR REPLACE INTO GoogleEvent VALUES":
         command = command[:-1] + ";" # Remove the last comma and add a semicolon
         return run(command)
+
+def update_calendars():
+    """
+    Downloads Google Calendars in data.json and updates the database
+    """
+    if not os.path.exists("./data.json"):
+        print("No calendars added.")
+        return False
+
+    with open("./data.json") as f:
+        calendar_ids = json.loads(f.read())["calendar_ids"]
+        if len(calendar_ids) == 0:
+            print("Empty calendar list")
+            return False
+    i=0
+    for calendar_id in calendar_ids:
+        i+=1
+        result = googleutils.download_calendar(calendar_id)
+        if result[0] and len(result[1]) > 0:
+            print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}")
 
 def add_user(uuid, email, group_id, *, commit=False):
     """
@@ -206,7 +214,6 @@ def get_constraints(musician_uuid: str) -> list[tuple]:
     """
 
     return run(f"SELECT start_time, end_time FROM MusicianConstraint WHERE musician_uuid == {musician_uuid}")
-
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #

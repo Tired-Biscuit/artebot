@@ -2,7 +2,7 @@ import time
 
 class Event:
     """
-    Represents a single event with a start and end time in Unix Epoch format.
+    Represents a single event with a start and end time in Unix Epoch (UTC) format.
     """
     def __init__(self, start_time: int, end_time: int):
         self.start_time = start_time
