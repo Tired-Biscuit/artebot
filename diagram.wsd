@@ -42,4 +42,11 @@ GoogleEvent : int start_time
 GoogleEvent : int end_time
 GoogleEvent : str name
 
+class MusicianConstraint
+MusicianConstraint : str musician_uuid
+MusicianConstraint : int day
+MusicianConstraint : int start_time
+MusicianConstraint : int end_time
+MusicianConstraint : int week_day
+
 @enduml
