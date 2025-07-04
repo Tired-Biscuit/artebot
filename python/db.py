@@ -16,15 +16,17 @@ else:
 #      Basic functions      #
 # # # # # # # # # # # # # # #
 
-def run(command):
+def run(command, *, commit=False):
     cursor = db.cursor()
     try:
         cursor.execute(command)
         db.commit()
         result = cursor.fetchall()
     except Exception as e:
-        result = e
+        raise Exception(f"Error during request execution:\n            {e}")
     finally:
+        if commit:
+            db.commit()
         cursor.close()
     return result
 
@@ -35,7 +37,7 @@ def runscript(script):
         db.commit()
         result = cursor.fetchall()
     except Exception as e:
-        result = e
+        raise Exception(f"Error during request execution:\n            {e}")
     finally:
         cursor.close()
     return result
@@ -134,31 +136,26 @@ def update_calendar(calendar):
 
     return run(command)
 
-def add_user(email, group_id):
+def add_user(uuid, email, group_id, *, commit=False):
     """
     Adds a user to the database.
     
     Args:
+        uuid (str) : Discord user uuid
         email (str): The email of the musician.
-        group_id (int): The group ID of the musician.
+        group_id (str): The group ID of the musician.
+        commit (bool): (optional and keyword-only) ask for database commit on successful execution
     """
 
-    uuid_query = "SELECT MAX(uuid) FROM User;"
-    uuid = run(uuid_query)
-    if not uuid or len(uuid) == 0 or uuid[0][0] is None:
-        uuid = 1
-    else:
-        uuid = uuid[0][0] + 1
-
-    command = f"INSERT INTO User VALUES({uuid}, '{email}', {group_id});"
-    return run(command)
+    command = f"INSERT INTO User VALUES({uuid}, '{email}', '{group_id}');"
+    return run(command, commit=commit)
 
 def add_puncutal_constraint(musician, day, start_time, end_time):
     """
     Adds a constraint for a musician in the database.
     
     Args:
-        musician (str): The UUID of the musician.
+        musician (str): The UUID of the musician (Discord user uuid).
         day (str): The day of the constraint in DD-MM-YYYY format.
         start_time (str): THe start time of the constraint in HH:MM format.
         end_time (str): The end time of the constraint in HH:MM format.
@@ -171,7 +168,7 @@ def add_recurring_constraint(musician, start_time, end_time, week_day):
     Adds a recurring constraint for a musician in the database.
     
     Args:
-        musician (str): The UUID of the musician.
+        musician (str): The UUID of the musician (Discord user uuid).
         start_time (str): THe start time of the constraint in HH:MM format.
         end_time (str): The end time of the constraint in HH:MM format.
         weekDay (int): The day of the week for the recurring event (1-8, where 1 is Monday, and 8 is every day).
