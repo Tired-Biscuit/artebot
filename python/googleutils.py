@@ -103,7 +103,7 @@ def download_calendar(calendar_id):
     if response.status_code == 200:
         data = response.json()
         
-        with open("temp_cal.json", "w") as f:
+        with open("temp_cal2.json", "w") as f:
             
             f.write(json.dumps(data))
         return (True, data["items"])

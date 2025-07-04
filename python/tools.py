@@ -1,9 +1,11 @@
 import subprocess
-import python.db as db
 import time
 import os
 import json
-import python.googleutils as googleutils
+from datetime import timezone, timedelta, datetime
+
+CEST = timezone(timedelta(hours=2), name="CEST")
+CET  = timezone(timedelta(hours=1), name="CET")
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
@@ -16,13 +18,6 @@ def download_timetables():
     """
     r = subprocess.call("./scripts/auto_update.sh")
     return r == 0
-
-def update_timetables():
-    """
-    Downloads timetables and updates the database
-    """
-    if download_timetables():
-        db.update_timetables()
 
 def add_calendar(calendar_id):
     """
@@ -53,22 +48,16 @@ def delete_calendar(calendar_id):
                 data["calendar_ids"].remove(calendar_id)
                 f.write(json.dumps(data))
 
-def update_calendars():
+def ics_to_unixepoch(ics_time: str) -> int:
     """
-    Downloads Google Calendars in data.json and updates the database
+    Converts an ICS timestamp (GMT) with format YYYYMMDDTHHMMSSZ to a Unix epoch timestamp.
     """
-    if not os.path.exists("./data.json"):
-        print("No calendars added.")
-        return False
+    time_struct = datetime.strptime(ics_time, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+    return int(time_struct.timestamp())
 
-    with open("./data.json") as f:
-        calendar_ids = json.loads(f.read())["calendar_ids"]
-        if len(calendar_ids) == 0:
-            print("Empty calendar list")
-            return False
-    i=0
-    for calendar_id in calendar_ids:
-        i+=1
-        result = googleutils.download_calendar(calendar_id)
-        if result[0] and len(result[1]) > 0:
-            print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := db.update_calendar(result[1])) in [[], None] else val}")
+def cal_to_unixepoch(cal_time: str) -> int:
+    """
+    Converts a Google Calendar timestamp with format YYYY-MM-DDTHH:MM:SS+HH:MM (local+time zone difference) to a Unix epoch timestamp (UTC).
+    """
+    time_struct = time.strptime(cal_time[:-6], "%Y-%m-%dT%H:%M:%S")
+    return int(time.mktime(time_struct))
