@@ -66,8 +66,9 @@ def update_calendars():
         if len(calendar_ids) == 0:
             print("Empty calendar list")
             return False
-    
+    i=0
     for calendar_id in calendar_ids:
+        i+=1
         result = googleutils.download_calendar(calendar_id)
-        if result[0]:
-            print(db.update_calendar(result[1]))
+        if result[0] and len(result[1]) > 0:
+            print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := db.update_calendar(result[1])) in [[], None] else val}")

@@ -2,6 +2,7 @@ import sqlite3
 import time
 import os
 import json
+from fileinput import filename
 
 from urllib3 import request
 
@@ -129,8 +130,8 @@ def update_calendar(calendar):
 
     for event in calendar:
         keys = event.keys()
-        if event and "id" in keys and "organizer" in keys and "start" in keys and "end" in keys and "summary" in keys and "location" in keys:
-            if event["location"] in ["local", "Local", "LOCAL"]:
+        if event and "id" in keys and "organizer" in keys and "start" in keys and "end" in keys and "summary" in keys:
+            if "location" in keys and event["location"] in ["local", "Local", "LOCAL"]:
                 musicians = ""
                 if "attendees" in keys:
                     for attendee in event['attendees']:
@@ -138,11 +139,16 @@ def update_calendar(calendar):
                     musicians = musicians[:-1]
                 command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{cal_to_unixepoch(event['start']['dateTime'])}', '{cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
         else:
-            print("Incomplete event data, skipping insertion.")
+            field_names = ["id", "organizer", "start", "end", "summary", "location"]
+            missing_fields = ""
+            for field_name in field_names:
+                if field_name not in keys:
+                    missing_fields += " "+field_name
+            print(f"Incomplete event data, skipping insertion. Missing fields:{missing_fields}")
 
-    command = command[:-1] + ";" # Remove the last comma and add a semicolon
-
-    return run(command)
+    if command != "INSERT OR REPLACE INTO GoogleEvent VALUES":
+        command = command[:-1] + ";" # Remove the last comma and add a semicolon
+        return run(command)
 
 def add_user(uuid, email, group_id, *, commit=False):
     """
