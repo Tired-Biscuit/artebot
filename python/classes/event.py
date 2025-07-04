@@ -4,7 +4,7 @@ class Event:
     """
     Represents a single event with a start and end time in Unix Epoch format.
     """
-    def __init__(self, start_time:int, end_time:int):
+    def __init__(self, start_time: int, end_time: int):
         self.start_time = start_time
         self.end_time = end_time
     
@@ -13,7 +13,7 @@ class Event:
         end = time.strftime("%d-%m-%Y %H:%M", time.localtime(self.end_time))
         return f"Event between {start} and {end}"
 
-def constraints_to_events(constraints):
+def constraints_to_events(constraints: list[tuple]) -> list[Event]:
     """
     Converts a list of constraints provided by the database to a list of Event objects.
     
@@ -29,7 +29,7 @@ def constraints_to_events(constraints):
         start_time = time.strptime(f"{constraint[1]} {constraint[2]}", "%d-%m-%Y %H:%M")
         end_time = time.strptime(f"{constraint[1]} {constraint[3]}", "%d-%m-%Y %H:%M")
 
-        events.append(Event(time.mktime(start_time), time.mktime(end_time)))
+        events.append(Event(int(time.mktime(start_time)), int(time.mktime(end_time))))
     return events
 
 def school_events_to_events(constraints):
@@ -77,7 +77,7 @@ class RecurringEvent(Event):
     Represents a recurring event happening weekly or daily.
     """
 
-    def __init__(self, start_time:str, end_time:str, week_day:int):
+    def __init__(self, start_time: str, end_time: str, week_day: int):
         self.start_time = start_time # "HH:MM" format
         self.end_time = end_time # "HH:MM" format
         self.week_day = week_day # 1-7 for Monday to Sunday, 8 for every day
@@ -90,7 +90,7 @@ class RecurringEvent(Event):
         day = days[self.week_day - 1] if self.week_day <= 7 else "day"
         return f"Recurring event every {day} from {self.start_time} to {self.end_time}"
     
-def recurring_constraints_to_events(constraints):
+def recurring_constraints_to_events(constraints: list[tuple]) -> list[RecurringEvent]:
     """
     Converts a list of recurring constraints provided by the database to a list of RecurringEvent objects.
     

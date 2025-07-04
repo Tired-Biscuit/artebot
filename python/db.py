@@ -2,15 +2,18 @@ import sqlite3
 import time
 import os
 import json
+
+from urllib3 import request
+
 import python.driveutils as driveutils
 
 # TODO faire des tests d'injection sur les champs de type : nom du morceau
-
+# TODO ajouter la règle PRAGMA pour obliger l'unicité des Primary Keys
 if os.path.exists("./database/database.db"):
     db = sqlite3.connect("./database/database.db")
 else:
     with open("./database/database.db", "w") as f:
-        f.close()
+        pass
 
 # # # # # # # # # # # # # # #
 #      Basic functions      #
@@ -23,34 +26,39 @@ def run(command, *, commit=False):
         db.commit()
         result = cursor.fetchall()
     except Exception as e:
-        raise Exception(f"Error during request execution:\n            {e}")
+        raise Exception(f"Error during request execution:\n            {e}\n\nWhen running the following request:\n\n{command}")
     finally:
         if commit:
             db.commit()
         cursor.close()
     return result
 
-def runscript(script):
+def runscript(script, *, allow_fail=False):
     cursor = db.cursor()
     try:
         cursor.executescript(script)
         db.commit()
         result = cursor.fetchall()
     except Exception as e:
-        raise Exception(f"Error during request execution:\n            {e}")
+        if not allow_fail:
+            raise Exception(f"Error during script execution:\n            {e}\n\nWhen running the following script:\n\n{script}")
+        else:
+            return "Silenced error happened"
     finally:
         cursor.close()
     return result
 
-def reset():
+def reset(*, allow_fail=False):
     with open("./sql/reset.sql", "r") as f:
         content = f.read()
-    return runscript(content)
+    result = runscript(content, allow_fail=allow_fail)
+    return result if result != [] else "Done"
 
 def init():
     with open("./sql/init.sql", "r") as f:
         content = f.read()
-    return runscript(content)
+    result = runscript(content)
+    return result if result != [] else "Done"
 
 # # # # # # # # # # # # # # #
 #    Database operations    #
@@ -58,14 +66,14 @@ def init():
 
 def ics_to_unixepoch(ics_time: str) -> int:
     """
-    Converts an ICS timestamp to a Unix epoch timestamp.
+    Converts an ICS timestamp with format YYYYMMDDTHHMMSSZ to a Unix epoch timestamp.
     """
     time_struct = time.strptime(ics_time, "%Y%m%dT%H%M%SZ")
     return int(time.mktime(time_struct))
 
 def cal_to_unixepoch(cal_time: str) -> int:
     """
-    Converts a Google Calendar timestamp to a Unix epoch timestamp.
+    Converts a Google Calendar timestamp with format YYYY-MM-DDTHH:MM:SS+HH:MM to a Unix epoch timestamp (ignores time zone info).
     """
     time_struct = time.strptime(cal_time[:-6], "%Y-%m-%dT%H:%M:%S")
     return int(time.mktime(time_struct))
@@ -150,17 +158,17 @@ def add_user(uuid, email, group_id, *, commit=False):
     command = f"INSERT INTO User VALUES({uuid}, '{email}', '{group_id}');"
     return run(command, commit=commit)
 
-def add_puncutal_constraint(musician, day, start_time, end_time):
+def add_puncutal_constraint(musician_uuid: str, day: str, start_time: str, end_time: str):
     """
     Adds a constraint for a musician in the database.
     
     Args:
         musician (str): The UUID of the musician (Discord user uuid).
         day (str): The day of the constraint in DD-MM-YYYY format.
-        start_time (str): THe start time of the constraint in HH:MM format.
+        start_time (str): The start time of the constraint in HH:MM format.
         end_time (str): The end time of the constraint in HH:MM format.
     """
-    command = f"INSERT INTO MusicianConstraint VALUES('{musician}', '{day}', '{start_time}', '{end_time}', 0);"
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '{day}', '{start_time}', '{end_time}', 0);"
     return run(command)
 
 def add_recurring_constraint(musician, start_time, end_time, week_day):
@@ -185,6 +193,14 @@ def add_recurring_constraint(musician, start_time, end_time, week_day):
 
     command = f"INSERT INTO MusicianConstraint VALUES('{musician}', '', '{start_time}', '{end_time}', {day});"
     return run(command)
+
+def get_constraints(musician_uuid: str) -> list[tuple]:
+    """
+    Returns all constraints from musician's Discord UUID
+    """
+
+    return run(f"SELECT start_time, end_time FROM MusicianConstraint WHERE musician_uuid == {musician_uuid}")
+
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #

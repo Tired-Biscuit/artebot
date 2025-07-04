@@ -20,7 +20,7 @@ CREATE TABLE Song(
 
 CREATE TABLE User(
     uuid INTEGER UNIQUE,
-    email TEXT,
+    email TEXT UNIQUE,
     group_id INTEGER
 );
 
@@ -47,13 +47,12 @@ CREATE TABLE GoogleEvent(
 );
 
 CREATE TABLE MusicianConstraint(
-    musician INTEGER,
-    
+    musician_uuid TEXT,
     day DATE,
     start_time TIME,
     end_time TIME,
     week_day INTEGER,
 
-    CONSTRAINT pk_musician_constraint UNIQUE (musician, day, start_time, end_time, week_day),
-    FOREIGN KEY (musician) REFERENCES User(uuid)
+    CONSTRAINT pk_musician_constraint UNIQUE (musician_uuid, day, start_time, end_time, week_day),
+    FOREIGN KEY (musician_uuid) REFERENCES User(uuid)
 )
