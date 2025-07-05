@@ -19,7 +19,7 @@ DEBUG = True # Toggle the dev or production bot
 logs_data = {"update": {"successful":0, "failed":0}, "info":{"successful":0, "failed":0}, "logs":0}
 
 # Get tokens
-load_dotenv()
+load_dotenv("./.env/.env")
 if DEBUG:
     TOKEN = os.getenv('DEV_TOKEN')
 else:
@@ -40,15 +40,23 @@ else:
 #        New content        #
 # # # # # # # # # # # # # # #
 
-@bot.command(help="help text", brief="brief text", usage="usage value")
-@app_commands.choices(choices=[
-        app_commands.Choice(name="name 1", value="value 1"),
-        app_commands.Choice(name="name 2", value="value 2"),
-        app_commands.Choice(name="name 3", value="value 3"),
-        ])
-async def test(ctx, i: discord.Interaction, name=app_commands.Choice[str]):
-    message = discord.Embed(title="hello"+name)
-    await ctx.author.send(embed=message)
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+
+@bot.tree.command(description="Test command with choices")
+@app_commands.choices(name=[
+    app_commands.Choice(name="name 1", value="value 1"),
+    app_commands.Choice(name="name 2", value="value 2"),
+    app_commands.Choice(name="name 3", value="value 3"),
+])
+async def test(i: discord.Interaction, name: app_commands.Choice[str]):
+    message = discord.Embed(title="hello " + name.name)
+    await i.response.send_message(embed=message)
+
+@bot.command()
+async def foo(ctx):
+    await ctx.send("miam")
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #
