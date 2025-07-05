@@ -62,19 +62,19 @@ async def test(i: discord.Interaction, name: app_commands.Choice[str]):
 
 @bot.tree.command(name="connexion", description="S'ajouter à la base de données")
 @app_commands.describe(
-    group="Groupe auquel tu appartiens",
+    group="Groupe scolaire auquel tu appartiens",
     mail="Ton adresse mail TN.net"
 )
 @app_commands.choices(group=group_choices)
 
-async def connexion(i: discord.Interaction, group: str, mail:str):
+async def connexion(i: discord.Interaction, group: app_commands.Choice[str], mail:str):
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("Tu es déjà dans la base de données !")
+            raise ValueError("tu es déjà dans la base de données !")
 
         # Add user to the database
-        db.add_user(i.user.id, mail, group)
+        db.add_user(i.user.id, mail, group.value)
 
         message = discord.Embed(title="Ajout réussi", description=f"{i.user.name} a été ajouté à la base de données avec succès.")
         await i.response.send_message(embed=message)
@@ -83,21 +83,39 @@ async def connexion(i: discord.Interaction, group: str, mail:str):
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout : {str(e)}")
         await i.response.send_message(embed=message)
 
-@bot.tree.command(name="contrainte", description="Ajouter une contrainte ponctuelle")
-@app_commands.describe(
-    jour="Date de la contrainte",
-    début="Heure de début de la contrainte",
-    fin="Heure de fin de la contrainte"
 
+@bot.tree.command(name="changer_mail", description="Changer l'adresse mail associée à son compte")
+@app_commands.describe(
+    mail="La nouvelle adresse mail (TN.net)"
 )
 
-async def contrainte(i: discord.Interaction, jour:str, début: str, fin: str):
+async def changer_mail(i: discord.Interaction, mail:str):
+    try:
+        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
+            raise ValueError()
+        
+        db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{i.user.id}'")
+        await i.response.send_message("Adresse mail modifiée avec succès !")
+        
+    except:
+        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
+
+
+
+@bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
+@app_commands.describe(
+    jour="Jour de la contrainte",
+    début="Heure de début de la contrainte",
+    fin="Heure de fin de la contrainte"
+)
+
+async def indisponibilité(i:discord.Interaction, jour:str, début:str, fin: str):
     try:
 
         mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
 
         if not mail:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
+            raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         mail = mail[0][0]
 
@@ -123,15 +141,14 @@ async def contrainte(i: discord.Interaction, jour:str, début: str, fin: str):
     jour="Jour de la semaine de l'indisponibilité (peut être « Tous »)",
     début="Heure de début de l'indisponibilité",
     fin="Heure de fin de l'indisponibilité"
-
 )
-async def indisponibilité_récurrente(i: discord.Interaction, jour:str, début: str, fin: str):
+async def indisponibilité_récurrente(i:discord.Interaction, jour:str, début:str, fin: str):
     try:
 
         mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
 
         if not mail:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
+            raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         mail = mail[0][0]
 
@@ -167,6 +184,8 @@ async def indisponibilité_récurrente(i: discord.Interaction, jour:str, début:
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
         await i.response.send_message(embed=message)
+
+
 
 @bot.command()
 async def foo(ctx):
