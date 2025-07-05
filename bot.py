@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord import app_commands
 import python.tools as tools
 from python.tools import DELTA_TIME, UPDATE_TIME
+import json
 import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
@@ -40,6 +41,11 @@ else:
 #        New content        #
 # # # # # # # # # # # # # # #
 
+with open("groups.json", "r", encoding="utf-8") as f:
+    groups = json.load(f)
+
+group_choices = [app_commands.Choice(name=group, value=groups[group]) for group in groups]
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
@@ -54,18 +60,21 @@ async def test(i: discord.Interaction, name: app_commands.Choice[str]):
     message = discord.Embed(title="hello " + name.name)
     await i.response.send_message(embed=message)
 
-@bot.tree.command(name="join", description="S'ajouter à la base de données")
+@bot.tree.command(name="connexion", description="S'ajouter à la base de données")
 @app_commands.describe(
-    group="Groupe auquel tu appartiens"
+    group="Groupe auquel tu appartiens",
+    mail="Ton adresse mail TN.net"
 )
-async def join(i: discord.Interaction, group: str):
+@app_commands.choices(group=group_choices)
+
+async def connexion(i: discord.Interaction, group: str, mail:str):
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError("Tu es déjà dans la base de données !")
 
         # Add user to the database
-        db.add_user(i.user.id, "", group)
+        db.add_user(i.user.id, mail, group)
 
         message = discord.Embed(title="Ajout réussi", description=f"{i.user.name} a été ajouté à la base de données avec succès.")
         await i.response.send_message(embed=message)
@@ -88,7 +97,7 @@ async def contrainte(i: discord.Interaction, jour:str, début: str, fin: str):
         mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
 
         if not mail:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/join`.")
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         mail = mail[0][0]
 
@@ -99,7 +108,7 @@ async def contrainte(i: discord.Interaction, jour:str, début: str, fin: str):
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
 
-        db.add_new_punctual_constraint(mail, start_unix, end_unix)
+        db.add_punctual_constraint(mail, start_unix, end_unix)
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} le **{ndate[-2:]}/{ndate[4:6]}/{ndate[:4]}** de **{nstart[:2]} h {nstart[2:]}** à **{nend[:2]} h {nend[2:]}** ajoutée avec succès.")
         await i.response.send_message(embed=message)
@@ -122,7 +131,7 @@ async def indisponibilité_récurrente(i: discord.Interaction, jour:str, début:
         mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
 
         if not mail:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/join`.")
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         mail = mail[0][0]
 
