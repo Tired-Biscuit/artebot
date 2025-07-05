@@ -1,0 +1,30 @@
+import tools
+
+assert tools.parse_date("02/05/2025") == "20250502"
+assert tools.parse_date("02-05-2025") == "20250502"
+assert tools.parse_date("02 05 2025") == "20250502"
+assert tools.parse_date("02 5 2025") == "20250502"
+assert tools.parse_date("02-5-2025") == "20250502"
+assert tools.parse_date("2-5-2025") == "20250502"
+assert tools.parse_date("2 5 2025") == "20250502"
+assert tools.parse_date("2-05-2025") == "20250502"
+assert tools.parse_date("2 05 2025") == "20250502"
+assert tools.parse_date("02-05-25") == "20250502"
+assert tools.parse_date("2-5-25") == "20250502"
+assert tools.parse_date("02/05") == "20250502"
+assert tools.parse_date("02 5") == "20250502"
+assert tools.parse_date("02 mai") == "20250502"
+assert tools.parse_date("02 mai.") == "20250502"
+assert tools.parse_date("2 mai 25") == "20250502"
+assert tools.parse_date("2 may 25") == "20250502"
+
+print(tools.parse_date("Demain"))
+
+assert tools.parse_time("12:51") == "1251"
+assert tools.parse_time("12h51") == "1251"
+assert tools.parse_time("12 h 51") == "1251"
+assert tools.parse_time("12:51:09") == "1251"
+assert tools.parse_time("12h 51") == "1251"
+assert tools.parse_time("12 51") == "1251"
+assert tools.parse_time("12.51") == "1251"
+assert tools.parse_time("midi") == "1200"
