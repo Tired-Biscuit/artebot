@@ -217,7 +217,7 @@ def add_recurring_constraint(musician_uuid: str, start_time: str, end_time: str,
         day = 8
     else:
         try:
-            day = days.index(str.capitalize(week_day)) + 1
+            day = days.index(week_day.capitalize()) + 1
         except ValueError:
             raise ValueError(f"Invalid week day: {week_day}. Must be one of {days}.")
 

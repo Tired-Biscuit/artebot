@@ -54,6 +54,111 @@ async def test(i: discord.Interaction, name: app_commands.Choice[str]):
     message = discord.Embed(title="hello " + name.name)
     await i.response.send_message(embed=message)
 
+@bot.tree.command(name="join", description="S'ajouter à la base de données")
+@app_commands.describe(
+    group="Groupe auquel tu appartiens"
+)
+async def join(i: discord.Interaction, group: str):
+    try:
+        # Check if user is already in the database
+        if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
+            raise ValueError("Tu es déjà dans la base de données !")
+
+        # Add user to the database
+        db.add_user(i.user.id, "", group)
+
+        message = discord.Embed(title="Ajout réussi", description=f"{i.user.name} a été ajouté à la base de données avec succès.")
+        await i.response.send_message(embed=message)
+
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout : {str(e)}")
+        await i.response.send_message(embed=message)
+
+@bot.tree.command(name="contrainte", description="Ajouter une contrainte ponctuelle")
+@app_commands.describe(
+    jour="Date de la contrainte",
+    début="Heure de début de la contrainte",
+    fin="Heure de fin de la contrainte"
+
+)
+
+async def contrainte(i: discord.Interaction, jour:str, début: str, fin: str):
+    try:
+
+        mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
+
+        if not mail:
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/join`.")
+
+        mail = mail[0][0]
+
+        ndate = tools.parse_date(jour)
+        nstart = tools.parse_time(début)
+        nend = tools.parse_time(fin)
+
+        start_unix = tools.local_to_unixepoch(ndate + nstart)
+        end_unix = tools.local_to_unixepoch(ndate + nend)
+
+        db.add_new_punctual_constraint(mail, start_unix, end_unix)
+
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} le **{ndate[-2:]}/{ndate[4:6]}/{ndate[:4]}** de **{nstart[:2]} h {nstart[2:]}** à **{nend[:2]} h {nend[2:]}** ajoutée avec succès.")
+        await i.response.send_message(embed=message)
+
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
+        await i.response.send_message(embed=message)
+
+
+@bot.tree.command(name="indisponibilité_récurrente", description="Ajouter une contrainte récurrente")
+@app_commands.describe(
+    jour="Jour de la semaine de l'indisponibilité (peut être « Tous »)",
+    début="Heure de début de l'indisponibilité",
+    fin="Heure de fin de l'indisponibilité"
+
+)
+async def indisponibilité_récurrente(i: discord.Interaction, jour:str, début: str, fin: str):
+    try:
+
+        mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
+
+        if not mail:
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/join`.")
+
+        mail = mail[0][0]
+
+        nstart = tools.parse_time(début)
+        nend = tools.parse_time(fin)
+
+        start_unix = int(nstart[:2])*3600 + int(nstart[2:])*60
+        end_unix = int(nend[:2])*3600 + int(nend[2:])*60
+
+        days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+        
+        jour = jour.capitalize()
+        if jour == "Tous" or jour == "Tous les jours":
+            day = 8
+        else:
+            try:
+                if jour[-1] == "s":
+                    jour = jour[:-1]
+                day = days.index(jour) + 1
+            except ValueError:
+                raise ValueError(f"Jour de la semaine invalide : {jour}.")
+
+        db.add_new_recurring_constraint(mail, start_unix, end_unix, day)
+
+        if day == 8:
+            day_string = "jours"
+        else:
+            day_string = jour.lower() + "s"
+
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} tous les **{day_string}** de **{nstart[:2]} h {nstart[2:]}** à **{nend[:2]} h {nend[2:]}** ajoutée avec succès.")
+        await i.response.send_message(embed=message)
+
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
+        await i.response.send_message(embed=message)
+
 @bot.command()
 async def foo(ctx):
     await ctx.send("miam")
