@@ -26,10 +26,10 @@ def constraints_to_events(constraints: list[tuple]) -> list[Event]:
     events = []
 
     for constraint in constraints:
-        start_time = time.strptime(f"{constraint[1]} {constraint[2]}", "%d-%m-%Y %H:%M")
-        end_time = time.strptime(f"{constraint[1]} {constraint[3]}", "%d-%m-%Y %H:%M")
+        # start_time = time.strptime(f"{constraint[1]} {constraint[2]}", "%d-%m-%Y %H:%M")
+        # end_time = time.strptime(f"{constraint[1]} {constraint[3]}", "%d-%m-%Y %H:%M")
 
-        events.append(Event(int(time.mktime(start_time)), int(time.mktime(end_time))))
+        events.append(Event(int(constraint[2]), int(constraint[3])))
     return events
 
 def school_events_to_events(constraints):

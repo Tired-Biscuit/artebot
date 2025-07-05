@@ -2,6 +2,8 @@ import sqlite3
 import time
 import os
 import json
+from inspect import stack
+
 import python.googleutils as googleutils
 import python.tools as tools
 from fileinput import filename
@@ -92,7 +94,7 @@ def update_timetables():
                     elif line.startswith("END:VEVENT"):
 
                         if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            command += f"""('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{(event['end_time'] - event['start_time'])/60}', "{event['subject']}"),"""
+                            command += f"""('{event['uuid']}', '{group}', '{event['start_time']}', '{event['end_time']}', '{(event['end_time'] - event['start_time'])/60}', "{event['name']}"),"""
                         else:
                             print("Incomplete event data, skipping insertion.")
 
@@ -103,7 +105,7 @@ def update_timetables():
                     elif line.startswith("DTEND:"):
                         event["end_time"] = tools.ics_to_unixepoch(line.split(":", 1)[1].strip())
                     elif line.startswith("SUMMARY:"):
-                        event["subject"] = line.split(":", 1)[1].strip()
+                        event["name"] = line.split(":", 1)[1].strip()
 
     command = command[:-1] + ";" # Remove the last comma and add a semicolon
 
@@ -125,7 +127,8 @@ def update_calendar(calendar):
                     for attendee in event['attendees']:
                         musicians +=  f"""{attendee['email']} """
                     musicians = musicians[:-1]
-                command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{tools.cal_to_unixepoch(event['start']['dateTime'])}', '{tools.cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
+                if "dateTime" in event['start'].keys() and "dateTime" in event['end'].keys():
+                    command += f"""('{event['id']}','{event['organizer']['email']}', "{musicians}", '{tools.cal_to_unixepoch(event['start']['dateTime'])}', '{tools.cal_to_unixepoch(event['end']['dateTime'])}', "{event['summary']}"),"""
         else:
             field_names = ["id", "organizer", "start", "end", "summary", "location"]
             missing_fields = ""
@@ -172,7 +175,7 @@ def add_user(uuid, email, group_id, *, commit=False):
     command = f"INSERT INTO User VALUES({uuid}, '{email}', '{group_id}');"
     return run(command, commit=commit)
 
-def add_puncutal_constraint(musician_uuid: str, day: str, start_time: str, end_time: str):
+def add_punctual_constraint(musician_uuid: str, day: str, start_time: str, end_time: str):
     """
     Adds a constraint for a musician in the database.
     
@@ -185,7 +188,20 @@ def add_puncutal_constraint(musician_uuid: str, day: str, start_time: str, end_t
     command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '{day}', '{start_time}', '{end_time}', 0);"
     return run(command)
 
-def add_recurring_constraint(musician, start_time, end_time, week_day):
+
+def add_new_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
+    """
+    Adds a constraint for a musician in the database.
+
+    Args:
+        musician (str): The UUID of the musician (Discord user uuid).
+        start_time (int): The start time of the constraint in epoch
+        end_time (int): The end time of the constraint in epoch
+    """
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '2025-01-01', '{start_time}', '{end_time}', 0);"
+    return run(command)
+
+def add_recurring_constraint(musician_uuid: str, start_time: str, end_time: str, week_day: int):
     """
     Adds a recurring constraint for a musician in the database.
     
@@ -205,15 +221,62 @@ def add_recurring_constraint(musician, start_time, end_time, week_day):
         except ValueError:
             raise ValueError(f"Invalid week day: {week_day}. Must be one of {days}.")
 
-    command = f"INSERT INTO MusicianConstraint VALUES('{musician}', '', '{start_time}', '{end_time}', {day});"
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '', '{start_time}', '{end_time}', {day});"
     return run(command)
 
-def get_constraints(musician_uuid: str) -> list[tuple]:
+
+def add_new_recurring_constraint(musician_uuid: str, start_time: int, end_time: int, week_day: int):
+    """
+    Adds a recurring constraint for a musician in the database.
+
+    Args:
+        musician (str): The UUID of the musician (Discord user uuid).
+        start_time (int): The start time of the constraint in epoch (in umber of seconds from 12:00 AM).
+        end_time (int): The end time of the constraint in epoch.
+        weekDay (int): The day of the week for the recurring event (1-8, where 1 is Monday, and 8 is every day).
+    """
+
+    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '', '{start_time}', '{end_time}', {week_day});"
+    return run(command)
+
+def request_constraints(musician_uuid: str) -> list[tuple]:
     """
     Returns all constraints from musician's Discord UUID
     """
 
     return run(f"SELECT start_time, end_time FROM MusicianConstraint WHERE musician_uuid == {musician_uuid}")
+
+def request_blocking_events(time: int, duration: int, musician_id: str) -> list:
+    """
+    Returns the result of the request returning all events occuring at the given epoch time (or during the given duration in seconds), for the user with given uuid
+    """
+    return run(f"""
+        SELECT name, start_time, end_time
+        FROM (
+            SELECT name, start_time, end_time
+            FROM SchoolEvent
+            JOIN User ON User.group_id = SchoolEvent.group_id
+            WHERE User.uuid = {musician_id}
+            
+            UNION
+            
+            SELECT name, start_time, end_time
+            FROM GoogleEvent
+            JOIN User ON GoogleEvent.musicians LIKE '%' || User.email || '%'
+            WHERE User.uuid = {musician_id}
+            
+            UNION
+            
+            SELECT week_day, start_time, end_time
+            FROM MusicianConstraint
+            JOIN User ON MusicianConstraint.musician_uuid = user.uuid
+            WHERE User.uuid = {musician_id}
+        ) AS Event
+        WHERE (Event.start_time < {time} AND {time} < Event.end_time)
+        OR (Event.start_time < {time+duration} AND {time+duration} < Event.end_time)
+        OR ({time} <= Event.start_time AND Event.end_time <= {time+duration})
+        ;
+    """)
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #

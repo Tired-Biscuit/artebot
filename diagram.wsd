@@ -32,7 +32,7 @@ SchoolEvent : str group_id
 SchoolEvent : int start_time
 SchoolEvent : int end_time
 SchoolEvent : int duration
-SchoolEvent : str subject
+SchoolEvent : str name
 
 class GoogleEvent
 GoogleEvent : str uuid
