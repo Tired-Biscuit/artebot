@@ -29,7 +29,7 @@ assert(musician.group == "fise_1a_g1")
 # db.add_punctual_constraint("1234", "01-01-2025", "18:30", "19:30")
 db.add_new_punctual_constraint("4321", tools.local_to_unixepoch("20250901100000"), tools.local_to_unixepoch("20250901113000"))
 db.add_new_punctual_constraint("1234", tools.local_to_unixepoch("20250901100000"), tools.local_to_unixepoch("20250901113000"))
-db.add_new_recurring_constraint("4321", 32400, 37800, 3)
+db.add_new_recurring_constraint("4321", 32400, 37800, 1)
 musician = Musician(id="1234")
 
 event = Event(tools.ics_to_unixepoch("20250901T80000Z"), tools.ics_to_unixepoch("20250901T93000Z"))
