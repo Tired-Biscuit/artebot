@@ -246,7 +246,7 @@ def request_constraints(musician_uuid: str) -> list[tuple]:
 
     return run(f"SELECT start_time, end_time FROM MusicianConstraint WHERE musician_uuid == {musician_uuid}")
 
-def request_blocking_events(time: int, duration: int, musician_id: str) -> list:
+def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> list:
     """
     Returns the result of the request returning all events occuring at the given epoch time (or during the given duration in seconds), for the user with given uuid
     """
@@ -257,24 +257,34 @@ def request_blocking_events(time: int, duration: int, musician_id: str) -> list:
             FROM SchoolEvent
             JOIN User ON User.group_id = SchoolEvent.group_id
             WHERE User.uuid = {musician_id}
-            
+
             UNION
-            
+
             SELECT name, start_time, end_time
             FROM GoogleEvent
             JOIN User ON GoogleEvent.musicians LIKE '%' || User.email || '%'
             WHERE User.uuid = {musician_id}
-            
+
             UNION
-            
+
             SELECT week_day, start_time, end_time
             FROM MusicianConstraint
             JOIN User ON MusicianConstraint.musician_uuid = user.uuid
             WHERE User.uuid = {musician_id}
+            AND (MusicianConstraint.week_day = 0
+            OR MusicianConstraint.week_day = 8
+            OR MusicianConstraint.week_day = {time.gmtime(timestamp).tm_wday+1}
+            )
         ) AS Event
-        WHERE (Event.start_time < {time} AND {time} < Event.end_time)
-        OR (Event.start_time < {time+duration} AND {time+duration} < Event.end_time)
-        OR ({time} <= Event.start_time AND Event.end_time <= {time+duration})
+        WHERE (Event.start_time < {timestamp} AND {timestamp} < Event.end_time)
+        OR (Event.start_time < {timestamp + duration} AND {timestamp + duration} < Event.end_time)
+        OR ({timestamp} <= Event.start_time AND Event.end_time <= {timestamp + duration})
+        OR (Event.start_time < 86400 AND (
+            TRUE OR
+            (Event.start_time < {timestamp%84600} AND {timestamp%84600} < Event.end_time)
+            OR (Event.start_time < {timestamp%84600 + duration} AND {timestamp%84600 + duration} < Event.end_time)
+            OR ({timestamp%84600} <= Event.start_time AND Event.end_time <= {timestamp%84600 + duration})
+        ))
         ;
     """)
 
