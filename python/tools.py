@@ -93,7 +93,7 @@ def parse_date(date: str) -> str:
     now = datetime.now()
 
     match = re.match(
-        r"^(\d{1,2})[\/\-\s]([A-Za-zéûîôäëöüàèùa-zA-Z]{3,}\.?|\d{1,2})(?:[\/\-\s](\d{2,4}))?$", date
+        r"^(\d{1,2})[\/\-\s]([A-Za-zéa-zA-Z]{3,}\.?|\d{1,2})(?:[\/\-\s](\d{2,4}))?$", date
     )
 
     month_map = {
@@ -156,11 +156,10 @@ def parse_time(time: str) -> str:
     Parses a time string and returns it in the HHMM format.
     """
     match = re.match(
-        r"^(\d{1,2})\s*[.-:h]?\s*(\d{1,2})?", time
+        r"^(\d{1,2})\s*[-:h]?\s*(\d{1,2})?", time
     )
 
     if match:
-        
         h, m = match.groups()
 
         if len(h) == 1:
@@ -181,3 +180,62 @@ def parse_time(time: str) -> str:
         return "1200"
 
     raise ValueError("Time could not be parsed.")
+
+def date_to_string(date: str) -> str:
+    """
+    Returns a readable string in french of the date given in argument.
+
+    Args:
+        date (str): The date, in YYYYMMDD format
+    """
+    today = int(datetime.now().strftime("%Y%m%d"))
+
+    if str(today) == date:
+        return "**aujourd'hui**"
+
+    if str(today + 1) == date:
+        return "**demain**"
+
+    if str(today + 2) == date:
+        return "**après-demain**"
+
+    return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
+
+def time_span_to_string(start: str, end: str) -> str:
+    """
+    Returns a readable string in french of the time span given in argument.
+
+    Args:
+        start (str): The start time of the span, in HHMM format
+        end (str): The end time of the span, in HHMM format
+    """
+    res = ""
+    
+    if start == "0000" and end == "2359":
+        return "**toute la journée**"
+
+    if start == "0000":
+        res += "jusqu'"
+    else:
+        if start[0] == '0':
+            start = start[1:]
+
+        if start[-2:] == "00":
+           res += f"de **{start[:-2]} h** "
+        else:
+           res += f"de **{start[:-2]} h {start[-2:]}** "
+    
+    if end == "2359":
+        return "à partir " + res[:-1]
+
+    else:
+        if end[0] == '0':
+            end = end[1:]
+
+        if end[-2:] == "00":
+           res += f"à **{end[:-2]} h**"
+        else:
+           res += f"à **{end[:-2]} h {end[-2:]}**" 
+    
+    return res
+
