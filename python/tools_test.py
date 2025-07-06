@@ -1,4 +1,5 @@
 import tools
+from datetime import datetime
 
 assert tools.parse_date("02/05/2025") == "20250502"
 assert tools.parse_date("02-05-2025") == "20250502"
@@ -11,12 +12,19 @@ assert tools.parse_date("2-05-2025") == "20250502"
 assert tools.parse_date("2 05 2025") == "20250502"
 assert tools.parse_date("02-05-25") == "20250502"
 assert tools.parse_date("2-5-25") == "20250502"
-assert tools.parse_date("02/05") == "20250502"
-assert tools.parse_date("02 5") == "20250502"
-assert tools.parse_date("02 mai") == "20250502"
-assert tools.parse_date("02 mai.") == "20250502"
 assert tools.parse_date("2 mai 25") == "20250502"
 assert tools.parse_date("2 may 25") == "20250502"
+
+year = str(datetime.now().year)
+
+assert tools.parse_date("31/12") == year + "1231"
+assert tools.parse_date("31 12") == year + "1231"
+assert tools.parse_date("31 déc.") == year + "1231"
+assert tools.parse_date("31 déc") == year + "1231"
+assert tools.parse_date("31 dec") == year + "1231"
+assert tools.parse_date("31 décembre") == year + "1231"
+assert tools.parse_date("1 janvier") == str(int(year) + 1) + "0101"
+
 
 # print(tools.parse_date("Demain"))
 

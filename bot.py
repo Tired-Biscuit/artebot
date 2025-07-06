@@ -112,12 +112,8 @@ async def changer_mail(i: discord.Interaction, mail:str):
 async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, fin:str = None):
     try:
 
-        mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
-
-        if not mail:
+        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
-
-        mail = mail[0][0]
 
         ndate = tools.parse_date(jour)
         
@@ -128,7 +124,7 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
 
-        db.add_new_punctual_constraint(mail, start_unix, end_unix)
+        db.add_new_punctual_constraint(i.user.id, start_unix, end_unix)
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} {tools.date_to_string(ndate)} {tools.time_span_to_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message)
@@ -146,13 +142,10 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
 )
 async def indisponibilité_récurrente(i:discord.Interaction, jour:str, début:str, fin: str):
     try:
-
-        mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
-
-        if not mail:
+        
+        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
-        mail = mail[0][0]
 
         nstart = tools.parse_time(début)
         nend = tools.parse_time(fin)
@@ -173,7 +166,7 @@ async def indisponibilité_récurrente(i:discord.Interaction, jour:str, début:s
             except ValueError:
                 raise ValueError(f"Jour de la semaine invalide : {jour}.")
 
-        db.add_new_recurring_constraint(mail, start_unix, end_unix, day)
+        db.add_new_recurring_constraint(i.user.id, start_unix, end_unix, day)
 
         if day == 8:
             day_string = "jours"

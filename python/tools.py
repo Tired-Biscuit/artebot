@@ -129,6 +129,12 @@ def parse_date(date: str) -> str:
         if year is None:
             year = str(now.year)
 
+            parsed_date = int(month + day)
+
+            today = int(now.strftime("%m%d"))
+            if parsed_date < today:
+                year = str(now.year + 1)
+
         elif len(year) == 2:
             year = "20" + year
         
