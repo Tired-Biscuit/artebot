@@ -105,11 +105,11 @@ async def changer_mail(i: discord.Interaction, mail:str):
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
 @app_commands.describe(
     jour="Jour de la contrainte",
-    début="Heure de début de la contrainte",
-    fin="Heure de fin de la contrainte"
+    début="Heure de début de la contrainte (optionnel)",
+    fin="Heure de fin de la contrainte (optionnel)"
 )
 
-async def indisponibilité(i:discord.Interaction, jour:str, début:str, fin: str):
+async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, fin:str = None):
     try:
 
         mail = db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'")
@@ -120,15 +120,17 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str, fin: str
         mail = mail[0][0]
 
         ndate = tools.parse_date(jour)
-        nstart = tools.parse_time(début)
-        nend = tools.parse_time(fin)
+        
+        nstart = tools.parse_time(début) if début else "0000"
+        
+        nend = tools.parse_time(fin) if fin else "2359"
 
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
 
-        db.add_punctual_constraint(mail, start_unix, end_unix)
+        db.add_new_punctual_constraint(mail, start_unix, end_unix)
 
-        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} le **{ndate[-2:]}/{ndate[4:6]}/{ndate[:4]}** de **{nstart[:2]} h {nstart[2:]}** à **{nend[:2]} h {nend[2:]}** ajoutée avec succès.")
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {i.user.name} {tools.date_to_string(ndate)} {tools.time_span_to_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message)
 
     except Exception as e:
