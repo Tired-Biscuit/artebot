@@ -20,7 +20,7 @@ DEBUG = True # Toggle the dev or production bot
 logs_data = {"update": {"successful":0, "failed":0}, "info":{"successful":0, "failed":0}, "logs":0}
 
 # Get tokens
-load_dotenv("./.env/.env")
+load_dotenv()
 if DEBUG:
     TOKEN = os.getenv('DEV_TOKEN')
 else:
@@ -61,23 +61,23 @@ async def test(i: discord.Interaction, name: app_commands.Choice[str]):
     await i.response.send_message(embed=message)
 
 @bot.tree.command(name="connexion", description="S'ajouter à la base de données")
-@app_commands.describe(
-    pseudo="Le pseudo que tu veux que le bot te donne",
+@app_commands.describe( 
     groupe="Groupe scolaire auquel tu appartiens",
     mail="Ton adresse mail TN.net"
 )
 @app_commands.choices(groupe=group_choices)
 
-async def connexion(i: discord.Interaction, pseudo:str, groupe: app_commands.Choice[str], mail:str):
+async def connexion(i: discord.Interaction, groupe: app_commands.Choice[str], mail:str):
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError("tu es déjà dans la base de données !")
 
+        pseudo = tools.parse_mail(mail)
         # Add user to the database
         db.add_user(i.user.id, pseudo, mail, groupe.value)
 
-        message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès.")
+        message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
         await i.response.send_message(embed=message)
 
     except Exception as e:
@@ -87,12 +87,12 @@ async def connexion(i: discord.Interaction, pseudo:str, groupe: app_commands.Cho
 
 
 
-@bot.tree.command(name="changer_mail", description="Changer l'adresse mail associée à son compte")
+@bot.tree.command(name="mail", description="Changer l'adresse mail associée à son compte")
 @app_commands.describe(
     mail="La nouvelle adresse mail (TN.net)"
 )
 
-async def changer_mail(i: discord.Interaction, mail:str):
+async def mail(i: discord.Interaction, mail:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError()
@@ -103,6 +103,21 @@ async def changer_mail(i: discord.Interaction, mail:str):
     except:
         await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
 
+@bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
+@app_commands.describe(
+    pseudo="Ton nouveau pseudo (Prénom NOM par défaut)"
+)
+
+async def pseudo(i: discord.Interaction, pseudo:str):
+    try:
+        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
+            raise ValueError()
+        
+        db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
+        await i.response.send_message("Pseudo modifié avec succès !")
+        
+    except:
+        await i.response.send_message("Erreur lors du changement de pseudo, fais-tu partie de la base de données ? (`/connexion`)")
 
 
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
@@ -186,7 +201,6 @@ async def indisponibilité_récurrente(i:discord.Interaction, jour: app_commands
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
         await i.response.send_message(embed=message)
-
 
 
 @bot.command()

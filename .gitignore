@@ -2,6 +2,7 @@
 timetables/*
 *.ics
 database/*
+venv/*
 *.db
 cron/logs.txt
 env/
