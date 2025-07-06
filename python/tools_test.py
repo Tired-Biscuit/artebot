@@ -44,3 +44,5 @@ assert tools.time_span_to_string("0000", "2359") == "**toute la journée**"
 assert tools.time_span_to_string("0446", "2359") == "à partir de **4 h 46**"
 
 assert tools.date_to_string("20250405") == "le **05/04/2025**"
+
+assert tools.parse_mail("tom.loisil@telecomnancy.net") == "Tom LOISIL"

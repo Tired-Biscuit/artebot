@@ -187,6 +187,19 @@ def parse_time(time: str) -> str:
 
     raise ValueError("Time could not be parsed.")
 
+def parse_mail(mail: str) -> str:
+    """
+    Returns the name of the owner of the mail adress (first_name.last_name@xxx.xxx format) 
+    """
+    mail = mail.split("@")[0].split(".")
+    
+    if len(mail) != 2:
+        raise ValueError("Format de l'adresse mail incorrecte...")
+
+    return mail[0].capitalize() + " " + mail[1].upper()
+
+
+
 def date_to_string(date: str) -> str:
     """
     Returns a readable string in french of the date given in argument.
