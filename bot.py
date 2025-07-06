@@ -12,8 +12,8 @@ import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
 
-# reset()
-# init()
+db.reset()
+db.init()
 # register_lines(lines)
 
 # For metering purposes
@@ -36,6 +36,8 @@ if DEBUG:
     bot = commands.Bot(command_prefix='/', intents=intents)
 else:
     bot = commands.Bot(command_prefix='$', intents=intents)
+
+
 
 # # # # # # # # # # # # # # #
 #        New content        #
@@ -60,14 +62,16 @@ async def test(i: discord.Interaction, name: app_commands.Choice[str]):
     message = discord.Embed(title="hello " + name.name)
     await i.response.send_message(embed=message)
 
+
 @bot.tree.command(name="connexion", description="S'ajouter à la base de données")
-@app_commands.describe( 
-    groupe="Groupe scolaire auquel tu appartiens",
+@app_commands.describe(
+    group="Groupe scolaire auquel tu appartiens",
     mail="Ton adresse mail TN.net"
 )
-@app_commands.choices(groupe=group_choices)
+@app_commands.rename(group="groupe")
+@app_commands.choices(group=group_choices)
 
-async def connexion(i: discord.Interaction, groupe: app_commands.Choice[str], mail:str):
+async def connection(i: discord.Interaction, group: app_commands.Choice[str], mail:str):
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
@@ -75,7 +79,7 @@ async def connexion(i: discord.Interaction, groupe: app_commands.Choice[str], ma
 
         pseudo = tools.parse_mail(mail)
         # Add user to the database
-        db.add_user(i.user.id, pseudo, mail, groupe.value)
+        db.add_user(str(i.user.id), pseudo, mail, group.value)
 
         message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
         await i.response.send_message(embed=message)
@@ -83,8 +87,6 @@ async def connexion(i: discord.Interaction, groupe: app_commands.Choice[str], ma
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout : {str(e)}")
         await i.response.send_message(embed=message)
-    
-
 
 
 @bot.tree.command(name="mail", description="Changer l'adresse mail associée à son compte")
@@ -112,22 +114,27 @@ async def pseudo(i: discord.Interaction, pseudo:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError()
-        
+
         db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Pseudo modifié avec succès !")
-        
+
     except:
         await i.response.send_message("Erreur lors du changement de pseudo, fais-tu partie de la base de données ? (`/connexion`)")
 
 
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
 @app_commands.describe(
-    jour="Jour de la contrainte",
-    début="Heure de début de la contrainte (optionnel)",
-    fin="Heure de fin de la contrainte (optionnel)"
+    day="Jour de la contrainte",
+    start="Heure de début de la contrainte (optionnel)",
+    end="Heure de fin de la contrainte (optionnel)"
+)
+@app_commands.rename(
+    day="jour",
+    start="début",
+    end="fin"
 )
 
-async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, fin:str = None):
+async def punctual_constraint(i:discord.Interaction, day: str, start: str = None, end: str = None):
     try:
         name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
         if not name:
@@ -135,11 +142,11 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
 
         name = name[0][0]
 
-        ndate = tools.parse_date(jour)
+        ndate = tools.parse_date(day)
         
-        nstart = tools.parse_time(début) if début else "0000"
+        nstart = tools.parse_time(start) if start else "0000"
         
-        nend = tools.parse_time(fin) if fin else "2359"
+        nend = tools.parse_time(end) if end else "2359"
 
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
@@ -156,11 +163,11 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
 
 @bot.tree.command(name="indisponibilité_récurrente", description="Ajouter une contrainte récurrente")
 @app_commands.describe(
-    jour="Jour de la semaine de l'indisponibilité (peut être « Tous »)",
-    début="Heure de début de l'indisponibilité",
-    fin="Heure de fin de l'indisponibilité"
+    day="Jour de la semaine de l'indisponibilité (peut être « Tous »)",
+    start="Heure de début de l'indisponibilité",
+    end="Heure de fin de l'indisponibilité"
 )
-@app_commands.choices(jour=[
+@app_commands.choices(day=[
     app_commands.Choice(name="Lundi", value=1),
     app_commands.Choice(name="Mardi", value=2),
     app_commands.Choice(name="Mercredi", value=3),
@@ -170,8 +177,13 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
     app_commands.Choice(name="Dimanche", value=7),
     app_commands.Choice(name="Tous", value=8)
 ])
+@app_commands.rename(
+    day="jour",
+    start="début",
+    end="fin"
+)
 
-async def indisponibilité_récurrente(i:discord.Interaction, jour: app_commands.Choice[int], début:str = None, fin: str = None):
+async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[int], start:str = None, end: str = None):
     try:
         name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
         if not name:
@@ -179,18 +191,18 @@ async def indisponibilité_récurrente(i:discord.Interaction, jour: app_commands
 
         name = name[0][0]
 
-        nstart = tools.parse_time(début) if début else "0000"
-        nend = tools.parse_time(fin) if fin else "2359"
+        nstart = tools.parse_time(start) if start else "0000"
+        nend = tools.parse_time(end) if end else "2359"
 
         start_unix = int(nstart[:2])*3600 + int(nstart[2:])*60
         end_unix = int(nend[:2])*3600 + int(nend[2:])*60
 
-        db.add_recurring_constraint(i.user.id, start_unix, end_unix, jour.value)
+        db.add_recurring_constraint(i.user.id, start_unix, end_unix, day.value)
 
-        if jour.value == 8:
+        if day.value == 8:
             day_string = "jours"
         else:
-            day_string = jour.name.lower() + "s"
+            day_string = day.name.lower() + "s"
 
         message = discord.Embed(
             title="Contrainte ajoutée",
@@ -201,6 +213,7 @@ async def indisponibilité_récurrente(i:discord.Interaction, jour: app_commands
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
         await i.response.send_message(embed=message)
+
 
 
 @bot.command()
