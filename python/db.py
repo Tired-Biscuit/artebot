@@ -161,18 +161,19 @@ def update_calendars():
         if result[0] and len(result[1]) > 0:
             print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}")
 
-def add_user(uuid, email, group_id, *, commit=False):
+def add_user(uuid, username, email, group_id, *, commit=False):
     """
     Adds a user to the database.
     
     Args:
         uuid (str) : Discord user uuid
+        username (str) : The username of the musician.
         email (str): The email of the musician.
         group_id (str): The group ID of the musician.
         commit (bool): (optional and keyword-only) ask for database commit on successful execution
     """
 
-    command = f"INSERT INTO User VALUES({uuid}, '{email}', '{group_id}');"
+    command = f"INSERT INTO User VALUES({uuid}, '{username}', '{email}', '{group_id}');"
     return run(command, commit=commit)
 
 def add_punctual_constraint(musician_uuid: str, day: str, start_time: str, end_time: str):

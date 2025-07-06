@@ -20,6 +20,7 @@ CREATE TABLE Song(
 
 CREATE TABLE User(
     uuid INTEGER UNIQUE,
+    username TEXT,
     email TEXT UNIQUE,
     group_id INTEGER
 );
