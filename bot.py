@@ -129,7 +129,7 @@ async def indisponibilité(i:discord.Interaction, jour:str, début:str = None, f
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
 
-        db.add_new_punctual_constraint(i.user.id, start_unix, end_unix)
+        db.add_punctual_constraint(i.user.id, start_unix, end_unix)
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.time_span_to_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message)
@@ -170,7 +170,7 @@ async def indisponibilité_récurrente(i:discord.Interaction, jour: app_commands
         start_unix = int(nstart[:2])*3600 + int(nstart[2:])*60
         end_unix = int(nend[:2])*3600 + int(nend[2:])*60
 
-        db.add_new_recurring_constraint(i.user.id, start_unix, end_unix, jour.value)
+        db.add_recurring_constraint(i.user.id, start_unix, end_unix, jour.value)
 
         if jour.value == 8:
             day_string = "jours"
