@@ -176,21 +176,8 @@ def add_user(uuid, username, email, group_id, *, commit=False):
     command = f"INSERT INTO User VALUES({uuid}, '{username}', '{email}', '{group_id}');"
     return run(command, commit=commit)
 
-def add_punctual_constraint(musician_uuid: str, day: str, start_time: str, end_time: str):
-    """
-    Adds a constraint for a musician in the database.
-    
-    Args:
-        musician (str): The UUID of the musician (Discord user uuid).
-        day (str): The day of the constraint in DD-MM-YYYY format.
-        start_time (str): The start time of the constraint in HH:MM format.
-        end_time (str): The end time of the constraint in HH:MM format.
-    """
-    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '{day}', '{start_time}', '{end_time}', 0);"
-    return run(command)
 
-
-def add_new_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
+def add_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
     """
     Adds a constraint for a musician in the database.
 
@@ -202,31 +189,8 @@ def add_new_punctual_constraint(musician_uuid: str, start_time: int, end_time: i
     command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '2025-01-01', '{start_time}', '{end_time}', 0);"
     return run(command)
 
-def add_recurring_constraint(musician_uuid: str, start_time: str, end_time: str, week_day: int):
-    """
-    Adds a recurring constraint for a musician in the database.
-    
-    Args:
-        musician (str): The UUID of the musician (Discord user uuid).
-        start_time (str): THe start time of the constraint in HH:MM format.
-        end_time (str): The end time of the constraint in HH:MM format.
-        weekDay (int): The day of the week for the recurring event (1-8, where 1 is Monday, and 8 is every day).
-    """
-    days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-    
-    if week_day == "Tous" or week_day == "tous" or week_day == "tous les jours" or week_day == "Tous les jours":
-        day = 8
-    else:
-        try:
-            day = days.index(week_day.capitalize()) + 1
-        except ValueError:
-            raise ValueError(f"Invalid week day: {week_day}. Must be one of {days}.")
 
-    command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '', '{start_time}', '{end_time}', {day});"
-    return run(command)
-
-
-def add_new_recurring_constraint(musician_uuid: str, start_time: int, end_time: int, week_day: int):
+def add_recurring_constraint(musician_uuid: str, start_time: int, end_time: int, week_day: int):
     """
     Adds a recurring constraint for a musician in the database.
 
