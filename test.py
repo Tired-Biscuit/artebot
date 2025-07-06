@@ -18,8 +18,8 @@ print("Updating database for Google calendars...", "Done" if db.update_calendars
 print("Updating database for school-issued timetables...", "Done" if (res := db.update_timetables()) == [] else res)
 
 
-db.add_user("1234", "toto@titi.com",  "fise_1a_g1")
-db.add_user("4321", "paul.musial@telecomnancy.net",  "fise_1a_g2")
+db.add_user("1234", "toto le goat", "toto@titi.com",  "fise_1a_g1")
+db.add_user("4321", "pol", "paul.musial@telecomnancy.net",  "fise_1a_g2")
 musician = Musician(id="1234")
 
 assert(musician.id == "1234")
