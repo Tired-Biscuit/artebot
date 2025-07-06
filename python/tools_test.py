@@ -46,3 +46,17 @@ assert tools.time_span_to_string("0446", "2359") == "à partir de **4 h 46**"
 assert tools.date_to_string("20250405") == "le **05/04/2025**"
 
 assert tools.parse_mail("tom.loisil@telecomnancy.net") == "Tom LOISIL"
+
+assert tools.parse_duration("1") == 3600
+assert tools.parse_duration("1h") == 3600
+assert tools.parse_duration("1 h") == 3600
+assert tools.parse_duration("1 h 30") == 5400
+assert tools.parse_duration("1:30") == 5400
+assert tools.parse_duration("1h30") == 5400
+assert tools.parse_duration("30m") == 1800
+assert tools.parse_duration("30 m") == 1800
+assert tools.parse_duration("30 min") == 1800
+
+assert tools.duration_to_string(1800) == "30 m"
+assert tools.duration_to_string(3600) == "1 h"
+assert tools.duration_to_string(5400) == "1 h 30 m"

@@ -12,8 +12,8 @@ import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
 
-db.reset()
-db.init()
+#db.reset()
+#db.init()
 # register_lines(lines)
 
 # For metering purposes
@@ -214,7 +214,92 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
         await i.response.send_message(embed=message)
 
+@bot.tree.command(name="ajouter_répète", description="Ajouter un nouveau créneau de répétition pour un morceau")
+@app_commands.describe(
+    day="Jour de la répétition",
+    start="Heure de début de la répétition",
+    duration="Durée de la répétition",
+    song="Si vous ne vous trouvez pas dans un fil, nom du morceau concerné par la répétition"
+)
+@app_commands.rename(
+    day="jour",
+    start="début",
+    duration="durée",
+    song="morceau"
+)
+async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str, song:str=None):
+    try:
+        if song is None:
+            if i.channel.type == "public_thread" or i.channel.type == "private_thread":
+                song = i.channel.name
+            else:
+                raise EnvironmentError("tu ne trouves pas dans un fil ! Spécifie le morceau concerné ou effectue la commande dans un fil portant le nom du morceau.")
 
+
+        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%'")
+        print(song, song_info)
+        if not song_info:
+            raise ValueError(f"morceau {song} non trouvé !")
+
+        song_info = song_info[0]
+
+        ndate = tools.parse_date(day)
+        nstart = tools.parse_time(start)
+
+        start_time = tools.local_to_unixepoch(ndate + nstart)
+        duration = tools.parse_duration(duration)
+
+        blocks = list()
+        absent = list()
+
+        for musician in song_info[3:]:
+
+            if musician and musician not in blocks and musician not in absent:
+                uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
+                if uuid:
+                    uuid, username = uuid[0]
+
+                    blocking_events = db.request_blocking_events(start_time, duration, uuid)
+                    if blocking_events:
+                        blocks.append(username)
+
+                else:
+                    absent.append(tools.parse_mail(musician))
+    
+        if blocks or absent:
+            message = ""
+            if absent:
+                message += "Les musiciennes et musiciens suivants ne font pas partie de la base de donnée : "
+                for absent_musician in absent:
+                    message += absent_musician + ", "
+                message = message[:-1] + "."
+            
+            if blocks:
+                message += "Les musiciennes et musiciens suivants ne pourront pas assister à cette répétition : "
+                for blocked_musician in blocks:
+                    message += blocked_musician + ", "
+            
+            message = message[:-2] + ". Veux-tu tout de même placer la répète ? (o/n)"
+
+            await i.response.send_message(message)
+            conf = await bot.wait_for('message', check=lambda message: message.author == i.user and message.channel.id == i.channel.id)
+
+            if conf.content.lower() not in ["o", "oui", "y", "yes"]: # Will be done with embed buttons later
+                return
+        else:
+            await i.response.send_message("Tout va bien ! Pas de blocage de trouvé.")
+
+        # TODO : add rehearsal to the calendar
+
+        message = discord.Embed(
+            title="Répétition ajoutée",
+            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.time_to_string(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès."
+        )
+        await i.followup.send(embed=message)
+
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la répétition : {str(e)}")
+        await i.followup.send(embed=message)
 
 @bot.command()
 async def foo(ctx):

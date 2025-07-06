@@ -187,6 +187,27 @@ def parse_time(time: str) -> str:
 
     raise ValueError("Time could not be parsed.")
 
+def parse_duration(duration: str) -> int:
+    """
+    Parses a duration string (precision up to minutes) and returns the corresponding duration in seconds.
+    """
+    match = re.match(
+        r"^(\d{1,3})\s*m", duration
+    )
+
+    if match:
+        m = match.groups()[0]
+        return 60*int(m)
+
+
+    match = re.match(
+        r"^(\d{1,2})\s*[-:h]?\s*(\d{1,2})?", duration
+    )
+
+    if match:
+        h, m = match.groups()
+        return 3600*int(h) + 60*int(m) if m is not None else 3600*int(h)
+
 def parse_mail(mail: str) -> str:
     """
     Returns the name of the owner of the mail adress (first_name.last_name@xxx.xxx format) 
@@ -258,3 +279,39 @@ def time_span_to_string(start: str, end: str) -> str:
     
     return res
 
+def time_to_string(time: str) -> str:
+    """
+    Returns a readable string in french of the time given in argument.
+
+    Args:
+        time (str): The time, in HHMM format
+    """
+    if time == "1200":
+        return "midi"
+
+    if time[0] == '0':
+        time = time[1:]
+
+        if time[-2:] == "00":
+           return f"{time[:-2]} h"
+        else:
+           return f"{time[:-2]} h {time[-2:]}"
+        
+def duration_to_string(duration: int) -> str:
+    """
+    Returns a readable string in french of the duration given in argument.
+
+    Args:
+        duration (str): The duraiton in seconds
+    """
+    res = ""
+    if duration >= 3600:
+        res += f"{int(duration/3600)} h"
+
+
+    if duration%3600 != 0:
+        if res:
+            res += " "
+        res += f"{int(duration%3600 / 60)} m"
+    
+    return res
