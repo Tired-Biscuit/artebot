@@ -14,7 +14,7 @@ CREATE TABLE Song(
     accordion TEXT,
     flute TEXT,
     saxophone TEXT,
-    horn TEXT,
+    brass TEXT,
     notes TEXT
 );
 
