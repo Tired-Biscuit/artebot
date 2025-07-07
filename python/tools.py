@@ -244,7 +244,7 @@ def date_to_string(date: str) -> str:
 
     return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
 
-def formatted_time_span_string(start: str, end: str) -> str:
+def formatted_time_span_to_string(start: str, end: str) -> str:
     """
     Returns a readable string in french of the time span given in argument.
 
@@ -286,7 +286,7 @@ def time_span_to_string(start_time: int, end_time: int) -> str:
     """"
     Returns a Markdown-formatted string for a time span (epoch values)
     """
-    return formatted_time_span_string(time.strftime("%H%M", time.gmtime(start_time)), time.strftime("%H%M", time.gmtime(end_time)))
+    return formatted_time_span_to_string(time.strftime("%H%M", time.gmtime(start_time)), time.strftime("%H%M", time.gmtime(end_time)))
 
 def formatted_hhmm(time_string: str) -> str:
     """
@@ -337,7 +337,7 @@ def get_constraint_description(constraint: list[int], start_time: int) -> str:
     """
     return f"""
             {week_index_to_week_day(time.gmtime(constraint[0]).tm_wday + 1)} {epoch_to_short_date(constraint[0])}\n
-            Indisponible {time_span_to_string(constraint[0], constraint[1])}
+            Indisponible {formatted_time_span_to_string(constraint[0], constraint[1])}
             """
 
 def get_constraint_message(constraints: list[list[int]], start_time) -> (discord.embeds.Embed, int):
