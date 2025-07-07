@@ -8,6 +8,7 @@ from discord import app_commands
 import python.tools as tools
 from python.tools import DELTA_TIME, UPDATE_TIME
 import json
+from discord.ui import View, Button
 import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
@@ -214,6 +215,24 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
         await i.response.send_message(embed=message)
 
+
+class ConfirmView(View):
+            def __init__(self):
+                super().__init__(timeout=60)
+                self.value = None
+
+            @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success)
+            async def confirm(self, interaction: discord.Interaction, button: Button):
+                self.value = True
+                await interaction.response.edit_message(view=None)
+                self.stop()
+
+            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+            async def cancel(self, interaction: discord.Interaction, button: Button):
+                self.value = False
+                await interaction.response.edit_message(view=None)
+                self.stop()
+
 @bot.tree.command(name="ajouter_répète", description="Ajouter un nouveau créneau de répétition pour un morceau")
 @app_commands.describe(
     day="Jour de la répétition",
@@ -249,42 +268,64 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
         start_time = tools.local_to_unixepoch(ndate + nstart)
         duration = tools.parse_duration(duration)
 
+        instruments = db.run("PRAGMA table_info(SONG);")
+
+
+        with open("instruments.json", "r", encoding="utf-8") as f:
+            instruments_file = json.load(f)
+
+        instruments = [instruments_file[instrument[1]] for instrument in instruments]
+
+
         blocks = list()
         absent = list()
 
-        for musician in song_info[3:]:
+        for j in range(3, len(song_info)):
 
-            if musician and musician not in blocks and musician not in absent:
-                uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
-                if uuid:
-                    uuid, username = uuid[0]
 
-                    blocking_events = db.request_blocking_events(start_time, duration, uuid)
-                    if blocking_events:
-                        blocks.append(username)
+            instrument = instruments[j]
+            musicians = song_info[j].split(",")
+            
+            for musician in musicians:
+                if musician and musician not in blocks and musician not in absent:
 
-                else:
-                    absent.append(tools.parse_mail(musician))
+                    uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
+                    if uuid:
+                        uuid, username = uuid[0]
+
+                        blocking_events = db.request_blocking_events(start_time, duration, uuid)
+                        if blocking_events:
+                            blocks.append([username, instrument, blocking_events[0]])
+
+                    else:
+                        absent.append([tools.parse_mail(musician), instrument])
     
         if blocks or absent:
-            message = ""
+            
+            message = discord.Embed(title="Blocages rencontrés")
+
             if absent:
-                message += "Les musiciennes et musiciens suivants ne font pas partie de la base de donnée : "
+                absents_message = ""
                 for absent_musician in absent:
-                    message += absent_musician + ", "
-                message = message[:-1] + "."
+                    absents_message += f"- {absent_musician[0]} ({absent_musician[1]})\n"                
+                message.add_field(name="Ces personnes ne sont pas présentes dans la base de données", value=absents_message)
             
             if blocks:
-                message += "Les musiciennes et musiciens suivants ne pourront pas assister à cette répétition : "
+                blocks_message = ""
                 for blocked_musician in blocks:
-                    message += blocked_musician + ", "
-            
-            message = message[:-2] + ". Veux-tu tout de même placer la répète ? (o/n)"
+                    blocks_message += f"- {blocked_musician[0]} ({blocked_musician[1]}) : "
+                    if (type(blocked_musician[2][0]) == str):
+                        blocks_message += blocked_musician[2][0]
+                    else:
+                        blocks_message += "indisponibilité personnelle"
+                    blocks_message += "\n"
+                
+                message.add_field(name="Ces personnes ne sont pas disponibles sur ce créneau", value=blocks_message)
 
-            await i.response.send_message(message)
-            conf = await bot.wait_for('message', check=lambda message: message.author == i.user and message.channel.id == i.channel.id)
-
-            if conf.content.lower() not in ["o", "oui", "y", "yes"]: # Will be done with embed buttons later
+            view = ConfirmView()
+            await i.response.send_message(embed=message, view=view)
+            await view.wait()
+            if not view.value:
                 return
         else:
             await i.response.send_message("Tout va bien ! Pas de blocage de trouvé.")
