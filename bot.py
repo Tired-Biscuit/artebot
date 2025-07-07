@@ -12,8 +12,8 @@ import python.db as db
 
 DEBUG = True # Toggle the dev or production bot
 
-#db.reset()
-#db.init()
+# db.reset()
+# db.init()
 # register_lines(lines)
 
 # For metering purposes

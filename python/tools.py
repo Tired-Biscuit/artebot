@@ -5,11 +5,14 @@ import json
 from datetime import timezone, timedelta, datetime
 import re
 
+import discord.embeds
+
 CEST = timezone(timedelta(hours=2), name="CEST")
 CET  = timezone(timedelta(hours=1), name="CET")
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
+DAY_DURATION = 84600
 
 def download_timetables():
     """
@@ -157,12 +160,12 @@ def parse_date(date: str) -> str:
     raise ValueError("Date could not be parsed.")
 
 
-def parse_time(time: str) -> str:
+def parse_time(time_string: str) -> str:
     """
     Parses a time string and returns it in the HHMM format.
     """
     match = re.match(
-        r"^(\d{1,2})\s*[-:h]?\s*(\d{1,2})?", time
+        r"^(\d{1,2})\s*[-:h]?\s*(\d{1,2})?", time_string
     )
 
     if match:
@@ -180,9 +183,9 @@ def parse_time(time: str) -> str:
         if int(h) <= 23 and int(m) <= 59:
             return h + m
     
-    time = time.capitalize()
+    time_string = time_string.capitalize()
 
-    if time in ["Midi", "Noon"]:
+    if time_string in ["Midi", "Noon"]:
         return "1200"
 
     raise ValueError("Time could not be parsed.")
@@ -241,7 +244,7 @@ def date_to_string(date: str) -> str:
 
     return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
 
-def time_span_to_string(start: str, end: str) -> str:
+def formatted_time_span_string(start: str, end: str) -> str:
     """
     Returns a readable string in french of the time span given in argument.
 
@@ -279,18 +282,24 @@ def time_span_to_string(start: str, end: str) -> str:
     
     return res
 
-def time_to_string(time: str) -> str:
+def time_span_to_string(start_time: int, end_time: int) -> str:
+    """"
+    Returns a Markdown-formatted string for a time span (epoch values)
+    """
+    return formatted_time_span_string(time.strftime("%H%M", time.gmtime(start_time)), time.strftime("%H%M", time.gmtime(end_time)))
+
+def formatted_hhmm(time_string: str) -> str:
     """
     Returns a readable string in french of the time given in argument.
 
     Args:
         time (str): The time, in HHMM format
     """
-    if time == "1200":
+    if time_string == "1200":
         return "midi"
 
-    if time[0] == '0':
-        time = time[1:]
+    if time_string[0] == '0':
+        time = time_string[1:]
 
         if time[-2:] == "00":
            return f"{time[:-2]} h"
@@ -302,7 +311,7 @@ def duration_to_string(duration: int) -> str:
     Returns a readable string in french of the duration given in argument.
 
     Args:
-        duration (str): The duraiton in seconds
+        duration (int): The duration in seconds
     """
     res = ""
     if duration >= 3600:
@@ -315,3 +324,29 @@ def duration_to_string(duration: int) -> str:
         res += f"{int(duration%3600 / 60)} m"
     
     return res
+
+def epoch_to_short_date(epoch_time: int) -> str:
+    """
+    Returns the date in DD/MM format, accounting recurring events (with epoch < 84600)
+    """
+    return time.strftime("%d/%m", time.gmtime(epoch_time))
+
+def get_constraint_description(constraint: list[int], start_time: int) -> str:
+    """
+    Returns a formatted text listing all constraints for week corresponding to the given start time
+    """
+    return f"""
+            {week_index_to_week_day(time.gmtime(constraint[0]).tm_wday + 1)} {epoch_to_short_date(constraint[0])}\n
+            Indisponible {time_span_to_string(constraint[0], constraint[1])}
+            """
+
+def get_constraint_message(constraints: list[list[int]], start_time) -> (discord.embeds.Embed, int):
+    week_start_day = 10
+    week_start_month = 9
+    week_end_day = 11
+    week_end_month = 9
+    message = discord.Embed(
+        title=f"Semaine du {week_start_day}/{week_start_month} au {week_end_day}/{week_end_month}",
+        description=get_constraint_description(constraints[0], start_time)
+    )
+    return message, 11354654
