@@ -37,11 +37,16 @@ assert tools.parse_time("12 51") == "1251"
 assert tools.parse_time("midi") == "1200"
 
 
-assert tools.time_span_to_string("1200", "1300") == "de **12 h** à **13 h**"
-assert tools.time_span_to_string("0700", "1251") == "de **7 h** à **12 h 51**"
-assert tools.time_span_to_string("0000", "0900") == "jusqu'à **9 h**"
-assert tools.time_span_to_string("0000", "2359") == "**toute la journée**"
-assert tools.time_span_to_string("0446", "2359") == "à partir de **4 h 46**"
+assert tools.formatted_time_span_string("1200", "1300") == "de **12 h** à **13 h**"
+assert tools.formatted_time_span_string("0700", "1251") == "de **7 h** à **12 h 51**"
+assert tools.formatted_time_span_string("0000", "0900") == "jusqu'à **9 h**"
+assert tools.formatted_time_span_string("0000", "2359") == "**toute la journée**"
+assert tools.formatted_time_span_string("0446", "2359") == "à partir de **4 h 46**"
+
+assert tools.formatted_hhmm("0900") == "9 h"
+assert tools.formatted_hhmm("1200") == "midi"
+assert tools.formatted_hhmm("1600") == "16 h"
+assert tools.formatted_hhmm("0250") == "2 h 50"
 
 assert tools.date_to_string("20250405") == "le **05/04/2025**"
 
