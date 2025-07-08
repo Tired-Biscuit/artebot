@@ -213,7 +213,7 @@ def parse_duration(duration: str) -> int:
 
 def parse_mail(mail: str) -> str:
     """
-    Returns the name of the owner of the mail adress (first_name.last_name@xxx.xxx format) 
+    Returns the name of the owner of the mail address ([first_name].[last_name]@[...] format) 
     """
     mail = mail.split("@")[0].split(".")
     
@@ -327,7 +327,7 @@ def duration_to_string(duration: int) -> str:
 
 def epoch_to_short_date(epoch_time: int) -> str:
     """
-    Returns the date in DD/MM format, accounting recurring events (with epoch < 84600)
+    Returns the date in DD/MM format, accounting for recurring events (with epoch < 84600)
     """
     return time.strftime("%d/%m", time.gmtime(epoch_time))
 

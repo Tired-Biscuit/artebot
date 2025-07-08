@@ -144,7 +144,7 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
         name = name[0][0]
 
         ndate = tools.parse_date(day)
-        
+
         nstart = tools.parse_time(start) if start else "0000"
         
         nend = tools.parse_time(end) if end else "2359"
@@ -154,7 +154,7 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
 
         db.add_punctual_constraint(i.user.id, start_unix, end_unix)
 
-        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.time_span_to_string(nstart, nend)} ajoutée avec succès.")
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message)
 
     except Exception as e:
@@ -252,11 +252,11 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             if i.channel.type == "public_thread" or i.channel.type == "private_thread":
                 song = i.channel.name
             else:
-                raise EnvironmentError("tu ne trouves pas dans un fil ! Spécifie le morceau concerné ou effectue la commande dans un fil portant le nom du morceau.")
+                raise EnvironmentError("tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
 
         song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%'")
-        print(song, song_info)
+
         if not song_info:
             raise ValueError(f"morceau {song} non trouvé !")
 
@@ -268,34 +268,27 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
         start_time = tools.local_to_unixepoch(ndate + nstart)
         duration = tools.parse_duration(duration)
 
-        instruments = db.run("PRAGMA table_info(SONG);")
+        instruments = db.get_instrument_names()
 
-
-        with open("instruments.json", "r", encoding="utf-8") as f:
-            instruments_file = json.load(f)
-
-        instruments = [instruments_file[instrument[1]] for instrument in instruments]
-
-
-        blocks = list()
-        absent = list()
+        blocks, absent, present = list(), list(), list()
 
         for j in range(3, len(song_info)):
 
-
             instrument = instruments[j]
-            musicians = song_info[j].split(",")
+            musicians = song_info[j].split(" ")
             
             for musician in musicians:
-                if musician and musician not in blocks and musician not in absent:
+                if musician and musician not in blocks and musician not in absent and musician not in present:
 
                     uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
                     if uuid:
                         uuid, username = uuid[0]
-
                         blocking_events = db.request_blocking_events(start_time, duration, uuid)
+
                         if blocking_events:
                             blocks.append([username, instrument, blocking_events[0]])
+                        else:
+                            present.append([username, uuid, instrument])
 
                     else:
                         absent.append([tools.parse_mail(musician), instrument])
@@ -305,13 +298,13 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             message = discord.Embed(title="Blocages rencontrés")
 
             if absent:
-                absents_message = ""
+                absents_message = str()
                 for absent_musician in absent:
                     absents_message += f"- {absent_musician[0]} ({absent_musician[1]})\n"                
                 message.add_field(name="Ces personnes ne sont pas présentes dans la base de données", value=absents_message)
             
             if blocks:
-                blocks_message = ""
+                blocks_message = str()
                 for blocked_musician in blocks:
                     blocks_message += f"- {blocked_musician[0]} ({blocked_musician[1]}) : "
                     if (type(blocked_musician[2][0]) == str):
@@ -326,21 +319,37 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             await i.response.send_message(embed=message, view=view)
             await view.wait()
             if not view.value:
+                await i.delete_original_response()
                 return
-        else:
-            await i.response.send_message("Tout va bien ! Pas de blocage de trouvé.")
 
         # TODO : add rehearsal to the calendar
 
         message = discord.Embed(
             title="Répétition ajoutée",
-            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.time_to_string(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès."
+            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès."
         )
-        await i.followup.send(embed=message)
+
+        present_message = str()
+        ping = str()
+
+        for present_musician in present:
+            ping += f"<@{present_musician[1]}> "
+            present_message += f"- {present_musician[0]} ({present_musician[2]})\n"
+
+        message.add_field(name="Membres présents", value=present_message)
+
+        if blocks or absent:
+            await i.followup.send(content=ping, embed=message)
+        else:
+            await i.response.send_message(content=ping, embed=message)
 
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la répétition : {str(e)}")
-        await i.followup.send(embed=message)
+        try:
+            await i.response.send_message(embed=message)
+        except:
+            await i.followup.send(embed=message)
+
 
 @bot.command()
 async def foo(ctx):
