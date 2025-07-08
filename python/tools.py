@@ -299,12 +299,12 @@ def formatted_hhmm(time_string: str) -> str:
         return "midi"
 
     if time_string[0] == '0':
-        time = time_string[1:]
+        time_string = time_string[1:]
 
-        if time[-2:] == "00":
-           return f"{time[:-2]} h"
-        else:
-           return f"{time[:-2]} h {time[-2:]}"
+    if time_string[-2:] == "00":
+        return f"{time_string[:-2]} h"
+    else:
+        return f"{time_string[:-2]} h {time_string[-2:]}"
         
 def duration_to_string(duration: int) -> str:
     """
