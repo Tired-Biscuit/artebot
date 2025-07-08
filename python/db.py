@@ -253,6 +253,17 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         ;
     """)
 
+def get_instrument_names() -> list[str]:
+    """
+    Returns a list of all the column names of the Song table in french (including non-instrument columns)
+    """
+    instruments = run("PRAGMA table_info(SONG);")
+
+    with open("./instruments.json", "r", encoding="utf-8") as f:
+            instruments_file = json.load(f)
+
+    return [instruments_file[instrument[1]] if instrument[1] in instruments_file else None for instrument in instruments]
+
 # # # # # # # # # # # # # # #
 #     Outdated content      #
 # # # # # # # # # # # # # # #
