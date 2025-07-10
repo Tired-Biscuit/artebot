@@ -53,26 +53,15 @@ group_choices = [app_commands.Choice(name=group, value=groups[group]) for group 
 async def on_ready():
     await bot.tree.sync()
 
-@bot.tree.command(description="Test command with choices")
-@app_commands.choices(name=[
-    app_commands.Choice(name="name 1", value="value 1"),
-    app_commands.Choice(name="name 2", value="value 2"),
-    app_commands.Choice(name="name 3", value="value 3"),
-])
-async def test(i: discord.Interaction, name: app_commands.Choice[str]):
-    message = discord.Embed(title="hello " + name.name)
-    await i.response.send_message(embed=message)
-
-
 @bot.tree.command(name="connexion", description="S'ajouter à la base de données")
 @app_commands.describe(
-    group="Groupe scolaire auquel tu appartiens",
+    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
     mail="Ton adresse mail TN.net"
 )
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
 
-async def connection(i: discord.Interaction, group: app_commands.Choice[str], mail:str):
+async def connection(i: discord.Interaction, mail:str, group: app_commands.Choice[str] = None):
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
@@ -80,7 +69,7 @@ async def connection(i: discord.Interaction, group: app_commands.Choice[str], ma
 
         pseudo = tools.parse_mail(mail)
         # Add user to the database
-        db.add_user(str(i.user.id), pseudo, mail, group.value)
+        db.add_user(str(i.user.id), pseudo, mail, group.value if group else "")
 
         message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
         await i.response.send_message(embed=message)
@@ -105,6 +94,29 @@ async def mail(i: discord.Interaction, mail:str):
         
     except:
         await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
+
+@bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
+@app_commands.describe(
+    group="Le nouveau groupe (laisser vide si extérieur)"
+)
+@app_commands.rename(group="groupe")
+@app_commands.choices(group=group_choices)
+
+
+async def mail(i: discord.Interaction, group: app_commands.Choice[str] = None):
+    try:
+        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
+            raise ValueError()
+        
+        db.run(f"UPDATE User SET group_id = '{group.value if group else ''}' WHERE uuid = '{i.user.id}'")
+        await i.response.send_message("Groupe modifié avec succès !")
+        
+    except:
+        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
+
+@bot.tree.command(name="pages")
+async def pages(i:discord.Interaction):
+    await i.response.send_message(embed=discord.Embed(title="titre", description="desc"))
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
