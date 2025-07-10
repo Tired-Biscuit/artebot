@@ -151,8 +151,11 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
 
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
-
-        db.add_punctual_constraint(i.user.id, start_unix, end_unix)
+        
+        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}'"):
+            db.add_punctual_constraint(i.user.id, start_unix, end_unix)
+        else:
+            raise ValueError("cette contrainte existe déjà !")
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message)
@@ -198,7 +201,10 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         start_unix = int(nstart[:2])*3600 + int(nstart[2:])*60
         end_unix = int(nend[:2])*3600 + int(nend[2:])*60
 
-        db.add_recurring_constraint(i.user.id, start_unix, end_unix, day.value)
+        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}' AND week_day = {day.value}"):
+            db.add_recurring_constraint(i.user.id, start_unix, end_unix, day.value)
+        else:
+            raise ValueError("cette contrainte existe déjà !")
 
         if day.value == 8:
             day_string = "jours"
@@ -207,7 +213,7 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
 
         message = discord.Embed(
             title="Contrainte ajoutée",
-            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.time_span_to_string(nstart, nend)} ajoutée avec succès."
+            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès."
         )
         await i.response.send_message(embed=message)
 
