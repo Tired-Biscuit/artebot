@@ -244,7 +244,7 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         WHERE (Event.start_time < {timestamp} AND {timestamp} < Event.end_time)
         OR (Event.start_time < {timestamp + duration} AND {timestamp + duration} < Event.end_time)
         OR ({timestamp} <= Event.start_time AND Event.end_time <= {timestamp + duration})
-        OR (Event.start_time < 86400 AND (
+        OR (Event.start_time < {tools.DAY_DURATION} AND (
             TRUE OR
             (Event.start_time < {timestamp%tools.DAY_DURATION} AND {timestamp%tools.DAY_DURATION} < Event.end_time)
             OR (Event.start_time < {timestamp%tools.DAY_DURATION + duration} AND {timestamp%tools.DAY_DURATION + duration} < Event.end_time)
