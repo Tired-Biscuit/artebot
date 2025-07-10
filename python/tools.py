@@ -12,7 +12,7 @@ CET  = timezone(timedelta(hours=1), name="CET")
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
-DAY_DURATION = 84600
+DAY_DURATION = 86400
 
 def download_timetables():
     """
@@ -327,18 +327,120 @@ def duration_to_string(duration: int) -> str:
 
 def epoch_to_short_date(epoch_time: int) -> str:
     """
-    Returns the date in DD/MM format, accounting for recurring events (with epoch < 84600)
+    Returns the date in DD/MM format, accounting for recurring events (with epoch < 86400)
     """
     return time.strftime("%d/%m", time.gmtime(epoch_time))
 
-def get_constraint_description(constraint: list[int], start_time: int) -> str:
+def get_constraint_description(constraint: list[int]) -> str:
     """
-    Returns a formatted text listing all constraints for week corresponding to the given start time
+    Returns a formatted text for the corresponding constraint
     """
-    return f"""
-            {week_index_to_week_day(time.gmtime(constraint[0]).tm_wday + 1)} {epoch_to_short_date(constraint[0])}\n
-            Indisponible {formatted_time_span_string(constraint[0], constraint[1])}
-            """
+    return f"""Indisponible {time_span_to_string(constraint[0], constraint[1])}\n"""
+
+def add_missing_recurring_constraints(message: str, constraints: list[list[int]], recurring_constraints: list[list[list[int]]], start_time: int, daynb: int, boundary: int) -> str:
+    """
+    Self-explanatory
+    """
+    j = 0
+    # Iterate through recurring constraints until boundary
+    while get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION < boundary:
+        if len(recurring_constraints[j]) > 0:
+            # Write the day's date in case of a change of day number (which has to be updated after the call of the function (choose the boundary wisely))
+            if get_nbdays(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) != daynb: # TODO beware of the missing daynb update !
+                message += get_date_string(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION)
+
+            # Pop the recurring constraints
+            while len(recurring_constraints[j]) > 0: #TODO no check for boundary might cause errors ?
+                message += get_constraint_description(recurring_constraints[j].pop(0))
+        j += 1
+    return message
+
+def get_constraints_week_description(constraints: list[list[int]], start_time: int) -> str:
+    """
+    Writes a message describing all musicians' constraints for the week of a given start time
+
+    constraints: result of a db request as list of (start_time, end_time, week_day) from musician constraints sorted by start time
+    start_time: epoch value of a day in the week
+    """
+
+    # Gets the week number to track for week change between constraints
+    weeknb = get_nbweeks(start_time)
+    i = 0
+    # List of all recurring contraints for the week, per day (recurrent ones are put directly in each day)
+    recurring_constraints = [[],[],[],[],[],[],[]]
+
+    # First, start from the first constraint and continue until getting the first constraint from the right week
+    while i < len(constraints)-1 and get_nbweeks(constraints[i][0]) < weeknb:
+        # At the beginning are all the recurring constraints
+        if constraints[i][0] < DAY_DURATION and constraints[i][2] > 0:
+            # They are added to their corresponding day
+            if constraints[i][2] < 8:
+                recurring_constraints[constraints[i][2]-1].append(constraints[i])
+            else:
+                # Daily constraint
+                for day in recurring_constraints:
+                    day.append(constraints[i])
+        i+=1
+
+    # From there, i is at the first constraint from start_day
+
+    daynb = 0
+    message = ""
+    # Iterating through all constraints of the week
+    while i < len(constraints) and get_nbweeks(constraints[i][0]) < weeknb+1:
+        # First, write the date
+        # daynb == 0 means the message is empty (could also check for message == "")
+        # The second test is for when the next constraint happens on another day
+        if daynb == 0 or get_nbdays(constraints[i][0]) > daynb:
+
+            # Get recurring constraints happening after the last constraint and still int the previous day
+            message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, (constraints[i][0] // DAY_DURATION) * DAY_DURATION)
+
+            # Update the day tracker
+            daynb = get_nbdays(constraints[i][0])
+            # Add the date of the day in the message
+            message += get_date_string(constraints[i][0])
+
+        # Now check for recurring constraint happening before the constraint
+        if len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday]) > 0: # First check the day
+            # Then check wether or not to write the recurring constraints
+            j = len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0])
+            while j > 0:
+                if recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0][0] < constraints[i][0]%DAY_DURATION:
+                    message += "[récurrent]" + get_constraint_description(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday].pop(0))
+                    j = len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0])
+                else:
+                    j = 0
+
+        # Finally, write the constraint
+        message += get_constraint_description(constraints[i])
+        i+=1
+
+    # In case of recurring constraints still happening after the last checked constraint, add them
+    message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, get_first_day_of_week(weeknb + 1))
+    return message
+
+def get_date_string(epoch_time: int) -> str:
+    """
+    Returns a string formatted as this: Thursday 24/10 \n
+    """
+    return f"""{week_index_to_week_day(time.gmtime(epoch_time).tm_wday + 1)} {epoch_to_short_date(epoch_time)}\n"""
+
+def get_nbdays(epoch_time: int) -> int:
+    """
+    Returns the number of days from 01/01/1970
+    """
+    return epoch_time//DAY_DURATION
+
+def get_nbweeks(epoch_time: int) -> int:
+    """
+    Returns the number of weeks since 5th of Jan., 1970
+    """
+    # The +3*DAY_DURATION is because the 01/01/1970 is a thursday, we have to correct this bias in order to have a coherent result after the division
+    return (epoch_time+3*DAY_DURATION)//(DAY_DURATION*7)
+
+def get_first_day_of_week(nbweeks: int):
+    return nbweeks*DAY_DURATION*7-3*DAY_DURATION
 
 def get_constraint_message(constraints: list[list[int]], start_time) -> (discord.embeds.Embed, int):
     week_start_day = 10
@@ -347,6 +449,6 @@ def get_constraint_message(constraints: list[list[int]], start_time) -> (discord
     week_end_month = 9
     message = discord.Embed(
         title=f"Semaine du {week_start_day}/{week_start_month} au {week_end_day}/{week_end_month}",
-        description=get_constraint_description(constraints[0], start_time)
+        description=get_constraints_week_description(constraints[0], start_time)
     )
     return message, 11354654
