@@ -10,6 +10,7 @@ from python.tools import DELTA_TIME, UPDATE_TIME
 import json
 from discord.ui import View, Button
 import python.db as db
+import python.discordutils as discordutils
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -207,7 +208,7 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
 
         message = discord.Embed(
             title="Contrainte ajoutée",
-            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.time_span_to_string(nstart, nend)} ajoutée avec succès."
+            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès."
         )
         await i.response.send_message(embed=message)
 
@@ -276,7 +277,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
             instrument = instruments[j]
             musicians = song_info[j].split(" ")
-            
+
             for musician in musicians:
                 if musician and musician not in blocks and musician not in absent and musician not in present:
 
@@ -292,17 +293,17 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
                     else:
                         absent.append([tools.parse_mail(musician), instrument])
-    
+
         if blocks or absent:
-            
+
             message = discord.Embed(title="Blocages rencontrés")
 
             if absent:
                 absents_message = str()
                 for absent_musician in absent:
-                    absents_message += f"- {absent_musician[0]} ({absent_musician[1]})\n"                
+                    absents_message += f"- {absent_musician[0]} ({absent_musician[1]})\n"
                 message.add_field(name="Ces personnes ne sont pas présentes dans la base de données", value=absents_message)
-            
+
             if blocks:
                 blocks_message = str()
                 for blocked_musician in blocks:
@@ -312,7 +313,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
                     else:
                         blocks_message += "indisponibilité personnelle"
                     blocks_message += "\n"
-                
+
                 message.add_field(name="Ces personnes ne sont pas disponibles sur ce créneau", value=blocks_message)
 
             view = ConfirmView()
@@ -349,6 +350,35 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             await i.response.send_message(embed=message)
         except:
             await i.followup.send(embed=message)
+
+
+@bot.tree.command(name="voir_indisponibilités", description="Consulter les indisponibilités")
+
+async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
+    try:
+        constraints: list[list[int]] = db.run(f"""
+            SELECT start_time, end_time, week_day FROM MusicianConstraint
+            WHERE musician_uuid = '{i.user.id}'
+            ORDER BY start_time ASC, week_day ASC;
+        """)
+        if not constraints:
+            raise ValueError(f"Aucune donnée trouvée.")
+
+        if len(constraints[0]) > 0:
+            view = discordutils.ConstraintsPaginationView(constraints)
+            await i.response.send_message(embed=view.embed_page(), view=view)
+        else:
+            raise Exception("Pas de contraintes trouvées.")
+
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=f"{str(e)}")
+        await i.response.send_message(embed=message)
+
+@bot.tree.command()
+async def pages(i:discord.Interaction):
+    pages = ["Un", "Deux", "Trois"]
+    view = discordutils.PaginationView(pages)
+    await i.response.send_message(embed=view.embed_page(), view=view)
 
 
 @bot.command()
