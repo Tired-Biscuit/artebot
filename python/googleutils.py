@@ -13,7 +13,8 @@ import os
 SCOPES = [
     'https://www.googleapis.com/auth/script.projects',
     'https://www.googleapis.com/auth/script.scriptapp',
-    'https://www.googleapis.com/auth/calendar'
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/spreadsheets'
 ]
 
 def refresh_token():
@@ -85,6 +86,7 @@ def download_calendar(calendar_id):
     creds = refresh_token()
 
     url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
+    print(url)
 
     headers = {
         "Authorization": f"Bearer {creds.token}",
@@ -110,5 +112,45 @@ def download_calendar(calendar_id):
         # for event in data.get("items", []):
         #     print(event["summary"], event.get("start"), event.get("end"))
     else:
-        print("Erreur:", response.status_code, response.text)
+        print("Erreur :", response.status_code, response.text)
         return (False, response.text)
+
+def download_spreadsheet(sheet_id) -> str:
+    """
+    Fetch the first sheet of the spreadsheet
+
+    Returns: the error text in case of error
+    """
+    creds = refresh_token()
+
+    # Get the first sheet's name
+    meta_url = f'https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}?fields=sheets.properties'
+    meta_headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json"
+    }
+    meta_response = requests.get(meta_url, headers=meta_headers)
+    if meta_response.status_code != 200:
+        print("Erreur:", meta_response.status_code, meta_response.text)
+        return meta_response.text
+    meta_data = meta_response.json()
+    first_sheet_title = meta_data["sheets"][0]["properties"]["title"]
+
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&headers=0&sheet={first_sheet_title}"
+
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json"
+    }
+
+    response = requests.get(url, headers=headers)#, params=params)
+
+    if response.status_code == 200:
+        data = response.text
+        print("miaou")
+        with open("setlist.csv", "w") as f:
+            f.write(data)
+
+    else:
+        print("Erreur :", response.status_code, response.text)
+        return response.text
