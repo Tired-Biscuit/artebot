@@ -14,6 +14,12 @@ DELTA_TIME = 14400
 UPDATE_TIME = time.time()
 DAY_DURATION = 86400
 
+def create_data_file():
+    if not os.path.exists("data.json"):
+        data = {"calendar_ids":[], "admins":[], "owners":[]}
+        with open("data.json", "w") as f:
+            f.write(json.dumps(data))
+
 def download_timetables():
     """
     Downloads timetables as .ics files in ./timetables
@@ -27,17 +33,14 @@ def add_calendar(calendar_id):
     """
     Adds calendar to data.json
     """
-    if os.path.exists("data.json"):
-        data = {}
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
+    create_data_file()
+    data = {}
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != {}:
         with open("data.json", "w") as f:
             if calendar_id not in data["calendar_ids"]:
                 data["calendar_ids"].append(calendar_id)
-                f.write(json.dumps(data))
-    else:
-        data = {"calendar_ids":[calendar_id]}
-        with open("data.json", "w") as f:
                 f.write(json.dumps(data))
 
 def delete_calendar(calendar_id):
@@ -447,3 +450,40 @@ def get_constraint_message(constraints: list[list[int]], start_time) -> discord.
         description=get_constraints_week_description(constraints, start_time)
     )
     return message
+
+def get_admins() -> list[int]:
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            admins = json.loads(f.read())["admins"]
+            return admins
+    else:
+        return []
+
+def get_owners() -> list[int]:
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            owners = json.loads(f.read())["owners"]
+            return owners
+    else:
+        return []
+
+def add_admin(uuid: int):
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if uuid not in data["admins"]:
+                data["admins"].append(uuid)
+                f.write(json.dumps(data))
+
+def remove_admin(uuid: int):
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None:
+            with open("data.json", "w") as f:
+                if uuid in data["admins"]:
+                    data["admins"].remove(uuid)
+                    f.write(json.dumps(data))

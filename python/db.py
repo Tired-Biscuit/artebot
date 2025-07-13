@@ -145,11 +145,11 @@ def update_calendars():
     """
     Downloads Google Calendars in data.json and updates the database
     """
-    if not os.path.exists("./data.json"):
+    if not os.path.exists("data.json"):
         print("No calendars added.")
         return False
 
-    with open("./data.json") as f:
+    with open("data.json") as f:
         calendar_ids = json.loads(f.read())["calendar_ids"]
         if len(calendar_ids) == 0:
             print("Empty calendar list")
@@ -253,7 +253,7 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         ;
     """)
 
-def get_instrument_names() -> list[str]:
+def get_instruments_names() -> list[str]:
     """
     Returns a list of all the column names of the Song table in french (including non-instrument columns)
     """

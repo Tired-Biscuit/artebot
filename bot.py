@@ -1,12 +1,13 @@
 # bot.py
 import os
 import time
+import traceback
+
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord import app_commands
 import python.tools as tools
-from python.tools import DELTA_TIME, UPDATE_TIME
 import json
 from discord.ui import View, Button
 import python.db as db
@@ -114,10 +115,6 @@ async def mail(i: discord.Interaction, group: app_commands.Choice[str] = None):
         
     except:
         await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
-
-@bot.tree.command(name="pages")
-async def pages(i:discord.Interaction):
-    await i.response.send_message(embed=discord.Embed(title="titre", description="desc"))
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
@@ -287,7 +284,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
         start_time = tools.local_to_unixepoch(ndate + nstart)
         duration = tools.parse_duration(duration)
 
-        instruments = db.get_instrument_names()
+        instruments = db.get_instruments_names()
 
         blocks, absent, present = list(), list(), list()
 
@@ -398,6 +395,63 @@ async def pages(i:discord.Interaction):
     view = discordutils.PaginationView(pages)
     await i.response.send_message(embed=view.embed_page(), view=view)
 
+@bot.tree.command(name="ajouter_admin", description="enregistrer un utilisateur comme admin")
+@app_commands.describe(
+    user="Mentionner la personne concernée"
+)
+@app_commands.rename(
+    user="membre"
+)
+
+async def add_admin(i: discord.Interaction, user: discord.User):
+    if i.user.id in tools.get_admins():
+        try:
+            tools.add_admin(user.id)
+            await i.response.send_message(content="Opération effectuée", ephemeral=True)
+        except Exception:
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+    else:
+        await i.response.send_message(content="Vous n'êtes pas admin :(", ephemeral=True)
+
+@bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
+@app_commands.describe(
+    user="Mentionner la personne concernée"
+)
+@app_commands.rename(
+    user="membre"
+)
+
+async def remove_admin(i: discord.Interaction, user: discord.User):
+    if i.user.id in tools.get_owners():
+        if i.user.id == user.id:
+            await i.response.send_message(content="Vous ne pouvez pas vous retirer les droits", ephemeral=True)
+        else:
+            try:
+                tools.remove_admin(user.id)
+                await i.response.send_message(content="Opération effectuée", ephemeral=True)
+            except Exception:
+                await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+    else:
+        await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
+
+@bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisser vide pour consulter vos morceaux.")
+@app_commands.describe(
+    user="Mentionner la personne désirée (elle ne recevra pas de notification)."
+)
+@app_commands.rename(
+    user="membre"
+)
+
+async def info(i: discord.Interaction, user: discord.User=None):
+    if user == None:
+        uuid = i.user.id
+    else:
+        uuid = user.id
+    title = f"Infos pour {db.get_user_name(uuid)}"
+    message = discord.Embed(title=title, description=db.get_songs(uuid))
+    await i.response.send_message(embed=message, ephemeral=True)
+
+
 
 @bot.command()
 async def foo(ctx):
@@ -412,7 +466,7 @@ async def update(ctx, opt=""):
     text = ""
     try:
         if not db.update_db(opt=="force"):
-            title = f"Mise à jour impossible ⌛ temps restant: {int((DELTA_TIME - (time.time() - UPDATE_TIME))//3600)} heures {int((DELTA_TIME - (time.time() - UPDATE_TIME))%3600//60)} minutes et {int((DELTA_TIME - (time.time() - UPDATE_TIME))%3600%60)} secondes"
+            title = f"Mise à jour impossible ⌛ temps restant: {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))//3600)} heures {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))%3600//60)} minutes et {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))%3600%60)} secondes"
             logs_data["update"]["failed"] += 1
         else:
             title = "Mise à jour réussie ✅"
