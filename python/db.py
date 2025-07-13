@@ -176,6 +176,12 @@ def add_user(uuid, username, email, group_id, *, commit=False):
     command = f"INSERT INTO User VALUES({uuid}, '{username}', '{email}', '{group_id}');"
     return run(command, commit=commit)
 
+def get_user_name(musician_uuid: int):
+    return run(f"SELECT username FROM User WHERE uuid = {musician_uuid};")[0][0]
+
+def get_user_name_from_email(email: str):
+    return run(f"SELECT username FROM User WHERE email = {email};")[0][0]
+
 
 def add_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
     """
@@ -264,92 +270,47 @@ def get_instruments_names() -> list[str]:
 
     return [instruments_file[instrument[1]] if instrument[1] in instruments_file else None for instrument in instruments]
 
-# # # # # # # # # # # # # # #
-#     Outdated content      #
-# # # # # # # # # # # # # # #
 
 
-def insert_name(name):
-    name = name.replace("'", " ")
-    run(f"INSERT INTO Musique(Nom) VALUES('{name}');")
-
-def add_field(field, value, name):
-    value = value.replace("'", " ")
-    name = name.replace("'", " ")
-    run(f"UPDATE Musique SET {field} = '{value}' WHERE Nom == '{name}';")
-
-def register_lines(lines):
-    fields = lines[0]
-    for line in lines:
-        for i in range(len(line)):
-            if i != 3:
-                if i == 0:
-                    insert_name(line[0])
-                else:
-                    add_field(fields[i], line[i], line[0])
-
-def get_song(name):
-    name = name.replace("'", " ")
-    return run(f"SELECT * FROM Musique WHERE Nom == '{name}';")
-
-def get_songs(name):
-    songs = {}
-    songs[trim_space(name)] = []
+def get_songs(musician_uuid: int) -> str:
+    email = ""
     try:
-        result = run(f"SELECT * FROM Musique WHERE Chant LIKE '%{name}%' OR Guitare LIKE '%{name}%' OR Clavier LIKE '%{name}%' OR Batterie LIKE '%{name}%' OR Basse LIKE '%{name}%' OR Violon LIKE '%{name}%' OR Flûte LIKE '%{name}%' OR Saxo LIKE '%{name}%';")
-        possible_matchs = []
-        for song in result:
-            for field in song:
-                if (trim_space(name) == trim_space(field)):
-                    if song not in songs[trim_space(name)]:
-                        songs[trim_space(name)].append(song)
-                elif (name in field) and (trim_space(field) != trim_space(name)) and ("&" not in field and "+" not in field):
-                    if trim_space(field) not in songs.keys():
-                        songs[trim_space(field)] = []
-                    if song not in songs[trim_space(field)]:
-                        songs[trim_space(field)].append(song)
-                    if trim_space(field) not in possible_matchs:
-                        possible_matchs.append(trim_space(field))
-                elif ("&" in field):
-                    for people in field.split("&"):
-                        if (name in people) and (trim_space(people) != trim_space(name)):
-                            if trim_space(people) not in songs.keys():
-                                songs[trim_space(people)] = []
-                            if song not in songs[trim_space(people)]:
-                                songs[trim_space(people)].append(song)
-                            if trim_space(people) not in possible_matchs:
-                                possible_matchs.append(trim_space(people))
-                elif ("+" in field):
-                    for people in field.split("+"):
-                        if (name in people) and (trim_space(people) != trim_space(name)):
-                            if trim_space(people) not in songs.keys():
-                                songs[trim_space(people)] = []
-                            if song not in songs[trim_space(people)]:
-                                songs[trim_space(people)].append(song)
-                            if trim_space(people) not in possible_matchs:
-                                possible_matchs.append(trim_space(people))
-        text = ""
-        for key in songs.keys():
-            if len(songs[key]) > 0:
-                text += f"{len(songs[key])} morceaux pour **{key}**:\n"
-                for song in songs[key]:
-                    text += get_song_infos(song, key)
-                    text += "\n"
-            text += "\n\n"
-        result = text
-        
+        email = run(f"SELECT email FROM User WHERE uuid = '{musician_uuid}'")
+        email = email[0][0]
     except Exception as e:
-        result = str(e)
-    return result
-
-def update_db(force):
-    if time.time() - tools.UPDATE_TIME < tools.DELTA_TIME and not force:
-        return False
-    else:
-        driveutils.download_file_from_google_drive()
-        reset()
-        init()
-        lines = update_lines()
-        register_lines(lines)
-        tools.UPDATE_TIME = time.time()
-        return True
+        raise Exception(f"Could not get email: {e.with_traceback(None)}")
+    songs = {}
+    try:
+        result = run(f"""
+            SELECT * FROM Song
+            WHERE voice LIKE '%{email}%'
+            OR guitar LIKE '%{email}%'
+            OR keys LIKE '%{email}%'
+            OR drums LIKE '%{email}%'
+            OR bass LIKE '%{email}%'
+            OR violin LIKE '%{email}%'
+            OR cello LIKE '%{email}%'
+            OR contrabass LIKE '%{email}%'
+            OR accordion LIKE '%{email}%'
+            OR flute LIKE '%{email}%'
+            OR saxophone LIKE '%{email}%'
+            OR brass LIKE '%{email}%';
+        """)
+        text = f"{len(result)} morceaux trouvés:\n"
+        instruments_names = get_instruments_names()
+        for song in result:
+            text += f"{song[0]} - {song[1]}\n"
+            for i in range(4, len(song)):
+                if email in song[i]:
+                    text += f"**"
+                text += f"{instruments_names[i]} :"
+                musicians = song[i].split(" ")
+                for musician in musicians:
+                    text += f" {get_user_name_from_email(musician)}"
+                if email in song[i]:
+                    text += f"**"
+                text += "\n"
+        return text
+    except Exception as e:
+        error = str(e)
+        return error
