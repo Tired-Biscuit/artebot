@@ -12,6 +12,7 @@ import json
 from discord.ui import View, Button
 import python.db as db
 import python.discordutils as discordutils
+import python.googleutils as googleutils
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -49,7 +50,10 @@ else:
 with open("groups.json", "r", encoding="utf-8") as f:
     groups = json.load(f)
 
+calendars = {"Google":"Google", "School":"École", "Spreadsheet":"Setlist"}
+
 group_choices = [app_commands.Choice(name=group, value=groups[group]) for group in groups]
+calendar_choices = [app_commands.Choice(name=calendars[calendar], value=calendar) for calendar in calendars.keys()]
 
 @bot.event
 async def on_ready():
@@ -103,7 +107,6 @@ async def mail(i: discord.Interaction, mail:str):
 )
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
-
 
 async def mail(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
@@ -434,6 +437,7 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
     else:
         await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
 
+
 @bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisser vide pour consulter vos morceaux.")
 @app_commands.describe(
     user="Mentionner la personne désirée (elle ne recevra pas de notification)."
@@ -452,6 +456,50 @@ async def info(i: discord.Interaction, user: discord.User=None):
     await i.response.send_message(embed=message, ephemeral=True)
 
 
+@bot.tree.command(name="actualiser", description="Met à jour un calendrier")
+@app_commands.describe(
+    calendar="Indiquer la ressource à mettre à jour"
+)
+@app_commands.rename(
+    calendar="calendrier"
+)
+@app_commands.choices(calendar=calendar_choices)
+
+async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+    title = f"Mise à jour du calendrier {calendar.value}"
+    message = discord.Embed(title=title, description="ok")
+    await i.response.send_message(embed=message, ephemeral=True)
+
+
+@bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
+@app_commands.describe(
+    setlist_link="Lien de la setlist"
+)
+@app_commands.rename(
+    setlist_link="lien"
+)
+
+async def add_setlist(i: discord.Interaction, setlist_link: str):
+    if setlist_link != "":
+        try:
+            tools.add_setlist(setlist_link)
+            message = discord.Embed(title="Setlist ajoutée")
+            await i.response.send_message(embed=message, ephemeral=True)
+        except Exception:
+            await i.response.send_message(embed=discord.Embed(title="Erreur", description=traceback.format_exc()), ephemeral=True)
+    else:
+        await i.response.send_message(embed=discord.Embed(title="Paramètre vide!"), ephemeral=True)
+
+
+@bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
+
+async def delete_setlist(i: discord.Interaction):
+    setlists_names = []
+    for setlist_link in tools.get_setlists_links():
+        setlists_names.append(googleutils.get_spreadsheet_name(googleutils.get_spreadsheet_id(setlist_link)))
+    view = discordutils.SetlistsPaginationView(setlists_names)
+    view.check_buttons_availability()
+    await i.response.send_message(embed=view.embed_page(), view=view)
 
 @bot.command()
 async def foo(ctx):

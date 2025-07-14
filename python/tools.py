@@ -16,9 +16,17 @@ DAY_DURATION = 86400
 
 def create_data_file():
     if not os.path.exists("data.json"):
-        data = {"calendar_ids":[], "admins":[], "owners":[]}
+        data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[]}
         with open("data.json", "w") as f:
             f.write(json.dumps(data))
+    else:
+        data = None
+        with open("data.json", "r") as f:
+            data = f.read()
+        if data == "":
+            data = {"calendar_ids": [], "setlists": [], "admins": [], "owners": []}
+            with open("data.json", "w") as f:
+                f.write(json.dumps(data))
 
 def download_timetables():
     """
@@ -43,7 +51,7 @@ def add_calendar(calendar_id):
                 data["calendar_ids"].append(calendar_id)
                 f.write(json.dumps(data))
 
-def delete_calendar(calendar_id):
+def remove_calendar(calendar_id):
     """
     Removes calendar from data.json
     """
@@ -487,3 +495,32 @@ def remove_admin(uuid: int):
                 if uuid in data["admins"]:
                     data["admins"].remove(uuid)
                     f.write(json.dumps(data))
+
+def add_setlist(setlist_link: str):
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if setlist_link not in data["setlists"]:
+                data["setlists"].append(setlist_link)
+                f.write(json.dumps(data))
+
+def get_setlists_links() -> list[str] | None:
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            return data["setlists"]
+
+def get_setlists_names() -> list[str] | None:
+    return None
+
+def remove_setlist(index: int):
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None:
+            with open("data.json", "w") as f:
+                data["setlists"].delete(index)
+                f.write(json.dumps(data))
