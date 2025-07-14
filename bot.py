@@ -453,25 +453,6 @@ async def info(i: discord.Interaction, user: discord.User=None):
 
 
 
-@bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisser vide pour consulter vos morceaux.")
-@app_commands.describe(
-    user="Mentionner la personne désirée (elle ne recevra pas de notification)."
-)
-@app_commands.rename(
-    user="membre"
-)
-
-async def info(i: discord.Interaction, user: discord.User=None):
-    if user == None:
-        uuid = i.user.id
-    else:
-        uuid = user.id
-    title = f"Infos pour {db.get_user_name(uuid)}"
-    message = discord.Embed(title=title, description=get_songs(uuid))
-    await i.response.send_message(embed=message, ephemeral=True)
-
-
-
 @bot.command()
 async def foo(ctx):
     await ctx.send("miam")
