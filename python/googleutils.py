@@ -115,16 +115,14 @@ def download_calendar(calendar_id):
         print("Erreur :", response.status_code, response.text)
         return (False, response.text)
 
-def download_spreadsheet(sheet_id) -> str:
-    """
-    Fetch the first sheet of the spreadsheet
+def get_spreadsheet_id(spreadsheet_link: str) -> str:
+    return spreadsheet_link.split("/")[5]
 
-    Returns: the error text in case of error
-    """
+def get_spreadsheet_name(spreadsheet_id: str) -> str:
     creds = refresh_token()
 
     # Get the first sheet's name
-    meta_url = f'https://sheets.googleapis.com/v4/spreadsheets/{sheet_id}?fields=sheets.properties'
+    meta_url = f'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}?fields=sheets.properties'
     meta_headers = {
         "Authorization": f"Bearer {creds.token}",
         "Accept": "application/json"
@@ -135,8 +133,20 @@ def download_spreadsheet(sheet_id) -> str:
         return meta_response.text
     meta_data = meta_response.json()
     first_sheet_title = meta_data["sheets"][0]["properties"]["title"]
+    return first_sheet_title
+
+def download_spreadsheet(sheet_id) -> str:
+    """
+    Fetch the first sheet of the spreadsheet
+
+    Returns: the error text in case of error
+    """
+
+    first_sheet_title = get_spreadsheet_name(sheet_id)
 
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&headers=0&sheet={first_sheet_title}"
+
+    creds = refresh_token()
 
     headers = {
         "Authorization": f"Bearer {creds.token}",
