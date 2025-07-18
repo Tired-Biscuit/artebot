@@ -152,7 +152,7 @@ def update_calendars():
     with open("data.json") as f:
         calendar_ids = json.loads(f.read())["calendar_ids"]
         if len(calendar_ids) == 0:
-            print("Empty calendar list")
+            print("/!\ Empty calendar list")
             return False
     i=0
     for calendar_id in calendar_ids:
@@ -272,7 +272,7 @@ def get_instruments_names() -> list[str]:
 
 
 
-def get_songs(musician_uuid: int) -> str:
+def get_songs_message(musician_uuid: int) -> str:
     email = ""
     try:
         email = run(f"SELECT email FROM User WHERE uuid = '{musician_uuid}'")

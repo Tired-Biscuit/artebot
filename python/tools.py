@@ -496,25 +496,23 @@ def remove_admin(uuid: int):
                     data["admins"].remove(uuid)
                     f.write(json.dumps(data))
 
-def add_setlist(setlist_link: str):
+def add_setlist(setlist_id: str):
     create_data_file()
     data = None
     with open("data.json", "r") as f:
         data = json.loads(f.read())
     if data != None:
         with open("data.json", "w") as f:
-            if setlist_link not in data["setlists"]:
-                data["setlists"].append(setlist_link)
+            if setlist_id not in data["setlists"]:
+                data["setlists"].append(setlist_id)
                 f.write(json.dumps(data))
 
-def get_setlists_links() -> list[str] | None:
+def get_setlists_ids() -> list[str] | None:
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
             data = json.loads(f.read())
             return data["setlists"]
 
-def get_setlists_names() -> list[str] | None:
-    return None
 
 def remove_setlist(index: int):
     if os.path.exists("data.json"):

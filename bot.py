@@ -452,7 +452,7 @@ async def info(i: discord.Interaction, user: discord.User=None):
     else:
         uuid = user.id
     title = f"Infos pour {db.get_user_name(uuid)}"
-    message = discord.Embed(title=title, description=db.get_songs(uuid))
+    message = discord.Embed(title=title, description=db.get_songs_message(uuid))
     await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -482,7 +482,7 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 async def add_setlist(i: discord.Interaction, setlist_link: str):
     if setlist_link != "":
         try:
-            tools.add_setlist(setlist_link)
+            tools.add_setlist(googleutils.get_spreadsheet_id(setlist_link))
             message = discord.Embed(title="Setlist ajoutée")
             await i.response.send_message(embed=message, ephemeral=True)
         except Exception:
@@ -495,8 +495,8 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 
 async def delete_setlist(i: discord.Interaction):
     setlists_names = []
-    for setlist_link in tools.get_setlists_links():
-        setlists_names.append(googleutils.get_spreadsheet_name(googleutils.get_spreadsheet_id(setlist_link)))
+    for setlist_id in tools.get_setlists_ids():
+        setlists_names.append(googleutils.get_sheet_name(setlist_id))
     view = discordutils.SetlistsPaginationView(setlists_names)
     view.check_buttons_availability()
     await i.response.send_message(embed=view.embed_page(), view=view)
