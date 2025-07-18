@@ -6,7 +6,6 @@ from inspect import stack
 
 import python.googleutils as googleutils
 import python.tools as tools
-from fileinput import filename
 
 from urllib3 import request
 
@@ -258,6 +257,25 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         ))
         ;
     """)
+
+def add_song(song: dict):
+    """
+    Adds a song in the format of a dictionnary with each field set up to the database
+    """
+
+    return run(f"""INSERT INTO
+    Song ('title', 'artist', 'length', 'supervisor', 'voice', 'guitar', 'keys', 'drums', 'bass', 'violin', 'cello', 'contrabass', 'accordion', 'flute', 'saxophone', 'brass', 'notes')
+    VALUES ("{song['title']}", "{song['artist']}", "{song['length']}", "{song['supervisor']}", "{song['voice']}", "{song['guitar']}", "{song['keys']}", "{song['drums']}",
+    "{song['bass']}", "{song['violin']}", "{song['cello']}", "{song['contrabass']}", "{song['accordion']}", "{song['flute']}", "{song['saxophone']}", "{song['brass']}", "{song['notes']}"
+);""")
+
+def add_setlist(setlist_id: str):
+    data = googleutils.get_spreadsheet_data(setlist_id)
+    data = data["sheets"][0]["data"][0]
+    rows = data["rowData"]
+    for row in rows:
+        print(add_song(googleutils.get_song_info_from_row_values(row["values"])))
+
 
 def get_instruments_names() -> list[str]:
     """
