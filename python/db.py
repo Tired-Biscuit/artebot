@@ -2,6 +2,7 @@ import sqlite3
 import time
 import os
 import json
+import traceback
 from inspect import stack
 
 import python.googleutils as googleutils
@@ -13,11 +14,26 @@ import python.driveutils as driveutils
 
 # TODO faire des tests d'injection sur les champs de type : nom du morceau
 # TODO ajouter la règle PRAGMA pour obliger l'unicité des Primary Keys
+
+TESTING_DATABASE = False
+
 if os.path.exists("./database/database.db"):
     db = sqlite3.connect("./database/database.db")
 else:
     with open("./database/database.db", "w") as f:
         pass
+
+def refresh():
+    """
+    Refreshes the sqlite database instance
+    """
+    path = "./database/testing_db.db" if TESTING_DATABASE else "./database/db.db"
+    global db
+    if os.path.exists(path):
+        db = sqlite3.connect(path)
+    else:
+        with open(path, "w") as f:
+            pass
 
 # # # # # # # # # # # # # # #
 #      Basic functions      #
@@ -176,10 +192,17 @@ def add_user(uuid, username, email, group_id, *, commit=False):
     return run(command, commit=commit)
 
 def get_user_name(musician_uuid: int):
-    return run(f"SELECT username FROM User WHERE uuid = {musician_uuid};")[0][0]
+    try:
+        return run(f"SELECT username FROM User WHERE uuid = {musician_uuid};")[0][0]
+    except Exception:
+        raise Exception("Erreur, êtes-vous enregistré ?")
 
-def get_user_name_from_email(email: str):
-    return run(f"SELECT username FROM User WHERE email = {email};")[0][0]
+def get_user_name_from_email(email: str) -> str:
+    try:
+        return run(f"SELECT username FROM User WHERE email = '{email}';")[0][0]
+    except:
+        return email
+        # raise Exception(f"""Erreur: lors de l'exécution de "SELECT username FROM User WHERE email = '{email}';" : {run(f"SELECT username FROM User WHERE email = '{email}';")}""")
 
 
 def add_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
@@ -269,8 +292,8 @@ def add_song(song: dict):
     "{song['bass']}", "{song['violin']}", "{song['cello']}", "{song['contrabass']}", "{song['accordion']}", "{song['flute']}", "{song['saxophone']}", "{song['brass']}", "{song['notes']}"
 );""")
 
-def add_setlist(setlist_id: str):
-    data = googleutils.get_spreadsheet_data(setlist_id)
+def add_setlist(setlist_id: str, rows: int):
+    data = googleutils.get_spreadsheet_data(setlist_id, rows)
     data = data["sheets"][0]["data"][0]
     rows = data["rowData"]
     for row in rows:
@@ -329,6 +352,5 @@ def get_songs_message(musician_uuid: int) -> str:
                     text += f"**"
                 text += "\n"
         return text
-    except Exception as e:
-        error = str(e)
-        return error
+    except Exception:
+        return traceback.format_exc()

@@ -135,13 +135,26 @@ def get_sheet_name(spreadsheet_id: str) -> str:
     first_sheet_title = meta_data["sheets"][0]["properties"]["title"]
     return first_sheet_title
 
+def get_spreadsheet_name(spreadsheet_id: str) -> str:
+    creds = refresh_token()
+
+    service = build('sheets', 'v4', credentials=creds)
+
+    request = service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        fields="properties.title"
+    )
+
+    response = request.execute()["properties"]["title"]
+    return response
+
 def get_setlists_names() -> list[str] | None:
     names = []
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
             setlists_ids = json.loads(f.read())["setlists"]
             for setlist_id in setlists_ids:
-                names.append(get_sheet_name(setlist_id))
+                names.append(get_spreadsheet_name(setlist_id))
             return names
     return None
 
@@ -175,7 +188,7 @@ def download_spreadsheet(spreadsheet_id) -> str:
         print("Erreur :", response.status_code, response.text)
         return response.text
 
-def get_spreadsheet_data(spreadsheet_id):
+def get_spreadsheet_data(spreadsheet_id: str, rows: int):
     """
     Executes a request to Google Sheets API and returns the response
     """
@@ -187,7 +200,7 @@ def get_spreadsheet_data(spreadsheet_id):
     request = service.spreadsheets().get(
         spreadsheetId=spreadsheet_id,
         includeGridData=True,
-        ranges=[f"{get_sheet_name(spreadsheet_id)}!{'A2:R6'}"],
+        ranges=[f"{get_sheet_name(spreadsheet_id)}!{f'A2:R{rows+1}'}"],
         fields="sheets(data(rowData(values(userEnteredValue,chipRuns))))"
         # fields="sheets(data(rowData(values(effectiveValue,userEnteredValue,formattedValue,hyperlink))))"
     )
@@ -211,7 +224,10 @@ def get_chip_emails_from_cell_values(cell_values: dict) -> list[str]:
         return emails
     for chip in cell_values["chipRuns"]:
         if "chip" in chip.keys():
-         emails.append(chip["chip"]["personProperties"]["email"])
+            try:
+                emails.append(chip["chip"]["personProperties"]["email"])
+            except:
+                raise Exception(f"Erreur pour le chip suivant: {chip}")
     return emails
 
 def get_email_from_cell_values(cell_values: dict) -> str:
@@ -285,8 +301,9 @@ def get_song_info_from_row_values(row_values: dict) -> dict:
         if k-1 >= len(keys):
             print("Error:", song["title"], str(row_values))
             return song
-        song[keys[k-1]] = get_emails_strings(get_chip_emails_from_cell_values(row_values[k]))
         if keys[k-1] == "notes":
             song[keys[k-1]] = get_text_cell_content(row_values[k])
+        else:
+            song[keys[k - 1]] = get_emails_strings(get_chip_emails_from_cell_values(row_values[k]))
     return song
 
