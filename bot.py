@@ -50,7 +50,7 @@ else:
 with open("groups.json", "r", encoding="utf-8") as f:
     groups = json.load(f)
 
-calendars = {"Google":"Google", "School":"École", "Spreadsheet":"Setlist"}
+calendars = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
 
 group_choices = [app_commands.Choice(name=group, value=groups[group]) for group in groups]
 calendar_choices = [app_commands.Choice(name=calendars[calendar], value=calendar) for calendar in calendars.keys()]
@@ -447,6 +447,7 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
 )
 
 async def info(i: discord.Interaction, user: discord.User=None):
+    # TODO error handling
     if user == None:
         uuid = i.user.id
     else:
@@ -467,7 +468,13 @@ async def info(i: discord.Interaction, user: discord.User=None):
 
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
     title = f"Mise à jour du calendrier {calendar.value}"
-    message = discord.Embed(title=title, description="ok")
+    if calendar.value == "Spreadsheets":
+        db.run("DELETE FROM Song;")
+        for setlist_id in tools.get_setlists_ids():
+            db.add_setlist(setlist_id, 28)
+        message=discord.Embed(title="Setlist mise à jour")
+    else:
+        message=discord.Embed(title=calendar.value)
     await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -494,13 +501,24 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 @bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
 
 async def delete_setlist(i: discord.Interaction):
-    setlists_names = []
-    for setlist_id in tools.get_setlists_ids():
-        setlists_names.append(googleutils.get_sheet_name(setlist_id))
+    setlists_names = googleutils.get_setlists_names()
     view = discordutils.SetlistsPaginationView(setlists_names)
     view.check_buttons_availability()
     await i.response.send_message(embed=view.embed_page(), view=view)
 
+
+@bot.tree.command(name="reinit_db", description="(owner-only) réinitialise la base de données")
+#TODO ajouter un écran de confirmation
+async def reset_database(i: discord.Interaction):
+    if i.user.id in tools.get_owners():
+        try:
+            db.reset()
+            db.init()
+            await i.response.send_message(content="Opération effectuée", ephemeral=True)
+        except Exception:
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+    else:
+        await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
 @bot.command()
 async def foo(ctx):
     await ctx.send("miam")
