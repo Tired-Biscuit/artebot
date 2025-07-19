@@ -6,7 +6,7 @@ import traceback
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, Interaction
 import python.tools as tools
 import json
 from discord.ui import View, Button
@@ -519,6 +519,14 @@ async def reset_database(i: discord.Interaction):
             await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
     else:
         await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
+
+
+@bot.tree.command(name="order_66", description="Execute order 66")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def order_66(i: discord.Interaction):
+    await i.response.send_message(embed=discord.Embed(title="Trooper!", description="Execute order 66."), ephemeral=True)
+
 @bot.command()
 async def foo(ctx):
     await ctx.send("miam")
