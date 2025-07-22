@@ -78,11 +78,11 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
         db.add_user(str(i.user.id), pseudo, mail, group.value if group else "")
 
         message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout : {str(e)}")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="mail", description="Changer l'adresse mail associée à son compte")
@@ -96,10 +96,10 @@ async def mail(i: discord.Interaction, mail:str):
             raise ValueError()
         
         db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Adresse mail modifiée avec succès !")
+        await i.response.send_message("Adresse mail modifiée avec succès !", ephemeral=True)
         
     except:
-        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
+        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
@@ -108,16 +108,16 @@ async def mail(i: discord.Interaction, mail:str):
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
 
-async def mail(i: discord.Interaction, group: app_commands.Choice[str] = None):
+async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError()
         
         db.run(f"UPDATE User SET group_id = '{group.value if group else ''}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Groupe modifié avec succès !")
+        await i.response.send_message("Groupe modifié avec succès !", ephemeral=True)
         
     except:
-        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)")
+        await i.response.send_message("Erreur lors du changement de groupe, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
@@ -130,10 +130,10 @@ async def pseudo(i: discord.Interaction, pseudo:str):
             raise ValueError()
 
         db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Pseudo modifié avec succès !")
+        await i.response.send_message("Pseudo modifié avec succès !", ephemeral=True)
 
     except:
-        await i.response.send_message("Erreur lors du changement de pseudo, fais-tu partie de la base de données ? (`/connexion`)")
+        await i.response.send_message("Erreur lors du changement de pseudo, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
 
 
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
@@ -171,11 +171,11 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
             raise ValueError("cette contrainte existe déjà !")
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="indisponibilité_récurrente", description="Ajouter une contrainte récurrente")
@@ -228,11 +228,11 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
             title="Contrainte ajoutée",
             description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès."
         )
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 class ConfirmView(View):
@@ -365,7 +365,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la répétition : {str(e)}")
         try:
-            await i.response.send_message(embed=message)
+            await i.response.send_message(embed=message, ephemeral=True)
         except:
             await i.followup.send(embed=message)
 
@@ -390,7 +390,7 @@ async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
 
     except Exception as e:
         message = discord.Embed(title="Erreur", description=f"{str(e)}")
-        await i.response.send_message(embed=message)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command()
 async def pages(i:discord.Interaction):
@@ -447,14 +447,16 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
 )
 
 async def info(i: discord.Interaction, user: discord.User=None):
-    # TODO error handling
-    if user == None:
-        uuid = i.user.id
-    else:
-        uuid = user.id
-    title = f"Infos pour {db.get_user_name(uuid)}"
-    message = discord.Embed(title=title, description=db.get_songs_message(uuid))
-    await i.response.send_message(embed=message, ephemeral=True)
+    try:
+        if user == None:
+            uuid = i.user.id
+        else:
+            uuid = user.id
+        title = f"Infos pour {db.get_user_name(uuid)}"
+        message = discord.Embed(title=title, description=db.get_songs_message(uuid))
+        await i.response.send_message(embed=message, ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e), ephemeral=True)
 
 
 @bot.tree.command(name="actualiser", description="Met à jour un calendrier")
