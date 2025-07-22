@@ -283,7 +283,7 @@ class ConfirmViewImpossible(View):
 async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str, song:str=None):
     try:
         if song is None:
-            if i.channel.type == "public_thread" or i.channel.type == "private_thread":
+            if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
                 song = i.channel.name
             else:
                 raise EnvironmentError("tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
