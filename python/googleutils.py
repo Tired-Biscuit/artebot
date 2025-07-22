@@ -86,7 +86,6 @@ def download_calendar(calendar_id):
     creds = refresh_token()
 
     url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
-    print(url)
 
     headers = {
         "Authorization": f"Bearer {creds.token}",
@@ -157,36 +156,6 @@ def get_setlists_names() -> list[str] | None:
                 names.append(get_spreadsheet_name(setlist_id))
             return names
     return None
-
-def download_spreadsheet(spreadsheet_id) -> str:
-    """
-    Fetches the first sheet of the spreadsheet
-
-    Returns: the error text in case of error
-    """
-
-    first_sheet_title = get_sheet_name(spreadsheet_id)
-
-    url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/gviz/tq?tqx=out:csv&headers=0&sheet={first_sheet_title}"
-
-    creds = refresh_token()
-
-    headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json"
-    }
-
-    response = requests.get(url, headers=headers)#, params=params)
-
-    if response.status_code == 200:
-        data = response.text
-        print("miaou")
-        with open("setlist.csv", "w") as f:
-            f.write(data)
-
-    else:
-        print("Erreur :", response.status_code, response.text)
-        return response.text
 
 def get_spreadsheet_data(spreadsheet_id: str, rows: int):
     """

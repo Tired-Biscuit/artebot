@@ -193,15 +193,17 @@ def add_user(uuid, username, email, group_id, *, commit=False):
 
 def get_user_name(musician_uuid: int):
     try:
-        return run(f"SELECT username FROM User WHERE uuid = {musician_uuid};")[0][0]
+        u = run(f"SELECT username FROM User WHERE uuid = {musician_uuid};")[0][0]
     except Exception:
-        raise Exception("Erreur, êtes-vous enregistré ?")
+        raise Exception("Tu ne te trouves pas dans la base de données.")
+    return u
 
 def get_user_name_from_email(email: str) -> str:
     try:
-        return run(f"SELECT username FROM User WHERE email = '{email}';")[0][0]
+        u = run(f"SELECT username FROM User WHERE email = '{email}';")[0][0]
     except:
-        return email
+        u = tools.parse_mail(email)
+    return u
         # raise Exception(f"""Erreur: lors de l'exécution de "SELECT username FROM User WHERE email = '{email}';" : {run(f"SELECT username FROM User WHERE email = '{email}';")}""")
 
 
@@ -297,7 +299,7 @@ def add_setlist(setlist_id: str, rows: int):
     data = data["sheets"][0]["data"][0]
     rows = data["rowData"]
     for row in rows:
-        print(add_song(googleutils.get_song_info_from_row_values(row["values"])))
+        add_song(googleutils.get_song_info_from_row_values(row["values"]))
 
 
 def get_instruments_names() -> list[str]:
@@ -337,20 +339,28 @@ def get_songs_message(musician_uuid: int) -> str:
             OR saxophone LIKE '%{email}%'
             OR brass LIKE '%{email}%';
         """)
-        text = f"{len(result)} morceaux trouvés:\n"
+        if not result:
+            return "Aucun morceau trouvé !"
+        if len(result) == 1:
+            text = f"1 morceau trouvé :\n"
+        else:
+            text = f"{len(result)} morceaux trouvés :\n"
         instruments_names = get_instruments_names()
         for song in result:
-            text += f"{song[0]} - {song[1]}\n"
-            for i in range(4, len(song)):
-                if email in song[i]:
-                    text += f"**"
-                text += f"{instruments_names[i]} :"
-                musicians = song[i].split(" ")
-                for musician in musicians:
-                    text += f" {get_user_name_from_email(musician)}"
-                if email in song[i]:
-                    text += f"**"
-                text += "\n"
+            text += f"### {song[0]} — {song[1]}\n"
+            for i in range(4, len(song)-1):
+                if song[i]:
+                    text += "- "
+                    if email in song[i]:
+                        text += f"**"
+                    text += f"{instruments_names[i].capitalize()} :"
+                    if email in song[i]:
+                        text += f"**"
+                    musicians = song[i].split(" ")
+                    for musician in musicians:
+                        text += f" {get_user_name_from_email(musician)},"
+                    text = text[:-1]
+                    text += "\n"
         return text
     except Exception:
         return traceback.format_exc()
