@@ -252,6 +252,21 @@ class ConfirmView(View):
                 await interaction.response.edit_message(view=None)
                 self.stop()
 
+class ConfirmViewImpossible(View):
+            def __init__(self):
+                super().__init__(timeout=60)
+                self.value = None
+
+            @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success, disabled=True)
+            async def confirm(self, interaction: discord.Interaction, button: Button):
+                pass
+
+            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+            async def cancel(self, interaction: discord.Interaction, button: Button):
+                self.value = False
+                await interaction.response.edit_message(view=None)
+                self.stop()
+
 @bot.tree.command(name="ajouter_répète", description="Ajouter un nouveau créneau de répétition pour un morceau")
 @app_commands.describe(
     day="Jour de la répétition",
@@ -291,7 +306,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         blocks, absent, present = list(), list(), list()
 
-        for j in range(3, len(song_info)):
+        for j in range(4, len(song_info)-1):
 
             instrument = instruments[j]
             musicians = song_info[j].split(" ")
@@ -314,7 +329,11 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         if blocks or absent:
 
-            message = discord.Embed(title="Blocages rencontrés")
+            message = discord.Embed(title=f"Blocages rencontrés : {len(present)} ")
+            if len(present) <= 1:
+                message.title += "personne disponible" 
+            else:
+                message.title += f"personnes disponibles"
 
             if absent:
                 absents_message = str()
@@ -334,7 +353,10 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
                 message.add_field(name="Ces personnes ne sont pas disponibles sur ce créneau", value=blocks_message)
 
-            view = ConfirmView()
+            if len(present) > 1:
+                view = ConfirmView()
+            else:
+                view = ConfirmViewImpossible()
             await i.response.send_message(embed=message, view=view)
             await view.wait()
             if not view.value:
