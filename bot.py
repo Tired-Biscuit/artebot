@@ -185,14 +185,14 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
     end="Heure de fin de l'indisponibilité"
 )
 @app_commands.choices(day=[
-    app_commands.Choice(name="Lundi", value=1),
-    app_commands.Choice(name="Mardi", value=2),
-    app_commands.Choice(name="Mercredi", value=3),
-    app_commands.Choice(name="Jeudi", value=4),
-    app_commands.Choice(name="Vendredi", value=5),
-    app_commands.Choice(name="Samedi", value=6),
-    app_commands.Choice(name="Dimanche", value=7),
-    app_commands.Choice(name="Tous", value=8)
+    app_commands.Choice(name="lundi", value=1),
+    app_commands.Choice(name="mardi", value=2),
+    app_commands.Choice(name="mercredi", value=3),
+    app_commands.Choice(name="jeudi", value=4),
+    app_commands.Choice(name="vendredi", value=5),
+    app_commands.Choice(name="samedi", value=6),
+    app_commands.Choice(name="dimanche", value=7),
+    app_commands.Choice(name="tous", value=8)
 ])
 @app_commands.rename(
     day="jour",
@@ -460,22 +460,48 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
         await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
 
 
-@bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisser vide pour consulter vos morceaux.")
+@bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisse vide pour consulter tes morceaux.")
 @app_commands.describe(
-    user="Mentionner la personne désirée (elle ne recevra pas de notification)."
+    user="Mentionner la personne désirée (elle ne recevra pas de notification)",
+    display="Niveau d'information"
 )
 @app_commands.rename(
-    user="membre"
+    user="membre",
+    display="affichage"
 )
+@app_commands.choices(display=[
+    app_commands.Choice(name="simplifié", value=0),
+    app_commands.Choice(name="avancé", value=1),
+    app_commands.Choice(name="complet", value=2)
+])
 
-async def info(i: discord.Interaction, user: discord.User=None):
+async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
     try:
         if user == None:
             uuid = i.user.id
         else:
             uuid = user.id
         title = f"Infos pour {db.get_user_name(uuid)}"
-        message = discord.Embed(title=title, description=db.get_songs_message(uuid))
+        message = discord.Embed(title=title, description=db.get_songs_message(uuid, display))
+        await i.response.send_message(embed=message, ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e), ephemeral=True)
+
+@bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
+@app_commands.describe(
+    user="Mentionner la personne désirée (elle ne recevra pas de notification)"
+)
+@app_commands.rename(
+    user="membre"
+)
+async def profile(i: discord.Interaction, user: discord.User=None):
+    try:
+        if user is None:
+            uuid = i.user.id
+        else:
+            uuid = user.id
+        title = f"Profil de {db.get_user_name(uuid)}"
+        message = discord.Embed(title=title, description=db.get_profile_message(uuid))
         await i.response.send_message(embed=message, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discord.Embed(title="Erreur", description=e), ephemeral=True)

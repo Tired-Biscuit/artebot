@@ -315,14 +315,14 @@ def get_instruments_names() -> list[str]:
 
 
 
-def get_songs_message(musician_uuid: int) -> str:
+def get_songs_message(musician_uuid: int, display:int) -> str:
     email = ""
     try:
         email = run(f"SELECT email FROM User WHERE uuid = '{musician_uuid}'")
         email = email[0][0]
     except Exception as e:
         raise Exception(f"Could not get email: {e.with_traceback(None)}")
-    songs = {}
+
     try:
         result = run(f"""
             SELECT * FROM Song
@@ -346,21 +346,109 @@ def get_songs_message(musician_uuid: int) -> str:
         else:
             text = f"{len(result)} morceaux trouvés :\n"
         instruments_names = get_instruments_names()
-        for song in result:
-            text += f"### {song[0]} — {song[1]}\n"
-            for i in range(4, len(song)-1):
-                if song[i]:
-                    text += "- "
-                    if email in song[i]:
-                        text += f"**"
-                    text += f"{instruments_names[i].capitalize()} :"
-                    if email in song[i]:
-                        text += f"**"
-                    musicians = song[i].split(" ")
-                    for musician in musicians:
+
+
+        if display == 2:
+
+            for song in result:
+                text += f"### {song[0]} — {song[1]}\n"
+                for i in range(4, len(song)-1):
+                    if song[i]:
+                        text += "- "
+                        if email in song[i]:
+                            text += f"**"
+                        text += f"{instruments_names[i].capitalize()} :"
+                        if email in song[i]:
+                            text += f"**"
+                        musicians = song[i].split(" ")
+                        for musician in musicians:
+                            text += f" {get_user_name_from_email(musician)},"
+                        text = text[:-1]
+                        text += "\n"
+        
+        else:
+
+            for song in result:
+
+                if display == 0:
+                    text += f"- **{song[0]}** :"
+                else:
+                    text += f"### {song[0]} — {song[1]}\n- "
+                
+                musician_list = list()
+                for i in range(4, len(song)-1):
+                        if song[i]:
+                            musicians = song[i].split(" ")
+
+                            if email in song[i]:
+                                text += f" {instruments_names[i]}" if display == 0 else f" {instruments_names[i].capitalize()}"
+                                if len(musicians) >= 2:
+                                    text += f" (avec"
+                                    for musician in musicians:
+                                        if musician != email:
+                                            text += f" {get_user_name_from_email(musician)},"
+                                    text = text[:-1] + ")"
+                                text += ","
+                            
+                            musician_list += [musician for musician in musicians if musician not in musician_list]
+
+                text = text[:-1]
+                if display == 1:
+                    text += "\n- Membres :"
+                    for musician in musician_list:
                         text += f" {get_user_name_from_email(musician)},"
                     text = text[:-1]
-                    text += "\n"
+                text += "\n"
+
         return text
     except Exception:
         return traceback.format_exc()
+    
+
+with open("groups.json", "r", encoding="utf-8") as f:
+        groups = json.load(f)
+
+def get_profile_message(musician_uuid: int) -> str:
+    try:
+        info = run(f"SELECT username, email, group_id FROM User WHERE uuid = '{musician_uuid}'")
+        info = info[0]
+    except Exception as e:
+        raise Exception(f"Could not get email: {e.with_traceback(None)}")
+    
+    email = info[1]
+    number_of_songs = run(f"""
+            SELECT COUNT(*) FROM Song
+            WHERE voice LIKE '%{email}%'
+            OR guitar LIKE '%{email}%'
+            OR keys LIKE '%{email}%'
+            OR drums LIKE '%{email}%'
+            OR bass LIKE '%{email}%'
+            OR violin LIKE '%{email}%'
+            OR cello LIKE '%{email}%'
+            OR contrabass LIKE '%{email}%'
+            OR accordion LIKE '%{email}%'
+            OR flute LIKE '%{email}%'
+            OR saxophone LIKE '%{email}%'
+            OR brass LIKE '%{email}%';
+        """)[0][0]
+
+    number_of_constraints = run(f"SELECT COUNT(*) FROM MusicianConstraint WHERE musician_uuid = {musician_uuid}")[0][0]
+
+    group_text = ""
+    if info[2]:
+        for group in groups:
+            if groups[group] == info[2]:
+                group_text = group
+                break
+    else:
+        group_text = "extérieur"
+
+    if not group_text:
+        raise ValueError("Groupe non existant")
+    
+    return f"""- Pseudo : **{info[0]}**\n
+               - Email : **{info[1]}**\n
+               - Groupe : **{group_text}**\n
+               - Nombre de morceaux : **{number_of_songs}**\n
+               - Nombre de contraintes ajoutées : **{number_of_constraints}**
+            """
