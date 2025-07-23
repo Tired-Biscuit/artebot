@@ -80,11 +80,11 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
         # Add user to the database
         db.add_user(str(i.user.id), pseudo, mail, group.value if group else "")
 
-        message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
+        message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !", colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -107,7 +107,7 @@ async def mail(i: discord.Interaction, mail:str):
         await i.response.send_message("Adresse mail modifiée avec succès !", ephemeral=True)
         
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
@@ -126,7 +126,7 @@ async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
         await i.response.send_message("Groupe modifié avec succès !", ephemeral=True)
         
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
@@ -143,7 +143,7 @@ async def pseudo(i: discord.Interaction, pseudo:str):
         await i.response.send_message("Pseudo modifié avec succès !", ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -181,11 +181,11 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
         else:
             raise ValueError("Cette contrainte existe déjà !")
 
-        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.")
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.", colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -237,12 +237,13 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
 
         message = discord.Embed(
             title="Contrainte ajoutée",
-            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès."
+            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.",
+            colour=tools.get_embed_colour()
         )
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -340,7 +341,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         if blocks or absent:
 
-            message = discord.Embed(title=f"Blocages rencontrés : {len(present)} ")
+            message = discord.Embed(title=f"Blocages rencontrés : {len(present)} ", colour=tools.get_embed_colour())
             if len(present) <= 1:
                 message.title += "personne disponible" 
             else:
@@ -378,7 +379,8 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         message = discord.Embed(
             title="Répétition ajoutée",
-            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès."
+            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.",
+            colour=tools.get_embed_colour()
         )
 
         present_message = str()
@@ -396,7 +398,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             await i.response.send_message(content=ping, embed=message)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         try:
             await i.response.send_message(embed=message, ephemeral=True)
         except:
@@ -419,7 +421,7 @@ async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
         await i.response.send_message(embed=view.embed_page(), view=view)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e)
+        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command()
@@ -442,9 +444,28 @@ async def add_admin(i: discord.Interaction, user: discord.User):
             tools.add_admin(user.id)
             await i.response.send_message(content="Opération effectuée", ephemeral=True)
         except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
         await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
+
+@bot.tree.command(name="couleur_intégrations", description="changer la couleur des intégrations Discord")
+@app_commands.describe(
+    colour="Nouvelle couleur (format hexadécimal XXXXXX)"
+)
+@app_commands.rename(
+    colour="couleur"
+)
+async def change_embed_colour(i: discord.Interaction, colour: str):
+    if i.user.id in tools.get_admins():
+        try:
+            tools.change_embed_colour(colour)
+            await i.response.send_message(embed=discord.Embed(description="Opération effectuée", colour=int(colour, 16)), ephemeral=True)
+
+        except Exception:
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
+    else:
+        await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
+
 
 @bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
 @app_commands.describe(
@@ -463,7 +484,7 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
                 tools.remove_admin(user.id)
                 await i.response.send_message(content="Opération effectuée", ephemeral=True)
             except Exception:
-                await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+                await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
         await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
@@ -497,10 +518,10 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
                 raise ValueError("Tu n'es pas dans la base de données ! (`/connexion`)")
             else:
                 raise ValueError("Cette personne ne se trouve pas dans la base de données !")
-        message = discord.Embed(title=title, description=db.get_songs_message(uuid, display))
+        message = discord.Embed(title=title, description=db.get_songs_message(uuid, display), colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
     except Exception as e:
-        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e), ephemeral=True)
+        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
 
 @bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
 @app_commands.describe(
@@ -523,10 +544,10 @@ async def profile(i: discord.Interaction, user: discord.User=None):
             else:
                 raise ValueError("Cette personne ne se trouve pas dans la base de données !")
 
-        message = discord.Embed(title=title, description=db.get_profile_message(uuid))
+        message = discord.Embed(title=title, description=db.get_profile_message(uuid), colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
     except Exception as e:
-        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e), ephemeral=True)
+        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
 
 
 @bot.tree.command(name="actualiser", description="Met à jour un calendrier")
@@ -543,9 +564,9 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
         db.run("DELETE FROM Song;")
         for setlist_id in tools.get_setlists_ids():
             db.add_setlist(setlist_id, 28)
-        message=discord.Embed(title="Setlist mise à jour")
+        message=discord.Embed(title="Setlist mise à jour", colour=tools.get_embed_colour())
     else:
-        message=discord.Embed(title=calendar.value)
+        message=discord.Embed(title=calendar.value, colour=tools.get_embed_colour())
     await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -561,12 +582,12 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
     if setlist_link != "":
         try:
             tools.add_setlist(googleutils.get_spreadsheet_id(setlist_link))
-            message = discord.Embed(title="Setlist ajoutée")
+            message = discord.Embed(title="Setlist ajoutée", colour=tools.get_embed_colour())
             await i.response.send_message(embed=message, ephemeral=True)
         except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Erreur", description=traceback.format_exc()), ephemeral=True)
+            await i.response.send_message(embed=discord.Embed(title="Erreur", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
-        await i.response.send_message(embed=discord.Embed(title="Paramètre vide!"), ephemeral=True)
+        await i.response.send_message(embed=discord.Embed(title="Paramètre vide!", colour=tools.get_embed_colour()), ephemeral=True)
 
 
 @bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
@@ -587,7 +608,7 @@ async def reset_database(i: discord.Interaction):
             db.init()
             await i.response.send_message(content="Opération effectuée", ephemeral=True)
         except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
         await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
@@ -596,7 +617,7 @@ async def reset_database(i: discord.Interaction):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def order_66(i: discord.Interaction):
-    await i.response.send_message(embed=discord.Embed(title="Trooper!", description="Execute order 66."), ephemeral=True)
+    await i.response.send_message(embed=discord.Embed(title="Trooper!", description="Execute order 66.", colour=tools.get_embed_colour()), ephemeral=True)
 
 @bot.command()
 async def foo(ctx):
@@ -622,7 +643,7 @@ async def update(ctx, opt=""):
         title = "Mise à jour impossible ❌"
         logs_data["update"]["failed"] += 1
     finally:
-        message = discord.Embed(title=title, description=text)
+        message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
         await ctx.author.send(embed=message)
 
 @bot.command()
@@ -630,7 +651,7 @@ async def logs(ctx):
     title = "Logs"
     text = f"- info"+"\n"+f"  - réussis : {logs_data['info']['successful']}"+"\n"+f"  - ratés : {logs_data['info']['failed']}"+"\n"+f"- update"+"\n"+f"  - réussis : {logs_data['update']['successful']}"+"\n"+f"  - ratés : {logs_data['update']['failed']}"+"\n"+f"- logs : {logs_data['logs']}"
     logs_data["logs"] += 1
-    message = discord.Embed(title=title, description=text)
+    message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
     await ctx.author.send(embed=message)
 
 bot.run(TOKEN)
