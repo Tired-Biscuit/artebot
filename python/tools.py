@@ -16,7 +16,7 @@ DAY_DURATION = 86400
 
 def create_data_file():
     if not os.path.exists("data.json"):
-        data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[]}
+        data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
         with open("data.json", "w") as f:
             f.write(json.dumps(data))
     else:
@@ -534,4 +534,22 @@ def remove_setlist(index: int):
         if data != None:
             with open("data.json", "w") as f:
                 data["setlists"].delete(index)
+                f.write(json.dumps(data))
+
+def get_embed_colour():
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            colour = json.loads(f.read())["embed_colour"]
+            return colour
+    else:
+        return 10070709
+
+def change_embed_colour(colour: str):
+    """Argument sous format héxadécimal XXXXXX"""
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None:
+            with open("data.json", "w") as f:
+                data["embed_colour"] = int(colour, 16)
                 f.write(json.dumps(data))
