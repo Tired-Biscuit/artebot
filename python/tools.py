@@ -138,7 +138,7 @@ def parse_date(date: str) -> str:
                     month = month[:-1]
                 month = month_map[month]
             except:
-                raise ValueError("Date could not be parsed.")
+                raise ValueError(f"« {date} » n'est pas reconnu comme une date valide.")
 
         if year is None:
             year = str(now.year)
@@ -168,7 +168,7 @@ def parse_date(date: str) -> str:
         return (now + timedelta(days=2)).strftime("%Y%m%d")
     
 
-    raise ValueError("Date could not be parsed.")
+    raise ValueError(f"« {date} » n'est pas reconnu comme une date valide.")
 
 
 def parse_time(time_string: str) -> str:
@@ -199,7 +199,7 @@ def parse_time(time_string: str) -> str:
     if time_string in ["Midi", "Noon"]:
         return "1200"
 
-    raise ValueError("Time could not be parsed.")
+    raise ValueError(f"« {time_string} » n'est pas reconnu comme une heure valide.")
 
 def parse_duration(duration: str) -> int:
     """
@@ -221,6 +221,8 @@ def parse_duration(duration: str) -> int:
     if match:
         h, m = match.groups()
         return 3600*int(h) + 60*int(m) if m is not None else 3600*int(h)
+    
+    raise ValueError(f"« {duration} » n'est pas reconnu comme une durée valide.")
 
 def parse_mail(mail: str) -> str:
     """
@@ -229,7 +231,7 @@ def parse_mail(mail: str) -> str:
     mail = mail.split("@")[0].split(".")
     
     if len(mail) != 2:
-        raise ValueError("Format de l'adresse mail incorrecte...")
+        raise ValueError(f"« {mail} » n'est pas reconnu comme une adresse mail valide.")
 
     return mail[0].capitalize() + " " + mail[1].upper()
 
@@ -253,7 +255,10 @@ def date_to_string(date: str) -> str:
     if str(today + 2) == date:
         return "**après-demain**"
 
-    return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
+    try:
+        return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
+    except:
+        raise ValueError(f"« {date} » n'est pas sous le format YYYYMMDD.")
 
 def formatted_time_span_string(start: str, end: str) -> str:
     """
@@ -263,6 +268,10 @@ def formatted_time_span_string(start: str, end: str) -> str:
         start (str): The start time of the span, in HHMM format
         end (str): The end time of the span, in HHMM format
     """
+
+    if len(start) != 4 or len(end) != 4:
+        raise ValueError(f"« {start} » et/ou « {end} » n'est pas sous le format HHMM.")
+
     res = ""
     
     if start == "0000" and end == "2359":
@@ -306,6 +315,10 @@ def formatted_hhmm(time_string: str) -> str:
     Args:
         time (str): The time, in HHMM format
     """
+
+    if len(time_string) != 4:
+        raise ValueError(f"« {time_string} » n'est pas sous le format HHMM.")
+
     if time_string == "1200":
         return "midi"
 

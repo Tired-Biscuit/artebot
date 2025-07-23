@@ -71,9 +71,12 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
     try:
         # Check if user is already in the database
         if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("tu es déjà dans la base de données !")
+            raise ValueError("Tu es déjà dans la base de données !")
 
-        pseudo = tools.parse_mail(mail)
+        try:
+            pseudo = tools.parse_mail(mail)
+        except:
+            raise ValueError(f"« {mail} » n'est pas une adresse mail valide.")
         # Add user to the database
         db.add_user(str(i.user.id), pseudo, mail, group.value if group else "")
 
@@ -81,7 +84,7 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout : {str(e)}")
+        message = discord.Embed(title="Erreur", description=e)
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -93,13 +96,19 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
 async def mail(i: discord.Interaction, mail:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError()
+            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
         
+        try:
+            tools.parse_mail(mail)
+        except:
+            raise ValueError("Format de l'adresse mail incorrect !")
+
         db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Adresse mail modifiée avec succès !", ephemeral=True)
         
-    except:
-        await i.response.send_message("Erreur lors du changement de l'adresse mail, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=e)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
@@ -111,13 +120,14 @@ async def mail(i: discord.Interaction, mail:str):
 async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError()
+            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
         
         db.run(f"UPDATE User SET group_id = '{group.value if group else ''}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Groupe modifié avec succès !", ephemeral=True)
         
-    except:
-        await i.response.send_message("Erreur lors du changement de groupe, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=e)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
@@ -127,13 +137,14 @@ async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
 async def pseudo(i: discord.Interaction, pseudo:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError()
-
+            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
+        
         db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Pseudo modifié avec succès !", ephemeral=True)
 
-    except:
-        await i.response.send_message("Erreur lors du changement de pseudo, fais-tu partie de la base de données ? (`/connexion`)", ephemeral=True)
+    except Exception as e:
+        message = discord.Embed(title="Erreur", description=e)
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
@@ -152,7 +163,7 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
     try:
         name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
         if not name:
-            raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         name = name[0][0]
 
@@ -168,13 +179,13 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
         if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}'"):
             db.add_punctual_constraint(i.user.id, start_unix, end_unix)
         else:
-            raise ValueError("cette contrainte existe déjà !")
+            raise ValueError("Cette contrainte existe déjà !")
 
         message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.")
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
+        message = discord.Embed(title="Erreur", description=e)
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -204,7 +215,7 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
     try:
         name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
         if not name:
-            raise ValueError(f"tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
+            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
 
         name = name[0][0]
 
@@ -217,7 +228,7 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}' AND week_day = {day.value}"):
             db.add_recurring_constraint(i.user.id, start_unix, end_unix, day.value)
         else:
-            raise ValueError("cette contrainte existe déjà !")
+            raise ValueError("Cette contrainte existe déjà !")
 
         if day.value == 8:
             day_string = "jours"
@@ -231,7 +242,7 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la contrainte : {str(e)}")
+        message = discord.Embed(title="Erreur", description=e)
         await i.response.send_message(embed=message, ephemeral=True)
 
 
@@ -272,7 +283,7 @@ class ConfirmViewImpossible(View):
     day="Jour de la répétition",
     start="Heure de début de la répétition",
     duration="Durée de la répétition",
-    song="Si vous ne vous trouvez pas dans un fil, nom du morceau concerné par la répétition"
+    song="Si tu ne te trouves pas dans un fil, nom du morceau concerné par la répétition"
 )
 @app_commands.rename(
     day="jour",
@@ -286,13 +297,13 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
                 song = i.channel.name
             else:
-                raise EnvironmentError("tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
+                raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
 
         song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%'")
 
         if not song_info:
-            raise ValueError(f"morceau {song} non trouvé !")
+            raise ValueError(f"Morceau « {song} » non trouvé !")
 
         song_info = song_info[0]
 
@@ -313,7 +324,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
             for musician in musicians:
                 if musician and musician not in blocks and musician not in absent and musician not in present:
-
+                    
                     uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
                     if uuid:
                         uuid, username = uuid[0]
@@ -385,7 +396,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             await i.response.send_message(content=ping, embed=message)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=f"Une erreur est survenue lors de l'ajout de la répétition : {str(e)}")
+        message = discord.Embed(title="Erreur", description=e)
         try:
             await i.response.send_message(embed=message, ephemeral=True)
         except:
@@ -402,16 +413,13 @@ async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
             ORDER BY start_time ASC, week_day ASC;
         """)
         if not constraints:
-            raise ValueError(f"Aucune donnée trouvée.")
+            raise ValueError(f"Pas de contraintes trouvées.")
 
-        if len(constraints[0]) > 0:
-            view = discordutils.ConstraintsPaginationView(constraints)
-            await i.response.send_message(embed=view.embed_page(), view=view)
-        else:
-            raise Exception("Pas de contraintes trouvées.")
+        view = discordutils.ConstraintsPaginationView(constraints)
+        await i.response.send_message(embed=view.embed_page(), view=view)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=f"{str(e)}")
+        message = discord.Embed(title="Erreur", description=e)
         await i.response.send_message(embed=message, ephemeral=True)
 
 @bot.tree.command()
@@ -420,7 +428,7 @@ async def pages(i:discord.Interaction):
     view = discordutils.PaginationView(pages)
     await i.response.send_message(embed=view.embed_page(), view=view)
 
-@bot.tree.command(name="ajouter_admin", description="enregistrer un utilisateur comme admin")
+@bot.tree.command(name="ajouter_admin", description="enregistrer quelqu'un comme admin")
 @app_commands.describe(
     user="Mentionner la personne concernée"
 )
@@ -436,7 +444,7 @@ async def add_admin(i: discord.Interaction, user: discord.User):
         except Exception:
             await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
     else:
-        await i.response.send_message(content="Vous n'êtes pas admin :(", ephemeral=True)
+        await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
 
 @bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
 @app_commands.describe(
@@ -449,7 +457,7 @@ async def add_admin(i: discord.Interaction, user: discord.User):
 async def remove_admin(i: discord.Interaction, user: discord.User):
     if i.user.id in tools.get_owners():
         if i.user.id == user.id:
-            await i.response.send_message(content="Vous ne pouvez pas vous retirer les droits", ephemeral=True)
+            await i.response.send_message(content="Tu ne peux pas te retirer les droits", ephemeral=True)
         else:
             try:
                 tools.remove_admin(user.id)
@@ -457,7 +465,7 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
             except Exception:
                 await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
     else:
-        await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
+        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
 
 @bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisse vide pour consulter tes morceaux.")
@@ -477,11 +485,18 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
 
 async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
     try:
-        if user == None:
+        if user is None:
             uuid = i.user.id
         else:
             uuid = user.id
-        title = f"Infos pour {db.get_user_name(uuid)}"
+
+        try:
+            title = f"Infos pour {db.get_user_name(uuid)}"
+        except:
+            if user is None:
+                raise ValueError("Tu n'es pas dans la base de données ! (`/connexion`)")
+            else:
+                raise ValueError("Cette personne ne se trouve pas dans la base de données !")
         message = discord.Embed(title=title, description=db.get_songs_message(uuid, display))
         await i.response.send_message(embed=message, ephemeral=True)
     except Exception as e:
@@ -500,7 +515,14 @@ async def profile(i: discord.Interaction, user: discord.User=None):
             uuid = i.user.id
         else:
             uuid = user.id
-        title = f"Profil de {db.get_user_name(uuid)}"
+        try:
+            title = f"Profil de {db.get_user_name(uuid)}"
+        except:
+            if user is None:
+                raise ValueError("Tu n'es pas dans la base de données ! (`/connexion`)")
+            else:
+                raise ValueError("Cette personne ne se trouve pas dans la base de données !")
+
         message = discord.Embed(title=title, description=db.get_profile_message(uuid))
         await i.response.send_message(embed=message, ephemeral=True)
     except Exception as e:
@@ -517,7 +539,6 @@ async def profile(i: discord.Interaction, user: discord.User=None):
 @app_commands.choices(calendar=calendar_choices)
 
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
-    title = f"Mise à jour du calendrier {calendar.value}"
     if calendar.value == "Spreadsheets":
         db.run("DELETE FROM Song;")
         for setlist_id in tools.get_setlists_ids():
@@ -557,7 +578,7 @@ async def delete_setlist(i: discord.Interaction):
     await i.response.send_message(embed=view.embed_page(), view=view)
 
 
-@bot.tree.command(name="reinit_db", description="(owner-only) réinitialise la base de données")
+@bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
 #TODO ajouter un écran de confirmation
 async def reset_database(i: discord.Interaction):
     if i.user.id in tools.get_owners():
@@ -568,7 +589,7 @@ async def reset_database(i: discord.Interaction):
         except Exception:
             await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc()), ephemeral=True)
     else:
-        await i.response.send_message(content="Vous n'êtes pas owner :(", ephemeral=True)
+        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
 
 @bot.tree.command(name="order_66", description="Execute order 66")
