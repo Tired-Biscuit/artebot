@@ -624,6 +624,47 @@ async def delete_setlist(i: discord.Interaction):
     view.check_buttons_availability()
     await i.response.send_message(embed=view.embed_page(), view=view)
 
+@bot.tree.command(name="créer_fils", description="Créer un fil par morceau dans ce salon")
+
+async def create_threads(i: discord.Interaction):
+    try:
+        if i.user.id not in tools.get_admins():
+            raise PermissionError("Tu n'es pas admin :(")
+        
+        try:
+            songs = db.run("SELECT * FROM Song")
+        except:
+            raise("Problème avec les morceaux présents...")
+        
+        await i.response.send_message(f"{len(songs)} fils en cours de création...", ephemeral=True)
+
+        for song in songs:
+            print(song[0])
+            thread = await i.channel.create_thread(
+                name=song[0],
+                auto_archive_duration=10080,
+                reason="Fil pour répétition"
+            )
+            musicians, not_in_db = db.get_song_musicians(song)
+            text = str()
+            for musician in musicians:
+                text += f"<@{musician}> "
+
+            if not text:
+                await thread.send("Aucun musicien ne se trouve dans la base de données ! Nan mais c'est quoi ça ?")
+            else:
+                await thread.send(text)
+                if not_in_db:
+                    text = f"\n Les personnes suivantes ne sont pas dans la base de données du bot ! Mentionnez-les et demandez leur de se connecter avec `/connexion` !\n"
+                    for musician in not_in_db:
+                        text += f"- {tools.parse_mail(musician)}\n"                
+                
+                    await thread.send(text)
+            
+    except Exception as e:
+        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+
+
 
 @bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
 #TODO ajouter un écran de confirmation
@@ -637,7 +678,6 @@ async def reset_database(i: discord.Interaction):
             await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
         await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
-
 
 @bot.tree.command(name="order_66", description="Execute order 66")
 @discord.app_commands.guild_only()

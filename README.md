@@ -12,7 +12,7 @@ Python 3.11 minimum (venv recommended)
 
 run the following to install any dependency in requirements.txt:
 
-```
+```sh
 pip install -r requirements.txt
 ```
 
@@ -28,7 +28,7 @@ To get the credentials.json, you need to create a OAuth 2.0 Client ID as 'Deskto
 
 In the root of the project, create a .env file (or remove the .example at the end of the commited file) with the following content:
 
-```
+```py
 DISCORD_TOKEN=... # Token for the production-ready bot here
 DEV_TOKEN=... # Token for the beta bot here
 SCRIPT_ID=... # Id of the API Google Apps script containing the script (in script.js)
