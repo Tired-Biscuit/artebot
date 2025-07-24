@@ -479,3 +479,24 @@ def get_profile_message(musician_uuid: int) -> str:
                - Nombre de morceaux : **{number_of_songs}**\n
                - Nombre de contraintes ajoutées : **{number_of_constraints}**
             """
+
+def get_song_musicians(song:list) -> list[int]:
+    """""
+    Returns a list of IDs of musicians playing on the song, as well as a list of muscians not in the database
+    """
+    musicians = list()
+    not_in_db = list()
+
+    for inst in song[3:-1]:
+        for musician in inst.split(" "):
+
+            if musician:
+                uuid = run(f"SELECT uuid FROM User WHERE email = '{musician}'")
+                
+                if uuid and uuid[0][0] not in musicians:
+                    musicians.append(uuid[0][0])
+                
+                if not uuid and musician not in not_in_db:
+                    not_in_db.append(musician)
+
+    return musicians, not_in_db

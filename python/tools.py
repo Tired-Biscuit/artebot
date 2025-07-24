@@ -546,7 +546,7 @@ def get_embed_colour():
         return 10070709
 
 def change_embed_colour(colour: str):
-    """Argument sous format héxadécimal XXXXXX"""
+    """Hexadecimal format"""
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
             data = json.loads(f.read())
