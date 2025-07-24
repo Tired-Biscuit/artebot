@@ -24,7 +24,7 @@ def create_data_file():
         with open("data.json", "r") as f:
             data = f.read()
         if data == "":
-            data = {"calendar_ids": [], "setlists": [], "admins": [], "owners": []}
+            data = {"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
             with open("data.json", "w") as f:
                 f.write(json.dumps(data))
 
@@ -231,6 +231,7 @@ def parse_mail(mail: str) -> str:
     mail = mail.split("@")[0].split(".")
     
     if len(mail) != 2:
+        return mail
         raise ValueError(f"« {mail} » n'est pas reconnu comme une adresse mail valide.")
 
     return mail[0].capitalize() + " " + mail[1].upper()

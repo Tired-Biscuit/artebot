@@ -403,7 +403,34 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
         return text
     except Exception:
         return traceback.format_exc()
-    
+
+def get_song_info_message(song: str) -> tuple:
+        song_info = run(f"""
+            SELECT * FROM Song WHERE title LIKE '%{song}%'
+        """)
+
+        if not song_info:
+            raise ValueError(f"Morceau « {song} » non trouvé !")
+
+        song_info = song_info[0]
+
+        instruments_names = get_instruments_names()
+
+        text = str()
+
+        for i in range(3, len(song_info)-1):
+            if song_info[i]:
+                text += f"- {instruments_names[i].capitalize()} :"
+                musicians = song_info[i].split(" ")
+                for musician in musicians:
+                    text += f" {get_user_name_from_email(musician)},"
+                text = text[:-1]
+                text += "\n"
+        
+        return f"{song_info[0]} — {song_info[1]}", text
+
+
+
 
 with open("groups.json", "r", encoding="utf-8") as f:
         groups = json.load(f)
