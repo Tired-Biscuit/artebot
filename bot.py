@@ -523,6 +523,32 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
     except Exception as e:
         await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
 
+@bot.tree.command(name="morceau", description="obtenir des informations concernant un morceau en particulier.")
+@app_commands.describe(
+    song="Nom du morceau (peut être vide si tu te trouves dans un fil portant le nom du morceau !)"
+)
+@app_commands.rename(
+    song="morceau"
+)
+async def song(i: discord.Interaction, song: str=None):
+        try:
+            if song is None:
+                if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
+                    song = i.channel.name
+                else:
+                    raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
+
+                title, desc = db.get_song_info_message(song)
+                message = discord.Embed(title=title, description=desc, colour=tools.get_embed_colour())
+                await i.response.send_message(embed=message, ephemeral=True)
+
+        
+        except Exception as e:
+            await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+
+
+
+
 @bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
 @app_commands.describe(
     user="Mentionner la personne désirée (elle ne recevra pas de notification)"
