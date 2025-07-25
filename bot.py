@@ -301,7 +301,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
                 raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
 
-        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%'")
+        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%';")
 
         if not song_info:
             raise ValueError(f"Morceau « {song} » non trouvé !")
@@ -325,8 +325,8 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
             for musician in musicians:
                 if musician and musician not in blocks and musician not in absent and musician not in present:
-                    
-                    uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}'")
+
+                    uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}';")
                     if uuid:
                         uuid, username = uuid[0]
                         blocking_events = db.request_blocking_events(start_time, duration, uuid)
@@ -665,6 +665,48 @@ async def create_threads(i: discord.Interaction):
         await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
 
 
+@bot.tree.command(name="trouver_repète", description="Trouve les 5 prochains créneaux possibles pour répéter un morceau")
+@app_commands.describe(
+    song="Nom du morceau (laisser vide si vous êtes dans le thread correspondant)"
+)
+@app_commands.rename(
+    song="morceau"
+)
+async def find_rehearsal(i: discord.Interaction, song: str = None):
+    try:
+        if song is None:
+            if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
+                song = i.channel.name
+            else:
+                raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
+        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%';")[0]
+        musicians_uuids = []
+        unregistered_users = []
+        for field in song_info[4:-1]:
+            for email in field.split(" "):
+                if len(email) > 17: # TODO valid email
+                    value = db.run(f"SELECT uuid FROM User WHERE email = '{email}';")
+                    if len(value) > 0:
+                        musicians_uuids.append(value[0][0])
+                    else:
+                        unregistered_users.append(email)
+
+        start_time = int((time.time()//3600+1)*3600)
+        if start_time%tools.DAY_DURATION >= 64800:
+            start_time = int((start_time//tools.DAY_DURATION + 1)*tools.DAY_DURATION + 8*3600) # The next day at 8 AM
+
+        rehearsals = []
+        while len(rehearsals) < 5:
+            for musician_uuid in musicians_uuids:
+                if len(db.request_blocking_events(start_time, 3600, musician_uuid)) == 0:
+                    rehearsals.append(start_time)
+            start_time += 3600
+
+        text = f"""Recherche à partir de {time.strftime("%d/%m %H:%M", time.localtime(start_time))}\nRésultats:\n{[time.strftime("%d/%m %H:%M", time.localtime(value)) for value in rehearsals]}"""
+
+        await i.response.send_message(content=text)
+    except Exception as e:
+        raise e
 
 @bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
 #TODO ajouter un écran de confirmation
