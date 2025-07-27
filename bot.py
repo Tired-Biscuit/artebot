@@ -13,6 +13,7 @@ from discord.ui import View, Button
 import python.db as db
 import python.discordutils as discordutils
 import python.googleutils as googleutils
+import asyncio
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -538,9 +539,9 @@ async def song(i: discord.Interaction, song: str=None):
                 else:
                     raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
-                title, desc = db.get_song_info_message(song)
-                message = discord.Embed(title=title, description=desc, colour=tools.get_embed_colour())
-                await i.response.send_message(embed=message, ephemeral=True)
+            title, desc = db.get_song_info_message(song)
+            message = discord.Embed(title=title, description=desc, colour=tools.get_embed_colour())
+            await i.response.send_message(embed=message, ephemeral=True)
 
         
         except Exception as e:
@@ -586,6 +587,9 @@ async def profile(i: discord.Interaction, user: discord.User=None):
 @app_commands.choices(calendar=calendar_choices)
 
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+
+    await i.response.defer()
+
     if calendar.value == "Spreadsheets":
         db.run("DELETE FROM Song;")
         for setlist_id in tools.get_setlists_ids():
@@ -593,7 +597,8 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
         message=discord.Embed(title="Setlist mise à jour", colour=tools.get_embed_colour())
     else:
         message=discord.Embed(title=calendar.value, colour=tools.get_embed_colour())
-    await i.response.send_message(embed=message, ephemeral=True)
+
+    await i.followup.send(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
@@ -636,15 +641,29 @@ async def create_threads(i: discord.Interaction):
         except:
             raise("Problème avec les morceaux présents...")
         
-        await i.response.send_message(f"{len(songs)} fils en cours de création...", ephemeral=True)
+        existing_threads = [thread.name for thread in i.channel.threads]
+        songs = [song for song in songs if song[0] not in existing_threads]
 
+        if not songs:
+            await i.response.send_message("Pas de fils à créer !", ephemeral=True)
+        else:
+            await i.response.defer(thinking=False)
+            await i.edit_original_response(content=f"0/{len(songs)} fil créé...")
+
+
+        k = 0
         for song in songs:
-            print(song[0])
+            k += 1
             thread = await i.channel.create_thread(
                 name=song[0],
                 auto_archive_duration=10080,
                 reason="Fil pour répétition"
             )
+            if k != 1: 
+                await i.edit_original_response(content=f"{k}/{len(songs)} fils créés... ({song[0]})")
+            else:
+                await i.edit_original_response(content=f"{k}/{len(songs)} fil créé... ({song[0]})")
+
             musicians, not_in_db = db.get_song_musicians(song)
             text = str()
             for musician in musicians:
@@ -660,10 +679,22 @@ async def create_threads(i: discord.Interaction):
                         text += f"- {tools.parse_mail(musician)}\n"                
                 
                     await thread.send(text)
+        
+        if songs:
+            if len(songs) != 1:
+                await i.followup.send(f"{k} fils créés avec succès !", ephemeral=True)
+            else:
+                await i.followup.send(f"{k} fil créé avec succès !", ephemeral=True)
+            
+            await i.delete_original_response()
+
             
     except Exception as e:
-        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
-
+        try:
+            await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+        except:
+            await i.followup.send(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+  
 
 
 @bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
