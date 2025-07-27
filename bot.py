@@ -13,7 +13,6 @@ from discord.ui import View, Button
 import python.db as db
 import python.discordutils as discordutils
 import python.googleutils as googleutils
-import asyncio
 
 DEBUG = True # Toggle the dev or production bot
 
