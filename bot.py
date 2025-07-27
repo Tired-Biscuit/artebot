@@ -628,6 +628,25 @@ async def delete_setlist(i: discord.Interaction):
     view.check_buttons_availability()
     await i.response.send_message(embed=view.embed_page(), view=view)
 
+class ThreadCreationView(View):
+            def __init__(self):
+                super().__init__(timeout=60)
+                self.value = None
+
+            @discord.ui.button(label="Créer", style=discord.ButtonStyle.success)
+            async def create(self, interaction: discord.Interaction, button: Button):
+                self.value = True
+                await interaction.response.edit_message(view=None)
+                self.stop()
+
+            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+            async def cancel(self, interaction: discord.Interaction, button: Button):
+                self.value = False
+                await interaction.response.edit_message(view=None)
+                self.stop()
+
+
+
 @bot.tree.command(name="créer_fils", description="Créer un fil par morceau dans ce salon")
 
 async def create_threads(i: discord.Interaction):
@@ -641,36 +660,66 @@ async def create_threads(i: discord.Interaction):
             raise("Problème avec les morceaux présents...")
         
         existing_threads = [thread.name for thread in i.channel.threads]
-        songs = [song for song in songs if song[0] not in existing_threads]
+        songs = [list(song) for song in songs if song[0] not in existing_threads]
 
         if not songs:
             await i.response.send_message("Pas de fils à créer !", ephemeral=True)
         else:
             await i.response.defer(thinking=False)
-            await i.edit_original_response(content=f"0/{len(songs)} fil créé...")
 
+            desc = str()
+            for song in songs:
+                desc += f"- {song[0]} ({song[1]})\n"
+            desc = desc[:-1]
 
-        k = 0
-        for song in songs:
-            k += 1
-            thread = await i.channel.create_thread(
-                name=song[0],
-                auto_archive_duration=10080,
-                reason="Fil pour répétition"
-            )
-            if k != 1: 
-                await i.edit_original_response(content=f"{k}/{len(songs)} fils créés... ({song[0]})")
+            view = ThreadCreationView()
+            if len(songs) != 1:
+                await i.edit_original_response(embed=discord.Embed(title=f"{len(songs)} fils manquants", description=desc), view=view)
             else:
-                await i.edit_original_response(content=f"{k}/{len(songs)} fil créé... ({song[0]})")
+                await i.edit_original_response(embed=discord.Embed(title=f"{len(songs)} fils manquants", description=desc, view=view))
 
-            musicians, not_in_db = db.get_song_musicians(song)
+            await view.wait()
+            if not view.value:
+                await i.delete_original_response()
+                return
+
+            await i.edit_original_response(embed=discord.Embed(title=f"0/{len(songs)} fil créé...", description=desc))
+
+
+        created = 0
+        for k in range(len(songs)):
+            musicians, not_in_db = db.get_song_musicians(songs[k])
+            if musicians:
+                thread = await i.channel.create_thread(
+                    name=songs[k][0],
+                    auto_archive_duration=10080,
+                    reason="Fil pour répétition"
+                )
+                songs[k][0] = ":white_check_mark: " + songs[k][0]
+                created += 1
+            else:
+                songs[k][0] = ":x: (pas de musiciens dans la DB) " + songs[k][0]
+                
+
+            desc = str()
+            for j in range(len(songs)):
+                if j == k+1:
+                    desc += f"- **{songs[j][0]} ({songs[j][1]})**\n"
+                else:
+                    desc += f"- {songs[j][0]} ({songs[j][1]})\n"
+
+            desc = desc[:-1]
+
+            if created > 1:
+                await i.edit_original_response(embed=discord.Embed(title=f"{created}/{len(songs)} fils créés...", description=desc))
+            else:
+                await i.edit_original_response(embed=discord.Embed(title=f"{created}/{len(songs)} fil créé...", description=desc))
+
             text = str()
             for musician in musicians:
                 text += f"<@{musician}> "
 
-            if not text:
-                await thread.send("Aucun musicien ne se trouve dans la base de données ! Nan mais c'est quoi ça ?")
-            else:
+            if musicians:
                 await thread.send(text)
                 if not_in_db:
                     text = f"\n Les personnes suivantes ne sont pas dans la base de données du bot ! Mentionnez-les et demandez leur de se connecter avec `/connexion` !\n"
@@ -680,13 +729,11 @@ async def create_threads(i: discord.Interaction):
                     await thread.send(text)
         
         if songs:
-            if len(songs) != 1:
-                await i.followup.send(f"{k} fils créés avec succès !", ephemeral=True)
+            if created > 1:
+                await i.followup.send(f"{created} fils créés avec succès !", ephemeral=True)
             else:
-                await i.followup.send(f"{k} fil créé avec succès !", ephemeral=True)
+                await i.followup.send(f"{created} fil créé avec succès !", ephemeral=True)
             
-            await i.delete_original_response()
-
             
     except Exception as e:
         try:
