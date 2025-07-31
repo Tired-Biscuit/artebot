@@ -234,12 +234,18 @@ def add_recurring_constraint(musician_uuid: str, start_time: int, end_time: int,
     command = f"INSERT INTO MusicianConstraint VALUES('{musician_uuid}', '', '{start_time}', '{end_time}', {week_day});"
     return run(command)
 
-def request_constraints(musician_uuid: str) -> list[tuple]:
+def request_constraints(musician_uuid: int) -> list[list[int]]:
     """
-    Returns all constraints from musician's Discord UUID
+    Returns start_time, end_time, week_day of constraints from musician's Discord UUID ordered by time
     """
 
-    return run(f"SELECT start_time, end_time FROM MusicianConstraint WHERE musician_uuid == {musician_uuid}")
+    constraints: list[list[int]] = run(f"SELECT start_time, end_time, week_day FROM MusicianConstraint WHERE musician_uuid == {musician_uuid} ORDER BY start_time ASC, week_day ASC;")
+    if not constraints:
+        raise ValueError(f"Pas de contraintes trouvées.")
+    else:
+        return constraints
+
+
 
 def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> list:
     """
@@ -500,3 +506,6 @@ def get_song_musicians(song:list) -> list[int]:
                     not_in_db.append(musician)
 
     return musicians, not_in_db
+
+def remove_constraint(musician_uuid:int, start_time: int, end_time: int, week_day: int):
+    run(f"""DELETE FROM MusicianConstraint WHERE musician_uuid = {musician_uuid} AND start_time = {start_time} AND end_time = {end_time} AND week_day = {week_day}""")

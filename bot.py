@@ -97,7 +97,7 @@ async def mail(i: discord.Interaction, mail:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-        
+
         try:
             tools.parse_mail(mail)
         except:
@@ -105,7 +105,7 @@ async def mail(i: discord.Interaction, mail:str):
 
         db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Adresse mail modifiée avec succès !", ephemeral=True)
-        
+
     except Exception as e:
         message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
@@ -121,10 +121,10 @@ async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-        
+
         db.run(f"UPDATE User SET group_id = '{group.value if group else ''}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Groupe modifié avec succès !", ephemeral=True)
-        
+
     except Exception as e:
         message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
@@ -170,12 +170,12 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
         ndate = tools.parse_date(day)
 
         nstart = tools.parse_time(start) if start else "0000"
-        
+
         nend = tools.parse_time(end) if end else "2359"
 
         start_unix = tools.local_to_unixepoch(ndate + nstart)
         end_unix = tools.local_to_unixepoch(ndate + nend)
-        
+
         if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}'"):
             db.add_punctual_constraint(i.user.id, start_unix, end_unix)
         else:
@@ -246,6 +246,22 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
+
+@bot.tree.command(name="supprimer_indisponibilité", description="Retirer une contrainte")
+async def delete_constraint(i: discord.Interaction):
+    constraints = db.request_constraints(i.user.id)
+    constraints_texts = []
+    for constraint in constraints:
+        if constraint[2] == 0:
+            constraints_texts.append(tools.get_date_string(constraint[0])+ " " +tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
+        else:
+            if constraint[2] != 7:
+                constraints_texts.append("Tous les " + tools.week_index_to_week_day(constraint[2]) + "s " + tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
+            else:
+                constraints_texts.append("Tous les jours " + tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
+    view = discordutils.ConstraintRemovalPaginationView(constraints_texts, constraints, i.user.id)
+    view.check_buttons_availability()
+    await i.response.send_message(embed=view.embed_page(), view=view)
 
 class ConfirmView(View):
             def __init__(self):
@@ -343,7 +359,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
             message = discord.Embed(title=f"Blocages rencontrés : {len(present)} ", colour=tools.get_embed_colour())
             if len(present) <= 1:
-                message.title += "personne disponible" 
+                message.title += "personne disponible"
             else:
                 message.title += f"personnes disponibles"
 
@@ -409,13 +425,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
 async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
     try:
-        constraints: list[list[int]] = db.run(f"""
-            SELECT start_time, end_time, week_day FROM MusicianConstraint
-            WHERE musician_uuid = '{i.user.id}'
-            ORDER BY start_time ASC, week_day ASC;
-        """)
-        if not constraints:
-            raise ValueError(f"Pas de contraintes trouvées.")
+        constraints = db.request_constraints(i.user.id)
 
         view = discordutils.ConstraintsPaginationView(constraints)
         await i.response.send_message(embed=view.embed_page(), view=view)
@@ -542,7 +552,7 @@ async def song(i: discord.Interaction, song: str=None):
             message = discord.Embed(title=title, description=desc, colour=tools.get_embed_colour())
             await i.response.send_message(embed=message, ephemeral=True)
 
-        
+
         except Exception as e:
             await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
 
@@ -653,12 +663,12 @@ async def create_threads(i: discord.Interaction):
     try:
         if i.user.id not in tools.get_admins():
             raise PermissionError("Tu n'es pas admin :(")
-        
+
         try:
             songs = db.run("SELECT * FROM Song")
         except:
             raise("Problème avec les morceaux présents...")
-        
+
         existing_threads = [thread.name for thread in i.channel.threads]
         songs = [list(song) for song in songs if song[0] not in existing_threads]
 
@@ -699,7 +709,7 @@ async def create_threads(i: discord.Interaction):
                 created += 1
             else:
                 songs[k][0] = ":x: (pas de musiciens dans la DB) " + songs[k][0]
-                
+
 
             desc = str()
             for j in range(len(songs)):
@@ -724,17 +734,17 @@ async def create_threads(i: discord.Interaction):
                 if not_in_db:
                     text = f"\n Les personnes suivantes ne sont pas dans la base de données du bot ! Mentionnez-les et demandez leur de se connecter avec `/connexion` !\n"
                     for musician in not_in_db:
-                        text += f"- {tools.parse_mail(musician)}\n"                
-                
+                        text += f"- {tools.parse_mail(musician)}\n"
+
                     await thread.send(text)
-        
+
         if songs:
             if created > 1:
                 await i.followup.send(f"{created} fils créés avec succès !", ephemeral=True)
             else:
                 await i.followup.send(f"{created} fil créé avec succès !", ephemeral=True)
-            
-            
+
+
     except Exception as e:
         try:
             await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)

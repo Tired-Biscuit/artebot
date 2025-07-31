@@ -372,7 +372,7 @@ def add_missing_recurring_constraints(message: str, constraints: list[list[int]]
         if len(recurring_constraints[j]) > 0:
             # Write the day's date in case of a change of day number (which has to be updated after the call of the function (choose the boundary wisely))
             if get_nbdays(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) != daynb: # TODO beware of the missing daynb update !
-                message += "**" + "\n" + get_date_string(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) + "**"
+                message += "**" + "\n" + get_date_string(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) + "**\n"
 
             # Pop the recurring constraints
             while len(recurring_constraints[j]) > 0: #TODO no check for boundary might cause errors ?
@@ -423,7 +423,7 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
             # Update the day tracker
             daynb = get_nbdays(constraints[i][0])
             # Add the date of the day in the message
-            message += "**" + "\n" + get_date_string(constraints[i][0]) + "**"
+            message += "**" + "\n" + get_date_string(constraints[i][0]) + "**\n"
 
         # Now check for recurring constraint happening before the constraint
         if len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday]) > 0: # First check the day
@@ -446,9 +446,9 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
 
 def get_date_string(epoch_time: int) -> str:
     """
-    Returns a string formatted as this: Thursday 24/10 \n
+    Returns a string formatted as this: Thursday 24/10
     """
-    return f"""{week_index_to_week_day(time.gmtime(epoch_time).tm_wday + 1)} {epoch_to_short_date(epoch_time)}\n"""
+    return f"""{week_index_to_week_day(time.gmtime(epoch_time).tm_wday + 1)} {epoch_to_short_date(epoch_time)}"""
 
 def get_nbdays(epoch_time: int) -> int:
     """
