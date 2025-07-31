@@ -2,10 +2,14 @@ import python.db as db
 import python.tools as tools
 from python.classes.musician import Musician
 from python.classes.event import Event
+import python.googleutils as googleutils
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+db.TESTING_DATABASE = True
+db.refresh()
 
 try:
     print("Database reset...", db.reset(allow_fail=True))
@@ -14,7 +18,7 @@ except Exception as e:
     print(e)
     pass
 
-print("Updating database for Google calendars...", "Done" if db.update_calendars() == None else "An error occured")
+print("Updating database for Google calendars...", "Done" if (result := db.update_calendars()) == None else f"An error occured: {result}")
 print("Updating database for school-issued timetables...", "Done" if (res := db.update_timetables()) == [] else res)
 
 
