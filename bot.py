@@ -20,6 +20,8 @@ DEBUG = True # Toggle the dev or production bot
 # db.init()
 # register_lines(lines)
 
+# db.update_timetables()
+
 # For metering purposes
 logs_data = {"update": {"successful":0, "failed":0}, "info":{"successful":0, "failed":0}, "logs":0}
 
@@ -51,9 +53,11 @@ with open("groups.json", "r", encoding="utf-8") as f:
     groups = json.load(f)
 
 calendars = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
+tables = ["User", "Song", "MusicianConstraint", "GoogleEvent", "SchoolEvent"]
 
 group_choices = [app_commands.Choice(name=group, value=groups[group]) for group in groups]
 calendar_choices = [app_commands.Choice(name=calendars[calendar], value=calendar) for calendar in calendars.keys()]
+table_choices = [app_commands.Choice(name=table, value=table) for table in tables]
 
 @bot.event
 async def on_ready():
@@ -66,7 +70,6 @@ async def on_ready():
 )
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
-
 async def connection(i: discord.Interaction, mail:str, group: app_commands.Choice[str] = None):
     try:
         # Check if user is already in the database
@@ -92,7 +95,6 @@ async def connection(i: discord.Interaction, mail:str, group: app_commands.Choic
 @app_commands.describe(
     mail="La nouvelle adresse mail (TN.net)"
 )
-
 async def mail(i: discord.Interaction, mail:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
@@ -110,13 +112,13 @@ async def mail(i: discord.Interaction, mail:str):
         message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
+
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
     group="Le nouveau groupe (laisser vide si extérieur)"
 )
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
-
 async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
@@ -129,16 +131,16 @@ async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
         message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
+
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
     pseudo="Ton nouveau pseudo (Prénom NOM par défaut)"
 )
-
 async def pseudo(i: discord.Interaction, pseudo:str):
     try:
         if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
             raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-        
+
         db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
         await i.response.send_message("Pseudo modifié avec succès !", ephemeral=True)
 
@@ -222,11 +224,16 @@ async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[i
         nstart = tools.parse_time(start) if start else "0000"
         nend = tools.parse_time(end) if end else "2359"
 
-        start_unix = int(nstart[:2])*3600 + int(nstart[2:])*60
-        end_unix = int(nend[:2])*3600 + int(nend[2:])*60
+        start_epoch = int(nstart[:2])*3600 + int(nstart[2:])*60
+        end_epoch = int(nend[:2])*3600 + int(nend[2:])*60
 
-        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}' AND week_day = {day.value}"):
-            db.add_recurring_constraint(i.user.id, start_unix, end_unix, day.value)
+        # start_epoch = time.mktime(time.strptime(nstart, "%H%M"))
+        # end_epoch = time.mktime(time.strptime(nend, "%H%M"))
+
+        print(f"Récurrente {tools.time_span_to_string(start_epoch, end_epoch)}, {start_epoch}, {end_epoch}")
+
+        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_epoch}' AND end_time = '{end_epoch}' AND week_day = {day.value}"):
+            db.add_recurring_constraint(i.user.id, start_epoch, end_epoch, day.value)
         else:
             raise ValueError("Cette contrainte existe déjà !")
 
@@ -334,9 +341,9 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         blocks, absent, present = list(), list(), list()
 
-        for j in range(4, len(song_info)-1):
+        for j in range(5, len(song_info)-1):
 
-            instrument = instruments[j]
+            instrument = instruments[j][0]
             musicians = song_info[j].split(" ")
 
             for musician in musicians:
@@ -421,7 +428,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             await i.followup.send(embed=message)
 
 
-@bot.tree.command(name="voir_indisponibilités", description="Consulter les indisponibilités")
+@bot.tree.command(name="voir_indisponibilités", description="Consulter les contraintes")
 
 async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
     try:
@@ -457,6 +464,25 @@ async def add_admin(i: discord.Interaction, user: discord.User):
             await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
     else:
         await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
+
+@bot.tree.command(name="ajouter_owner", description="(owner-only) enregistrer quelqu'un comme owner")
+@app_commands.describe(
+    user="Mentionner la personne concernée"
+)
+@app_commands.rename(
+    user="membre"
+)
+async def add_owner(i: discord.Interaction, user: discord.User):
+    #TODO demander la confirmation
+    if i.user.id in tools.get_owners():
+        try:
+            tools.add_admin(user.id)
+            tools.add_owner(user.id)
+            await i.response.send_message(content="Opération effectuée", ephemeral=True)
+        except Exception:
+            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
+    else:
+        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
 @bot.tree.command(name="couleur_intégrations", description="changer la couleur des intégrations Discord")
 @app_commands.describe(
@@ -600,9 +626,10 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
     await i.response.defer()
 
     if calendar.value == "Spreadsheets":
-        db.run("DELETE FROM Song;")
         for setlist_id in tools.get_setlists_ids():
-            db.add_setlist(setlist_id, 28)
+            db.run(f"""DELETE FROM Song WHERE setlist_id = "{setlist_id}";""")
+            print(setlist_id)
+            db.add_setlist(setlist_id, 50)
         message=discord.Embed(title="Setlist mise à jour", colour=tools.get_embed_colour())
     else:
         message=discord.Embed(title=calendar.value, colour=tools.get_embed_colour())
@@ -670,7 +697,7 @@ async def create_threads(i: discord.Interaction):
             raise("Problème avec les morceaux présents...")
 
         existing_threads = [thread.name for thread in i.channel.threads]
-        songs = [list(song) for song in songs if song[0] not in existing_threads]
+        songs = [list(song) for song in songs if song[1] not in existing_threads]
 
         if not songs:
             await i.response.send_message("Pas de fils à créer !", ephemeral=True)
@@ -679,7 +706,7 @@ async def create_threads(i: discord.Interaction):
 
             desc = str()
             for song in songs:
-                desc += f"- {song[0]} ({song[1]})\n"
+                desc += f"- {song[1]} ({song[2]})\n"
             desc = desc[:-1]
 
             view = ThreadCreationView()
@@ -701,22 +728,22 @@ async def create_threads(i: discord.Interaction):
             musicians, not_in_db = db.get_song_musicians(songs[k])
             if musicians:
                 thread = await i.channel.create_thread(
-                    name=songs[k][0],
+                    name=songs[k][1],
                     auto_archive_duration=10080,
                     reason="Fil pour répétition"
                 )
-                songs[k][0] = ":white_check_mark: " + songs[k][0]
+                songs[k][1] = ":white_check_mark: " + songs[k][1]
                 created += 1
             else:
-                songs[k][0] = ":x: (pas de musiciens dans la DB) " + songs[k][0]
+                songs[k][1] = ":x: (pas de musiciens dans la DB) " + songs[k][1]
 
 
             desc = str()
             for j in range(len(songs)):
                 if j == k+1:
-                    desc += f"- **{songs[j][0]} ({songs[j][1]})**\n"
+                    desc += f"- **{songs[j][1]} ({songs[j][2]})**\n"
                 else:
-                    desc += f"- {songs[j][0]} ({songs[j][1]})\n"
+                    desc += f"- {songs[j][1]} ({songs[j][2]})\n"
 
             desc = desc[:-1]
 
@@ -750,7 +777,7 @@ async def create_threads(i: discord.Interaction):
             await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
         except:
             await i.followup.send(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
-  
+
 
 @bot.tree.command(name="trouver_repète", description="Trouve les 5 prochains créneaux possibles pour répéter un morceau")
 @app_commands.describe(
@@ -808,11 +835,48 @@ async def reset_database(i: discord.Interaction):
     else:
         await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
+@bot.tree.command(name="ajouter_instrument", description="Ajouter un instrument dans la BDD")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+@app_commands.describe(
+    instrument="Nom de l'instrument en anglais",
+    translation="Nom de l'instrument en français"
+)
+@app_commands.rename(
+    instrument="instrument_anglais",
+    translation="instrument_francais"
+)
+async def add_instrument(i: discord.Interaction, instrument: str, translation: str):
+    db.add_instrument(instrument, translation)
+    await i.response.send_message(embed=discord.Embed(title="Ajout de l'instrument", description="Effectué", colour=tools.get_embed_colour()), ephemeral=True)
+
+@bot.tree.command(name="supprimer_table", description="Vider toutes les entrées d'une table de la BDD")
+@app_commands.describe(
+    table="Indiquer la table à vider"
+)
+@app_commands.rename(
+    table="table"
+)
+@app_commands.choices(table=table_choices)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def delete_songs(i: discord.Interaction, table: app_commands.Choice[str]):
+    if table.value == "User":
+        if i.user.id not in tools.get_owners():
+            await i.response.send_message(embed=discord.Embed(title="Opération impossible", description="Il faut être owner pour supprimer les utilisateurs", colour=tools.get_embed_colour()), ephemeral=True)
+    if i.user.id not in tools.get_admins():
+        await i.response.send_message(embed=discord.Embed(title="Opération impossible", description="Il faut être enregistré en admin pour faire cela", colour=tools.get_embed_colour()), ephemeral=True)
+    else:
+        db.run(f"""DELETE FROM {table.value};""")
+        await i.response.send_message(embed=discord.Embed(title=f"Suppression des entrées de {table.value}", description="Effectué", colour=tools.get_embed_colour()), ephemeral=True)
+
+
 @bot.tree.command(name="order_66", description="Execute order 66")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def order_66(i: discord.Interaction):
     await i.response.send_message(embed=discord.Embed(title="Trooper!", description="Execute order 66.", colour=tools.get_embed_colour()), ephemeral=True)
+
 
 @bot.command()
 async def foo(ctx):

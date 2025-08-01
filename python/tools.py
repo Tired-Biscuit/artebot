@@ -500,6 +500,17 @@ def add_admin(uuid: int):
                 data["admins"].append(uuid)
                 f.write(json.dumps(data))
 
+def add_owner(uuid: int):
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if uuid not in data["owner"]:
+                data["owner"].append(uuid)
+                f.write(json.dumps(data))
+
 def remove_admin(uuid: int):
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -553,4 +564,45 @@ def change_embed_colour(colour: str):
         if data != None:
             with open("data.json", "w") as f:
                 data["embed_colour"] = int(colour, 16)
+                f.write(json.dumps(data))
+
+def get_instruments_names_translation() -> dict:
+    """
+    Returns a dict for translating DB columns (keys) to spreadsheets column names (list of values)
+    """
+
+    with open("./data.json", "r", encoding="utf-8") as f:
+        instruments_file = json.load(f)["instruments"]
+
+    return instruments_file
+
+def get_ignored_column_names() -> dict:
+    """
+    Returns a list of ignored column names
+    """
+
+    with open("./data.json", "r", encoding="utf-8") as f:
+        data = json.load(f)["ignored_columns"]
+
+    return data
+
+def add_ignored_column(column: str): # TODO remove ignored column
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None and column not in data["ignored_columns"]:
+            with open("data.json", "w") as f:
+                data["ignored_columns"].append(column)
+                f.write(json.dumps(data))
+
+def add_instrument_translation(instrument: str, translation: str):
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None:
+            with open("data.json", "w") as f:
+                if instrument in list(data["instruments"].keys()):
+                    data["instruments"][instrument].append(translation)
+                else:
+                    data["instruments"][instrument] = [translation]
                 f.write(json.dumps(data))

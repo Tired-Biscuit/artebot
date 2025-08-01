@@ -8,6 +8,7 @@ User : str email
 User : int group_id
 
 class Song
+Song : str setlist_id
 Song : str title
 Song : str artist
 Song : int length
