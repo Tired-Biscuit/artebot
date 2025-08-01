@@ -169,7 +169,7 @@ def get_spreadsheet_data(spreadsheet_id: str, rows: int):
     request = service.spreadsheets().get(
         spreadsheetId=spreadsheet_id,
         includeGridData=True,
-        ranges=[f"{get_sheet_name(spreadsheet_id)}!{f'A2:R{rows+1}'}"],
+        ranges=[f"{get_sheet_name(spreadsheet_id)}!{f'A1:R{rows+1}'}"],
         fields="sheets(data(rowData(values(userEnteredValue,chipRuns))))"
         # fields="sheets(data(rowData(values(effectiveValue,userEnteredValue,formattedValue,hyperlink))))"
     )
@@ -178,11 +178,11 @@ def get_spreadsheet_data(spreadsheet_id: str, rows: int):
 
     return response
 
-def print_data_info(data: dict):
+def print_data_info(data: dict, setlist_id: str):
     data = data["sheets"][0]["data"][0]
     rows = data["rowData"]
     for row in rows:
-        print(json.dumps(get_song_info_from_row_values(row["values"]), sort_keys=False, indent=4))
+        print(json.dumps(get_song_info_from_row_values(row["values"], setlist_id), sort_keys=False, indent=4))
 
 def get_chip_emails_from_cell_values(cell_values: dict) -> list[str]:
     """
@@ -237,42 +237,47 @@ def get_emails_strings(emails: list[str]) -> str:
         result += email + " "
     return result[:-1]
 
-def get_song_info_from_row_values(row_values: dict) -> dict:
+def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_names: list[str], db_columns: list[str]) -> dict:
     """
     Parses the row values fetched from sheets and returns a dictionary compliant with the db
     """
-    song = {"title":"",
-    "artist":"",
-    "length":"",
-    "supervisor":"",
-    "voice":"",
-    "guitar":"",
-    "keys":"",
-    "drums":"",
-    "bass":"",
-    "violin":"",
-    "cello":"",
-    "contrabass":"",
-    "accordion":"",
-    "flute":"",
-    "saxophone":"",
-    "brass":"",
-    "notes":""}
+    song = {}
 
-    song["title"] = get_text_cell_content(row_values[0])
-    song["artist"] = get_text_cell_content(row_values[1])
-    song["supervisor"] = get_email_from_cell_values(row_values[3])
-    song["length"] = get_time_cell_content(row_values[4])
+    # print("db_columns:", db_columns)
 
-    keys = list(song.keys())
+    translation_dict = tools.get_instruments_names_translation()
 
-    for k in range(5,len(row_values)):
-        if k-1 >= len(keys):
-            print("Error:", song["title"], str(row_values))
-            return song
-        if keys[k-1] == "notes":
-            song[keys[k-1]] = get_text_cell_content(row_values[k])
+    translated_columns = []
+    for translations in translation_dict.values():
+        for value in translations:
+            translated_columns.append(value)
+
+
+    for i in range(min(len(column_names), len(row_values))):
+
+        if column_names[i] not in translated_columns and column_names[i] not in tools.get_ignored_column_names():
+            print("Attention, un instrument n'est pas enregistré dans la base de données:", column_names[i])
         else:
-            song[keys[k - 1]] = get_emails_strings(get_chip_emails_from_cell_values(row_values[k]))
+            for db_column in db_columns:
+                if column_names[i] in translation_dict[db_column]:
+                    if db_column in ["title", "artist", "notes"]:
+                        value = get_text_cell_content(row_values[i])
+                    elif db_column == "length":
+                        value = get_time_cell_content(row_values[i])
+                    elif db_column == "supervisor":
+                        value = get_email_from_cell_values(row_values[i])
+                    else:
+                        value = get_emails_strings(get_chip_emails_from_cell_values(row_values[i]))
+                    song[db_column] = value
+
+    song["setlist_id"] = setlist_id
+
+    print("Song:", song)
+
     return song
 
+def get_row_text(row: dict) -> list[str]:
+    row_content = []
+    for value in row["values"]:
+        row_content.append(get_text_cell_content(value))
+    return row_content

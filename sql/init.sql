@@ -1,21 +1,22 @@
 CREATE TABLE Song(
-    title TEXT,
-    artist TEXT,
-    length TIME,
-    supervisor TEXT,
-    voice TEXT,
-    guitar TEXT,
-    keys TEXT,
-    drums TEXT,
-    bass TEXT,
-    violin TEXT,
-    cello TEXT,
-    contrabass TEXT,
-    accordion TEXT,
-    flute TEXT,
-    saxophone TEXT,
-    brass TEXT,
-    notes TEXT
+    setlist_id TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    artist TEXT NOT NULL DEFAULT '',
+    length TIME NOT NULL DEFAULT 0,
+    supervisor TEXT NOT NULL DEFAULT '',
+    voice TEXT NOT NULL DEFAULT '',
+    guitar TEXT NOT NULL DEFAULT '',
+    keys TEXT NOT NULL DEFAULT '',
+    drums TEXT NOT NULL DEFAULT '',
+    bass TEXT NOT NULL DEFAULT '',
+    violin TEXT NOT NULL DEFAULT '',
+    cello TEXT NOT NULL DEFAULT '',
+    contrabass TEXT NOT NULL DEFAULT '',
+    accordion TEXT NOT NULL DEFAULT '',
+    flute TEXT NOT NULL DEFAULT '',
+    saxophone TEXT NOT NULL DEFAULT '',
+    brass TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE User(
@@ -54,6 +55,6 @@ CREATE TABLE MusicianConstraint(
     end_time TIME,
     week_day INTEGER,
 
-    CONSTRAINT pk_musician_constraint UNIQUE (musician_uuid, day, start_time, end_time, week_day),
+    CONSTRAINT pk_musician_constraint UNIQUE (setlist_id, musician_uuid, day, start_time, end_time, week_day),
     FOREIGN KEY (musician_uuid) REFERENCES User(uuid)
 )

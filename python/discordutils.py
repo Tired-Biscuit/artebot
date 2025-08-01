@@ -6,6 +6,7 @@ from discord import ButtonStyle
 import python.tools as tools
 import python.db as db
 
+
 class PaginationView(discord.ui.View):
     def __init__(self, pages):
         super().__init__()
@@ -93,13 +94,13 @@ class SetlistsPaginationView(discord.ui.View):
         tools.remove_setlist(self.page)
         await interaction.response.edit_message(embed=discord.Embed(title="Setlist supprimée"), view=self)
 
-    @discord.ui.button(label="Annuler", style=ButtonStyle.grey, custom_id="cancel")
+    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.prev_button.disabled = True
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.delete_button.disabled = True
-        await interaction.response.edit_message(embed=discord.Embed(title="Opération annulée"), view=self)
+        await interaction.response.edit_message(embed=discord.Embed(title="Opération terminée"), view=self)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
@@ -143,24 +144,24 @@ class ConstraintRemovalPaginationView(discord.ui.View):
 
     @discord.ui.button(label="Supprimer", style=ButtonStyle.red, custom_id="delete")
     async def delete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.prev_button.disabled = True
-        self.next_button.disabled = True
-        self.cancel_button.disabled = True
-        self.delete_button.disabled = True
+        self.delete_button.disabled = len(self.constraints_strings) == 0
         self.remove_constraint()
-        await interaction.response.edit_message(embed=discord.Embed(title="Contrainte supprimée"), view=self)
+        self.check_buttons_availability()
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
-    @discord.ui.button(label="Annuler", style=ButtonStyle.grey, custom_id="cancel")
+    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.prev_button.disabled = True
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.delete_button.disabled = True
-        await interaction.response.edit_message(embed=discord.Embed(title="Opération annulée"), view=self)
+        await interaction.response.edit_message(embed=discord.Embed(title="Terminé"), view=self)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
         self.next_button.disabled  = self.page >= len(self.constraints_strings) - 1
+        if self.page == len(self.constraints_strings):
+            self.page -= 1
 
     def embed_page(self) -> discord.Embed:
         if len(self.constraints_strings) == 0:
@@ -178,3 +179,5 @@ class ConstraintRemovalPaginationView(discord.ui.View):
     def remove_constraint(self):
         constraint = self.constraints[self.page]
         db.remove_constraint(self.musician_uuid, constraint[0], constraint[1], constraint[2])
+        self.constraints_strings.pop(self.page)
+        self.constraints.pop(self.page)

@@ -220,7 +220,7 @@ def add_punctual_constraint(musician_uuid: str, start_time: int, end_time: int):
     return run(command)
 
 
-def add_recurring_constraint(musician_uuid: str, start_time: int, end_time: int, week_day: int):
+def add_recurring_constraint(musician_uuid: int, start_time: int, end_time: int, week_day: int):
     """
     Adds a recurring constraint for a musician in the database.
 
@@ -281,7 +281,6 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         OR (Event.start_time < {timestamp + duration} AND {timestamp + duration} < Event.end_time)
         OR ({timestamp} <= Event.start_time AND Event.end_time <= {timestamp + duration})
         OR (Event.start_time < {tools.DAY_DURATION} AND (
-            TRUE OR
             (Event.start_time < {timestamp%tools.DAY_DURATION} AND {timestamp%tools.DAY_DURATION} < Event.end_time)
             OR (Event.start_time < {timestamp%tools.DAY_DURATION + duration} AND {timestamp%tools.DAY_DURATION + duration} < Event.end_time)
             OR ({timestamp%tools.DAY_DURATION} <= Event.start_time AND Event.end_time <= {timestamp%tools.DAY_DURATION + duration})
@@ -289,37 +288,49 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> 
         ;
     """)
 
-def add_song(song: dict):
+def add_song(song: dict, db_columns: list[str]):
     """
     Adds a song in the format of a dictionnary with each field set up to the database
     """
 
-    return run(f"""INSERT INTO
-    Song ('title', 'artist', 'length', 'supervisor', 'voice', 'guitar', 'keys', 'drums', 'bass', 'violin', 'cello', 'contrabass', 'accordion', 'flute', 'saxophone', 'brass', 'notes')
-    VALUES ("{song['title']}", "{song['artist']}", "{song['length']}", "{song['supervisor']}", "{song['voice']}", "{song['guitar']}", "{song['keys']}", "{song['drums']}",
-    "{song['bass']}", "{song['violin']}", "{song['cello']}", "{song['contrabass']}", "{song['accordion']}", "{song['flute']}", "{song['saxophone']}", "{song['brass']}", "{song['notes']}"
-);""")
+    if song["title"] == "":
+        return
+
+    columns = "("
+    values = "("
+    for key in song.keys():
+        columns += f""""{key}","""
+        values += f""""{song[key]}","""
+    columns = columns[:-1] + ")"
+    values = values[:-1] + ")"
+
+    return run(f"""INSERT INTO Song {columns} VALUES {values};""")
 
 def add_setlist(setlist_id: str, rows: int):
     data = googleutils.get_spreadsheet_data(setlist_id, rows)
     data = data["sheets"][0]["data"][0]
     rows = data["rowData"]
-    for row in rows:
-        add_song(googleutils.get_song_info_from_row_values(row["values"]))
+    column_names = googleutils.get_row_text(rows[0])
 
+    # print(f"Column names: {column_names}")
+    db_columns = []
+    for col in run("PRAGMA table_info(SONG);"):
+        db_columns.append(col[1])
+
+    rows = rows[1:]
+    for row in rows:
+        add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
 
 def get_instruments_names() -> list[str]:
     """
     Returns a list of all the column names of the Song table in french (including non-instrument columns)
     """
-    instruments = run("PRAGMA table_info(SONG);")
+    column_names = run("PRAGMA table_info(SONG);")
 
-    with open("./instruments.json", "r", encoding="utf-8") as f:
-            instruments_file = json.load(f)
+    with open("./data.json", "r", encoding="utf-8") as f:
+            instruments = json.load(f)["instruments"]
 
-    return [instruments_file[instrument[1]] if instrument[1] in instruments_file else None for instrument in instruments]
-
-
+    return [instruments[column[1]] if column[1] in instruments else None for column in column_names]
 
 def get_songs_message(musician_uuid: int, display:int) -> str:
     email = ""
@@ -363,7 +374,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
                         text += "- "
                         if email in song[i]:
                             text += f"**"
-                        text += f"{instruments_names[i].capitalize()} :"
+                        text += f"{instruments_names[i][0].capitalize()} :"
                         if email in song[i]:
                             text += f"**"
                         musicians = song[i].split(" ")
@@ -424,16 +435,16 @@ def get_song_info_message(song: str) -> tuple:
 
         text = str()
 
-        for i in range(3, len(song_info)-1):
+        for i in range(4, len(song_info)-1):
             if song_info[i]:
-                text += f"- {instruments_names[i].capitalize()} :"
+                text += f"- {instruments_names[i][0].capitalize()} :"
                 musicians = song_info[i].split(" ")
                 for musician in musicians:
                     text += f" {get_user_name_from_email(musician)},"
                 text = text[:-1]
                 text += "\n"
         
-        return f"{song_info[0]} — {song_info[1]}", text
+        return f"{song_info[1]} — {song_info[2]}", text
 
 
 
@@ -493,7 +504,7 @@ def get_song_musicians(song:list) -> list[int]:
     musicians = list()
     not_in_db = list()
 
-    for inst in song[3:-1]:
+    for inst in song[4:-1]:
         for musician in inst.split(" "):
 
             if musician:
@@ -509,3 +520,8 @@ def get_song_musicians(song:list) -> list[int]:
 
 def remove_constraint(musician_uuid:int, start_time: int, end_time: int, week_day: int):
     run(f"""DELETE FROM MusicianConstraint WHERE musician_uuid = {musician_uuid} AND start_time = {start_time} AND end_time = {end_time} AND week_day = {week_day}""")
+
+
+def add_instrument(instrument: str, translation: str):
+    run(f"""ALTER TABLE Song ADD {instrument} TEXT NOT NULL DEFAULT '';""")
+    tools.add_instrument_translation(instrument, translation)
