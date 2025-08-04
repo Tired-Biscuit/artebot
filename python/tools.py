@@ -5,16 +5,22 @@ import json
 from datetime import timezone, timedelta, datetime
 import re
 
-import discord.embeds
+import python.timeutils as timeutils
 
 CEST = timezone(timedelta(hours=2), name="CEST")
 CET  = timezone(timedelta(hours=1), name="CET")
 
 DELTA_TIME = 14400
 UPDATE_TIME = time.time()
-DAY_DURATION = 86400
+
+#########################################
+#      data.json related operations     #
+#########################################
 
 def create_data_file():
+    """
+    Creates the data file and initialize all the necessary fields
+    """
     if not os.path.exists("data.json"):
         data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
         with open("data.json", "w") as f:
@@ -28,18 +34,11 @@ def create_data_file():
             with open("data.json", "w") as f:
                 f.write(json.dumps(data))
 
-def download_timetables():
-    """
-    Downloads timetables as .ics files in ./timetables
-    
-    returns: True if operation successful 
-    """
-    r = subprocess.call("./scripts/auto_update.sh")
-    return r == 0
-
 def add_calendar(calendar_id):
     """
     Adds calendar to data.json
+
+    @flag data
     """
     create_data_file()
     data = {}
@@ -54,6 +53,8 @@ def add_calendar(calendar_id):
 def remove_calendar(calendar_id):
     """
     Removes calendar from data.json
+
+    @flag data
     """
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -63,46 +64,246 @@ def remove_calendar(calendar_id):
                 data["calendar_ids"].remove(calendar_id)
                 f.write(json.dumps(data))
 
-def ics_to_unixepoch(ics_time: str) -> int:
+def get_admins() -> list[int]:
     """
-    Converts an ICS timestamp (GMT) with format YYYYMMDDTHHMMSSZ to a Unix epoch timestamp.
-    """
-    time_struct = datetime.strptime(ics_time, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-    return int(time_struct.timestamp())
+    Returns a list of the admins' uuids
 
-def local_to_unixepoch(local_time: str) -> int:
+    @flag data
     """
-    Converts a local time given in YYYYMMDDHHMMSS format to epoch
-    """
-    time_struct = time.strptime(local_time, "%Y%m%d%H%M%S")
-    return int(time.mktime(time_struct))
-
-def cal_to_unixepoch(cal_time: str) -> int:
-    """
-    Converts a Google Calendar timestamp with format YYYY-MM-DDTHH:MM:SS+HH:MM (local+time zone difference) to a Unix epoch timestamp (UTC).
-    """
-    time_struct = time.strptime(cal_time[:-6], "%Y-%m-%dT%H:%M:%S")
-    return int(time.mktime(time_struct))
-
-def week_day_to_week_index(week_day: str):
-    days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-
-    if week_day == "Tous" or week_day == "tous" or week_day == "tous les jours" or week_day == "Tous les jours":
-        day = 8
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            admins = json.loads(f.read())["admins"]
+            return admins
     else:
-        try:
-            day = days.index(str.capitalize(week_day)) + 1
-        except ValueError:
-            raise ValueError(f"Invalid week day: {week_day}. Must be one of {days}.")
-    return day
+        return []
 
-def week_index_to_week_day(week_index: int):
-    days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-    return days[week_index-1] if 0< week_index and week_index <= 7 else "Tous les jours"
+def add_admin(uuid: int):
+    """
+    Adds an admin to the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if uuid not in data["admins"]:
+                data["admins"].append(uuid)
+                f.write(json.dumps(data))
+
+def remove_admin(uuid: int):
+    """
+    Removes an admin from the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if uuid in data["admins"]:
+                data["admins"].remove(uuid)
+                f.write(json.dumps(data))
+
+def get_owners() -> list[int]:
+    """
+    Returns a list of the owners' uuids
+
+    @flag data
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            owners = json.loads(f.read())["owners"]
+            return owners
+    else:
+        return []
+
+def add_owner(uuid: int):
+    """
+    Adds an owner to the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if uuid not in data["owner"]:
+                data["owner"].append(uuid)
+                f.write(json.dumps(data))
+
+def get_setlists_ids() -> list[str] | None:
+    """
+    Returns a list of the setlists' ids saved in data.json file
+
+    @flag data
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            return data["setlists"]
+
+def add_setlist(setlist_id: str):
+    """
+    Adds a setlist id to the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    data = None
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if setlist_id not in data["setlists"]:
+                data["setlists"].append(setlist_id)
+                f.write(json.dumps(data))
+
+def remove_setlist(index: int):
+    """
+    Removes a setlist id from the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            data["setlists"].delete(index)
+            f.write(json.dumps(data))
+
+def get_embed_colour()-> int:
+    """
+    Returns the embed color used for #TODO what is it for ?
+
+    @flag data
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            colour = json.loads(f.read())["embed_colour"]
+            return colour
+    else:
+        return 10070709
+
+def change_embed_colour(colour: str):
+    """
+    Hexadecimal format
+
+    @flag data
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            data["embed_colour"] = int(colour, 16)
+            f.write(json.dumps(data))
+
+def get_instruments_names_translation() -> dict:
+    """
+    Returns a dict for translating DB columns (keys) to spreadsheets column names (list of values)
+
+    @flag data
+    """
+    instruments_file = {}
+    if os.path.exists("data.sjon"):
+        with open("./data.json", "r", encoding="utf-8") as f:
+            instruments_file = json.load(f)["instruments"]
+
+    return instruments_file
+
+def get_ignored_column_names() -> dict:
+    """
+    Returns a list of ignored spreadsheet columns' names
+
+    @flag data
+    """
+    data = {}
+    if os.path.exists("data.json"):
+        with open("./data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)["ignored_columns"]
+
+    return data
+
+def add_ignored_column(column: str):
+    """
+    Adds a column name to the list of ignored columns in the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None and column not in data["ignored_columns"]:
+        with open("data.json", "w") as f:
+            data["ignored_columns"].append(column)
+            f.write(json.dumps(data))
+
+def remove_ignored_column(column: str): #TODO integrate command
+    """
+    Removes a column name from the list of ignored columns in the data.json file
+
+    @flag data
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            data["ignored_columns"].remove(column)
+            f.write(json.dumps(data))
+
+def add_instrument_translation(instrument: str, translation: str):
+    """
+    Adds an instrument translation to the data.json file
+
+    @flag data
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+        if data != None:
+            with open("data.json", "w") as f:
+                if instrument in list(data["instruments"].keys()):
+                    data["instruments"][instrument].append(translation)
+                else:
+                    data["instruments"][instrument] = [translation]
+                f.write(json.dumps(data))
+
+
+
+
+###############################
+#     Download operations     #
+###############################
+
+def download_timetables():
+    """
+    Downloads timetables as .ics files in ./timetables
+
+    returns: True if operation successful 
+    """
+    r = subprocess.call("./scripts/auto_update.sh")
+    return r == 0
+
+
+
+
+#############################
+#          Parsing          #
+#############################
 
 def parse_date(date: str) -> str:
     """
     Parses a date string and returns it in the YYYYMMDD format.
+
+    @flag parsing
     """
     now = datetime.now()
 
@@ -151,29 +352,30 @@ def parse_date(date: str) -> str:
 
         elif len(year) == 2:
             year = "20" + year
-        
+
         if len(year) == 4 and 1 <= int(day) <= 31 and 1 <= int(month) <= 12:
             return year + month + day
 
 
-    
+
     date = date.capitalize()
     if date in ["Aujourd'hui", "Aujourdhui", "Aujourd’hui", "Today"]:
         return now.strftime("%Y%m%d")
-    
+
     if date in ["Demain", "Tomorrow"]:
         return (now + timedelta(days=1)).strftime("%Y%m%d")
 
     if date in ["Après-demain", "Après demain", "Apres-demain", "Apres demain", "Overmorrow"]:
         return (now + timedelta(days=2)).strftime("%Y%m%d")
-    
+
 
     raise ValueError(f"« {date} » n'est pas reconnu comme une date valide.")
-
 
 def parse_time(time_string: str) -> str:
     """
     Parses a time string and returns it in the HHMM format.
+
+    @flag parsing
     """
     match = re.match(
         r"^(\d{1,2})\s*[-:h]?\s*(\d{1,2})?", time_string
@@ -184,16 +386,16 @@ def parse_time(time_string: str) -> str:
 
         if len(h) == 1:
             h = "0" + h
-        
+
         if m is None:
             m = "00"
-        
+
         if len(m) == 1:
             m = "0" + m
 
         if int(h) <= 23 and int(m) <= 59:
             return h + m
-    
+
     time_string = time_string.capitalize()
 
     if time_string in ["Midi", "Noon"]:
@@ -204,6 +406,9 @@ def parse_time(time_string: str) -> str:
 def parse_duration(duration: str) -> int:
     """
     Parses a duration string (precision up to minutes) and returns the corresponding duration in seconds.
+    Format example: 30m, 1:30, 1h30, 1-30
+
+    @flag parsing
     """
     match = re.match(
         r"^(\d{1,3})\s*m", duration
@@ -221,15 +426,17 @@ def parse_duration(duration: str) -> int:
     if match:
         h, m = match.groups()
         return 3600*int(h) + 60*int(m) if m is not None else 3600*int(h)
-    
+
     raise ValueError(f"« {duration} » n'est pas reconnu comme une durée valide.")
 
 def parse_mail(mail: str) -> str:
     """
-    Returns the name of the owner of the mail address ([first_name].[last_name]@[...] format) 
+    Returns the name of the owner of the mail address ([first_name].[last_name]@[...] format)
+
+    @flag parsing
     """
     mail = mail.split("@")[0].split(".")
-    
+
     if len(mail) != 2:
         return mail
         raise ValueError(f"« {mail} » n'est pas reconnu comme une adresse mail valide.")
@@ -238,12 +445,23 @@ def parse_mail(mail: str) -> str:
 
 
 
-def date_to_string(date: str) -> str:
+
+#########################################
+#     User-friendly date formatting     #
+#########################################
+
+def get_special_date_string(date: str) -> str:
     """
-    Returns a readable string in french of the date given in argument.
+    Returns a Markdown-formatted user-friendly string in french of the date given in argument.
+
+    Note: might return 'Demain' and 'Aujourd'hui'
 
     Args:
         date (str): The date, in YYYYMMDD format
+
+    @flag markdown
+    @flag date_string
+    @flag to_string
     """
     today = int(datetime.now().strftime("%Y%m%d"))
 
@@ -263,18 +481,24 @@ def date_to_string(date: str) -> str:
 
 def formatted_time_span_string(start: str, end: str) -> str:
     """
-    Returns a readable string in french of the time span given in argument.
+    Returns a Markdown-formatted user-friendly string in french of the time span given in argument
+
+    Note: might return 'Toute la journée'.
 
     Args:
         start (str): The start time of the span, in HHMM format
         end (str): The end time of the span, in HHMM format
+
+    @flag markdown
+    @flag timespan_string
+    @flag to_string
     """
 
     if len(start) != 4 or len(end) != 4:
         raise ValueError(f"« {start} » et/ou « {end} » n'est pas sous le format HHMM.")
 
     res = ""
-    
+
     if start == "0000" and end == "2359":
         return "**toute la journée**"
 
@@ -288,7 +512,7 @@ def formatted_time_span_string(start: str, end: str) -> str:
            res += f"de **{start[:-2]} h** "
         else:
            res += f"de **{start[:-2]} h {start[-2:]}** "
-    
+
     if end == "2359":
         return "à partir " + res[:-1]
 
@@ -305,16 +529,24 @@ def formatted_time_span_string(start: str, end: str) -> str:
 
 def time_span_to_string(start_time: int, end_time: int) -> str:
     """"
-    Returns a Markdown-formatted string for a time span (epoch values)
+    Returns a user-friendly string of a time span (epoch values)
+
+    @flag markdown
+    @flag timespan_string
+    @flag to_string
     """
     return formatted_time_span_string(time.strftime("%H%M", time.gmtime(start_time)), time.strftime("%H%M", time.gmtime(end_time)))
 
 def formatted_hhmm(time_string: str) -> str:
     """
-    Returns a readable string in french of the time given in argument.
+    Returns a formal string in french of the time given in argument.
 
     Args:
         time (str): The time, in HHMM format
+
+    @flag time_string
+    @flag to_string
+    @flag formal
     """
 
     if len(time_string) != 4:
@@ -333,10 +565,12 @@ def formatted_hhmm(time_string: str) -> str:
         
 def duration_to_string(duration: int) -> str:
     """
-    Returns a readable string in french of the duration given in argument.
+    Returns a string of the duration given in argument.
 
     Args:
         duration (int): The duration in seconds
+
+    @flag to_string
     """
     res = ""
     if duration >= 3600:
@@ -347,38 +581,67 @@ def duration_to_string(duration: int) -> str:
         if res:
             res += " "
         res += f"{int(duration%3600 / 60)} m"
-    
+
     return res
 
-def epoch_to_short_date(epoch_time: int) -> str:
+def epoch_to_ddmm(epoch_time: int) -> str:
     """
-    Returns the date in DD/MM format, accounting for recurring events (with epoch < 86400)
+    Returns the date in DD/MM format
+
+    @flag to_string
     """
     return time.strftime("%d/%m", time.gmtime(epoch_time))
 
 def get_constraint_description(constraint: list[int]) -> str:
     """
-    Returns a formatted text for the corresponding constraint
+    Returns a user-friendly text for the corresponding constraint
+
+    @flag to_string
+    @flag constraint
     """
-    return f"""Indisponible {time_span_to_string(constraint[0], constraint[1])}\n"""
+    return f"Indisponible {time_span_to_string(constraint[0], constraint[1])}\n"
+
+def get_date_string(epoch_time: int) -> str:
+    """
+    Returns a string formatted like this: Jeudi 24/10
+
+    @flag to_string
+    """
+    return f"{timeutils.week_index_to_week_day(time.gmtime(epoch_time).tm_wday + 1)} {epoch_to_ddmm(epoch_time)}"
+
+
+
+
+#######################
+#     Other works     #
+#######################
 
 def add_missing_recurring_constraints(message: str, constraints: list[list[int]], recurring_constraints: list[list[list[int]]], start_time: int, daynb: int, boundary: int) -> str:
     """
-    Self-explanatory
+    When recurring constraints happen between the last and the next constraint of any other type, they may be missed
+
+    This function makes sure no constraint is left behind
     """
     j = 0
     # Iterate through recurring constraints until boundary
-    while get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION < boundary:
+    while timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + j * timeutils.DAY_DURATION < boundary:
         if len(recurring_constraints[j]) > 0:
             # Write the day's date in case of a change of day number (which has to be updated after the call of the function (choose the boundary wisely))
-            if get_nbdays(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) != daynb: # TODO beware of the missing daynb update !
-                message += "**" + "\n" + get_date_string(get_first_day_of_week(get_nbweeks(start_time)) + j * DAY_DURATION) + "**\n"
+            if timeutils.get_nbdays(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + j * timeutils.DAY_DURATION) != daynb: # TODO beware of the missing daynb update !
+                message += "**" + "\n" + get_date_string(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + j * timeutils.DAY_DURATION) + "**\n"
 
             # Pop the recurring constraints
             while len(recurring_constraints[j]) > 0: #TODO no check for boundary might cause errors ?
                 message += "🟦 " + get_constraint_description(recurring_constraints[j].pop(0))
         j += 1
     return message
+
+
+
+
+#################################
+#     Heavy string building     #
+#################################
 
 def get_constraints_week_description(constraints: list[list[int]], start_time: int) -> str:
     """
@@ -389,15 +652,15 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
     """
 
     # Gets the week number to track for week change between constraints
-    weeknb = get_nbweeks(start_time)
+    weeknb = timeutils.get_nbweeks(start_time)
     i = 0
     # List of all recurring contraints for the week, per day (recurrent ones are put directly in each day)
     recurring_constraints = [[],[],[],[],[],[],[]]
 
     # First, start from the first constraint and continue until getting the first constraint from the right week
-    while i < len(constraints) and get_nbweeks(constraints[i][0]) < weeknb:
+    while i < len(constraints) and timeutils.get_nbweeks(constraints[i][0]) < weeknb:
         # At the beginning are all the recurring constraints
-        if constraints[i][0] < DAY_DURATION and constraints[i][2] > 0:
+        if constraints[i][0] < timeutils.DAY_DURATION and constraints[i][2] > 0:
             # They are added to their corresponding day
             if constraints[i][2] < 8:
                 recurring_constraints[constraints[i][2]-1].append(constraints[i])
@@ -412,16 +675,16 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
     daynb = 0
     message = ""
     # Iterating through all constraints of the week
-    while i < len(constraints) and get_nbweeks(constraints[i][0]) < weeknb+1:
+    while i < len(constraints) and timeutils.get_nbweeks(constraints[i][0]) < weeknb+1:
         # First, write the date
         # daynb == 0 means the message is empty (could also check for message == "")
         # The second test is for when the next constraint happens on another day
-        if daynb == 0 or get_nbdays(constraints[i][0]) > daynb:
+        if daynb == 0 or timeutils.get_nbdays(constraints[i][0]) > daynb:
 
             # Get recurring constraints happening after the last constraint and still int the previous day
-            message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, (constraints[i][0] // DAY_DURATION) * DAY_DURATION)
+            message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, (constraints[i][0] // timeutils.DAY_DURATION) * timeutils.DAY_DURATION)
             # Update the day tracker
-            daynb = get_nbdays(constraints[i][0])
+            daynb = timeutils.get_nbdays(constraints[i][0])
             # Add the date of the day in the message
             message += "**" + "\n" + get_date_string(constraints[i][0]) + "**\n"
 
@@ -430,7 +693,7 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
             # Then check wether or not to write the recurring constraints
             j = len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0])
             while j > 0:
-                if recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0][0] < constraints[i][0]%DAY_DURATION:
+                if recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0][0] < constraints[i][0]%timeutils.DAY_DURATION:
                     message += "🟦 " + get_constraint_description(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday].pop(0))
                     j = len(recurring_constraints[time.gmtime(constraints[i][0]).tm_wday][0])
                 else:
@@ -441,168 +704,5 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
         i+=1
 
     # In case of recurring constraints still happening after the last checked constraint, add them
-    message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, get_first_day_of_week(weeknb + 1))
+    message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, timeutils.get_first_day_of_week(weeknb + 1))
     return message
-
-def get_date_string(epoch_time: int) -> str:
-    """
-    Returns a string formatted as this: Thursday 24/10
-    """
-    return f"""{week_index_to_week_day(time.gmtime(epoch_time).tm_wday + 1)} {epoch_to_short_date(epoch_time)}"""
-
-def get_nbdays(epoch_time: int) -> int:
-    """
-    Returns the number of days from 01/01/1970
-    """
-    return epoch_time//DAY_DURATION
-
-def get_nbweeks(epoch_time: int) -> int:
-    """
-    Returns the number of weeks since 5th of Jan., 1970
-    """
-    # The +3*DAY_DURATION is because the 01/01/1970 is a thursday, we have to correct this bias in order to have a coherent result after the division
-    return (epoch_time+3*DAY_DURATION)//(DAY_DURATION*7)
-
-def get_first_day_of_week(nbweeks: int):
-    return nbweeks*DAY_DURATION*7-3*DAY_DURATION
-
-def get_constraint_message(constraints: list[list[int]], start_time) -> discord.embeds.Embed:
-    message = discord.Embed(
-        title=f"Semaine du {epoch_to_short_date(start_time)} au {epoch_to_short_date(get_first_day_of_week(get_nbweeks(start_time))+6*DAY_DURATION)}",
-        description=get_constraints_week_description(constraints, start_time)
-    )
-    return message
-
-def get_admins() -> list[int]:
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            admins = json.loads(f.read())["admins"]
-            return admins
-    else:
-        return []
-
-def get_owners() -> list[int]:
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            owners = json.loads(f.read())["owners"]
-            return owners
-    else:
-        return []
-
-def add_admin(uuid: int):
-    create_data_file()
-    data = None
-    with open("data.json", "r") as f:
-        data = json.loads(f.read())
-    if data != None:
-        with open("data.json", "w") as f:
-            if uuid not in data["admins"]:
-                data["admins"].append(uuid)
-                f.write(json.dumps(data))
-
-def add_owner(uuid: int):
-    create_data_file()
-    data = None
-    with open("data.json", "r") as f:
-        data = json.loads(f.read())
-    if data != None:
-        with open("data.json", "w") as f:
-            if uuid not in data["owner"]:
-                data["owner"].append(uuid)
-                f.write(json.dumps(data))
-
-def remove_admin(uuid: int):
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None:
-            with open("data.json", "w") as f:
-                if uuid in data["admins"]:
-                    data["admins"].remove(uuid)
-                    f.write(json.dumps(data))
-
-def add_setlist(setlist_id: str):
-    create_data_file()
-    data = None
-    with open("data.json", "r") as f:
-        data = json.loads(f.read())
-    if data != None:
-        with open("data.json", "w") as f:
-            if setlist_id not in data["setlists"]:
-                data["setlists"].append(setlist_id)
-                f.write(json.dumps(data))
-
-def get_setlists_ids() -> list[str] | None:
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            return data["setlists"]
-
-
-def remove_setlist(index: int):
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None:
-            with open("data.json", "w") as f:
-                data["setlists"].delete(index)
-                f.write(json.dumps(data))
-
-def get_embed_colour():
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            colour = json.loads(f.read())["embed_colour"]
-            return colour
-    else:
-        return 10070709
-
-def change_embed_colour(colour: str):
-    """Hexadecimal format"""
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None:
-            with open("data.json", "w") as f:
-                data["embed_colour"] = int(colour, 16)
-                f.write(json.dumps(data))
-
-def get_instruments_names_translation() -> dict:
-    """
-    Returns a dict for translating DB columns (keys) to spreadsheets column names (list of values)
-    """
-
-    with open("./data.json", "r", encoding="utf-8") as f:
-        instruments_file = json.load(f)["instruments"]
-
-    return instruments_file
-
-def get_ignored_column_names() -> dict:
-    """
-    Returns a list of ignored column names
-    """
-
-    with open("./data.json", "r", encoding="utf-8") as f:
-        data = json.load(f)["ignored_columns"]
-
-    return data
-
-def add_ignored_column(column: str): # TODO remove ignored column
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None and column not in data["ignored_columns"]:
-            with open("data.json", "w") as f:
-                data["ignored_columns"].append(column)
-                f.write(json.dumps(data))
-
-def add_instrument_translation(instrument: str, translation: str):
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None:
-            with open("data.json", "w") as f:
-                if instrument in list(data["instruments"].keys()):
-                    data["instruments"][instrument].append(translation)
-                else:
-                    data["instruments"][instrument] = [translation]
-                f.write(json.dumps(data))
