@@ -183,7 +183,7 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
         else:
             raise ValueError("Cette contrainte existe déjà !")
 
-        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.date_to_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.", colour=tools.get_embed_colour())
+        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.get_special_date_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.", colour=tools.get_embed_colour())
         await i.response.send_message(embed=message, ephemeral=True)
 
     except Exception as e:
@@ -402,7 +402,7 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
 
         message = discord.Embed(
             title="Répétition ajoutée",
-            description=f"Répétition pour {song} {tools.date_to_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.",
+            description=f"Répétition pour {song} {tools.get_special_date_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.",
             colour=tools.get_embed_colour()
         )
 
