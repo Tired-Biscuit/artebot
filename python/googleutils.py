@@ -3,6 +3,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient import errors
 from googleapiclient.discovery import build
+
 import python.tools as tools
 import requests
 import json
@@ -19,7 +20,7 @@ SCOPES = [
 
 def refresh_token():
     """
-    Creates or refresh token if necessary
+    Creates or refreshes token if necessary
     
     Returns the credentials or None if creds couldn't be acquired
     """
@@ -43,7 +44,7 @@ def refresh_token():
                 token.write(creds.to_json())
     return creds
 
-def execute_api_function(function_name: str, opt_param=None):
+def execute_api_function(function_name: str, opt_param=None) -> (bool, str):
     """
     Executes the corresponding API function with optionnal parameters between brackets if needed.
 
@@ -56,7 +57,7 @@ def execute_api_function(function_name: str, opt_param=None):
         
         script_id = os.getenv("SCRIPT_ID")
 
-        print(script_id)
+        print("Script id:", script_id)
 
         request = {
             "function": function_name,
@@ -76,9 +77,9 @@ def execute_api_function(function_name: str, opt_param=None):
         # The API encountered a problem.
         return (False, error.content)
 
-def download_calendar(calendar_id):
+def download_calendar(calendar_id: str) -> (bool, str|list):
     """
-    Fetch the calendar
+    Fetch the Google Calendar events
 
     Returns: (bool, str/list) if bool is True, it's a success and the second item is a list of event,
                 else, it's a string of the error message
@@ -103,13 +104,13 @@ def download_calendar(calendar_id):
 
     if response.status_code == 200:
         data = response.json()
-        
-        with open("temp_cal2.json", "w") as f:
-            
+
+        #TODO delete in production
+        with open("temp_cal.json", "w") as f:
             f.write(json.dumps(data))
+
         return (True, data["items"])
-        # for event in data.get("items", []):
-        #     print(event["summary"], event.get("start"), event.get("end"))
+
     else:
         print("Erreur :", response.status_code, response.text)
         return (False, response.text)
@@ -148,6 +149,11 @@ def get_spreadsheet_name(spreadsheet_id: str) -> str:
     return response
 
 def get_setlists_names() -> list[str] | None:
+    """
+    Gets a list of the names of the setlists in the data.json file.
+
+    @flag data
+    """
     names = []
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -157,7 +163,7 @@ def get_setlists_names() -> list[str] | None:
             return names
     return None
 
-def get_spreadsheet_data(spreadsheet_id: str, rows: int):
+def get_spreadsheet_data(spreadsheet_id: str, rows: int) -> dict:
     """
     Executes a request to Google Sheets API and returns the response
     """
@@ -243,15 +249,12 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
     """
     song = {}
 
-    # print("db_columns:", db_columns)
-
     translation_dict = tools.get_instruments_names_translation()
 
     translated_columns = []
     for translations in translation_dict.values():
         for value in translations:
             translated_columns.append(value)
-
 
     for i in range(min(len(column_names), len(row_values))):
 

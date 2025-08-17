@@ -7,6 +7,42 @@ import python.tools as tools
 import python.timeutils as timeutils
 import python.db as db
 
+########################
+#     Custom Views     #
+########################
+
+class ConfirmView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.value = None
+
+    @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = True
+        await interaction.response.edit_message(view=None)
+        self.stop()
+
+    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = False
+        await interaction.response.edit_message(view=None)
+        self.stop()
+
+
+class ConfirmViewImpossible(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.value = None
+
+    @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success, disabled=True)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        pass
+
+    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = False
+        await interaction.response.edit_message(view=None)
+        self.stop()
 
 class PaginationView(discord.ui.View):
     def __init__(self, pages):
@@ -35,7 +71,7 @@ class PaginationView(discord.ui.View):
         self.next_button.disabled  = self.page >= len(self.pages) - 1
 
     def embed_page(self):
-        return discord.Embed(title="Titre", description=self.pages[self.page])
+        return information_embed(title="Titre", message=self.pages[self.page])
 
 
 class ConstraintsPaginationView(discord.ui.View):
@@ -63,7 +99,7 @@ class ConstraintsPaginationView(discord.ui.View):
         # self.next_button.disabled  = self.page >= len(self.pages) -
 
     def embed_page(self) -> discord.Embed:
-        return tools.get_constraint_embed(self.constraints, tools.get_first_day_of_week(tools.get_nbweeks(int(time.time())) + self.page))
+        return get_constraint_embed(self.constraints, timeutils.get_first_day_of_week(timeutils.get_nbweeks(int(time.time())) + self.page))
 
 
 class SetlistsPaginationView(discord.ui.View):
@@ -118,7 +154,7 @@ class SetlistsPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return discord.Embed(title="Choisissez une setlist à supprimer", description=text)
+        return information_embed(title="Choisissez une setlist à supprimer", message=text)
 
 
 class ConstraintRemovalPaginationView(discord.ui.View):
@@ -166,7 +202,7 @@ class ConstraintRemovalPaginationView(discord.ui.View):
 
     def embed_page(self) -> discord.Embed:
         if len(self.constraints_strings) == 0:
-            return discord.Embed(title="Aucune contrainte ajoutée")
+            return information_embed(title="Aucune contrainte ajoutée")
         text = ""
         for i in range(len(self.constraints_strings)):
             if i == self.page:
@@ -175,7 +211,7 @@ class ConstraintRemovalPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return discord.Embed(title="Choisissez une contrainte à supprimer", description=text)
+        return information_embed(title="Choisissez une contrainte à supprimer", message=text)
 
     def remove_constraint(self):
         constraint = self.constraints[self.page]
@@ -183,12 +219,54 @@ class ConstraintRemovalPaginationView(discord.ui.View):
         self.constraints_strings.pop(self.page)
         self.constraints.pop(self.page)
 
+
+class ThreadCreationView(discord.view.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.value = None
+
+    @discord.ui.button(label="Créer", style=discord.ButtonStyle.success)
+    async def create(self, interaction: discord.Interaction, button: discord.view.Button):
+        self.value = True
+        await interaction.response.edit_message(view=None)
+        self.stop()
+
+    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
+    async def cancel(self, interaction: discord.Interaction, button: discord.view.Button):
+        self.value = False
+        await interaction.response.edit_message(view=None)
+        self.stop()
+
+
 def get_constraint_embed(constraints: list[list[int]], start_time) -> discord.embeds.Embed:
     """
     Builds a Discord Embed to display constraints
     """
-    message = discord.Embed(
-        title=f"Semaine du {tools.epoch_to_ddmm(start_time)} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + 6 * timeutils.DAY_DURATION)}",
-        description=tools.get_constraints_week_description(constraints, start_time)
-    )
+    message = information_embed(title=f"Semaine du {tools.epoch_to_ddmm(start_time)} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + 6 * timeutils.DAY_DURATION)}", message=tools.get_constraints_week_description(constraints, start_time))
     return message
+
+
+
+##########################
+#     Generic Embeds     #
+##########################
+
+def success_embed(title: str = "Opération réussie", message: str = "") -> discord.Embed:
+    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+
+def warning_embed(title: str = "Attention", message: str = "Un léger problème est survenu") -> discord.Embed:
+    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+
+def failure_embed(title: str = "Erreur", message: str = "Une erreur est survenue") -> discord.Embed:
+    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+
+def information_embed(title: str = "", message: str = "") -> discord.Embed:
+    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+
+############################################
+#     Generic user-firendly Exceptions     #
+############################################
+
+FailureError = Exception("Une erreur est survenue")
+NotAdminError = Exception("Tu n'es pas admin :(")
+NotOwnerError = Exception("Tu n'es pas owner, les admins peuvent voir les owners avec /voir_owners")
