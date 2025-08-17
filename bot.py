@@ -6,13 +6,21 @@ import traceback
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
-from discord import app_commands, Interaction
+from discord import app_commands
+from google.auth import message
+
 import python.tools as tools
 import json
 from discord.ui import View, Button
 import python.db as db
 import python.discordutils as discordutils
 import python.googleutils as googleutils
+import python.timeutils as timeutils
+import python.commands.user_commands as user_commands
+import python.commands.constraints_commands as constraints_commands
+import python.commands.musics_commands as music_commands
+import python.commands.admin_commands as admin_commands
+from python.discordutils import failure_embed
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -49,9 +57,7 @@ else:
 #        New content        #
 # # # # # # # # # # # # # # #
 
-with open("groups.json", "r", encoding="utf-8") as f:
-    groups = json.load(f)
-
+groups = tools.get_groups()
 calendars = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
 tables = ["User", "Song", "MusicianConstraint", "GoogleEvent", "SchoolEvent"]
 
@@ -63,54 +69,38 @@ table_choices = [app_commands.Choice(name=table, value=table) for table in table
 async def on_ready():
     await bot.tree.sync()
 
+
+
+
+#########################
+#     User Commands     #
+#########################
+
 @bot.tree.command(name="connexion", description="S'ajouter à la base de données")
 @app_commands.describe(
-    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
-    mail="Ton adresse mail TN.net"
+    mail="Ton adresse mail TN.net",
+    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)"
 )
 @app_commands.rename(group="groupe")
 @app_commands.choices(group=group_choices)
-async def connection(i: discord.Interaction, mail:str, group: app_commands.Choice[str] = None):
+async def connection(i: discord.Interaction, mail: str, group: app_commands.Choice[str] = None):
     try:
-        # Check if user is already in the database
-        if db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("Tu es déjà dans la base de données !")
-
-        try:
-            pseudo = tools.parse_mail(mail)
-        except:
-            raise ValueError(f"« {mail} » n'est pas une adresse mail valide.")
-        # Add user to the database
-        db.add_user(str(i.user.id), pseudo, mail, group.value if group else "")
-
-        message = discord.Embed(title="Ajout réussi", description=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !", colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=user_commands.connection(i.user.id, mail, group.value if group else ""), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="mail", description="Changer l'adresse mail associée à son compte")
 @app_commands.describe(
     mail="La nouvelle adresse mail (TN.net)"
 )
-async def mail(i: discord.Interaction, mail:str):
+async def mail(i: discord.Interaction, mail: str):
     try:
-        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-
-        try:
-            tools.parse_mail(mail)
-        except:
-            raise ValueError("Format de l'adresse mail incorrect !")
-
-        db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Adresse mail modifiée avec succès !", ephemeral=True)
+        await i.response.send_message(embed=user_commands.change_mail(i.user.id, mail), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
@@ -121,33 +111,45 @@ async def mail(i: discord.Interaction, mail:str):
 @app_commands.choices(group=group_choices)
 async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
     try:
-        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-
-        db.run(f"UPDATE User SET group_id = '{group.value if group else ''}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Groupe modifié avec succès !", ephemeral=True)
+        await i.response.send_message(embed=user_commands.change_group(i.user.id, group.value if group else ""), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="pseudo", description="Changer le pseudo associé à son compte")
 @app_commands.describe(
-    pseudo="Ton nouveau pseudo (Prénom NOM par défaut)"
+    username="Ton nouveau pseudo (Prénom NOM par défaut)"
 )
-async def pseudo(i: discord.Interaction, pseudo:str):
+@app_commands.rename(username="pseudo")
+async def username(i: discord.Interaction, username: str):
     try:
-        if not db.run(f"SELECT email FROM User WHERE uuid = '{i.user.id}'"):
-            raise ValueError("Tu ne fais pas partie de la base de données ! (`/connexion`)")
-
-        db.run(f"UPDATE User SET username = '{pseudo}' WHERE uuid = '{i.user.id}'")
-        await i.response.send_message("Pseudo modifié avec succès !", ephemeral=True)
+        await i.response.send_message(embed=user_commands.change_username(i.user.id, username), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
+
+
+@bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
+@app_commands.describe(
+    user="Mentionner la personne désirée (elle ne recevra pas de notification)"
+)
+@app_commands.rename(
+    user="membre"
+)
+async def profile(i: discord.Interaction, user: discord.User=None):
+    try:
+        await i.response.send_message(embed=user_commands.profile(i.user.id if user is None else user.id), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(str(e)), ephemeral=True)
+
+
+
+
+###############################
+#     Constraint Commands     #
+###############################
 
 @bot.tree.command(name="indisponibilité", description="Ajouter une contrainte ponctuelle")
 @app_commands.describe(
@@ -160,35 +162,12 @@ async def pseudo(i: discord.Interaction, pseudo:str):
     start="début",
     end="fin"
 )
-
-async def punctual_constraint(i:discord.Interaction, day: str, start: str = None, end: str = None):
+async def punctual_constraint(i: discord.Interaction, day: str, start: str = None, end: str = None):
     try:
-        name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
-        if not name:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
-
-        name = name[0][0]
-
-        ndate = tools.parse_date(day)
-
-        nstart = tools.parse_time(start) if start else "0000"
-
-        nend = tools.parse_time(end) if end else "2359"
-
-        start_unix = tools.local_to_unixepoch(ndate + nstart)
-        end_unix = tools.local_to_unixepoch(ndate + nend)
-
-        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_unix}' AND end_time = '{end_unix}'"):
-            db.add_punctual_constraint(i.user.id, start_unix, end_unix)
-        else:
-            raise ValueError("Cette contrainte existe déjà !")
-
-        message = discord.Embed(title="Contrainte ajoutée", description=f"Indisponibilité pour {name} {tools.get_special_date_string(ndate)} {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.", colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=constraints_commands.punctual_constraint(i.user.id, day, start, end), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="indisponibilité_récurrente", description="Ajouter une contrainte récurrente")
@@ -212,95 +191,41 @@ async def punctual_constraint(i:discord.Interaction, day: str, start: str = None
     start="début",
     end="fin"
 )
-
-async def recurring_constraint(i:discord.Interaction, day: app_commands.Choice[int], start:str = None, end: str = None):
+async def recurring_constraint(i: discord.Interaction, day: app_commands.Choice[int], start: str = None, end: str = None):
     try:
-        name = db.run(f"SELECT username FROM User WHERE uuid = '{i.user.id}'")
-        if not name:
-            raise ValueError(f"Tu ne fais pas partie de la base de données ! Ajoute-toi avec `/connexion`.")
-
-        name = name[0][0]
-
-        nstart = tools.parse_time(start) if start else "0000"
-        nend = tools.parse_time(end) if end else "2359"
-
-        start_epoch = int(nstart[:2])*3600 + int(nstart[2:])*60
-        end_epoch = int(nend[:2])*3600 + int(nend[2:])*60
-
-        # start_epoch = time.mktime(time.strptime(nstart, "%H%M"))
-        # end_epoch = time.mktime(time.strptime(nend, "%H%M"))
-
-        print(f"Récurrente {tools.time_span_to_string(start_epoch, end_epoch)}, {start_epoch}, {end_epoch}")
-
-        if not db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = {i.user.id} AND start_time = '{start_epoch}' AND end_time = '{end_epoch}' AND week_day = {day.value}"):
-            db.add_recurring_constraint(i.user.id, start_epoch, end_epoch, day.value)
-        else:
-            raise ValueError("Cette contrainte existe déjà !")
-
-        if day.value == 8:
-            day_string = "jours"
-        else:
-            day_string = day.name.lower() + "s"
-
-        message = discord.Embed(
-            title="Contrainte ajoutée",
-            description=f"Indisponibilité pour {name} tous les **{day_string}** {tools.formatted_time_span_string(nstart, nend)} ajoutée avec succès.",
-            colour=tools.get_embed_colour()
-        )
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=constraints_commands.recurring_constraint(i.user.id, day, start, end), ephemeral=True)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="supprimer_indisponibilité", description="Retirer une contrainte")
 async def delete_constraint(i: discord.Interaction):
-    constraints = db.request_constraints(i.user.id)
-    constraints_texts = []
-    for constraint in constraints:
-        if constraint[2] == 0:
-            constraints_texts.append(tools.get_date_string(constraint[0])+ " " +tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
-        else:
-            if constraint[2] != 7:
-                constraints_texts.append("Tous les " + tools.week_index_to_week_day(constraint[2]) + "s " + tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
-            else:
-                constraints_texts.append("Tous les jours " + tools.time_span_to_string(constraint[0], constraint[1]).replace("*", ""))
-    view = discordutils.ConstraintRemovalPaginationView(constraints_texts, constraints, i.user.id)
-    view.check_buttons_availability()
-    await i.response.send_message(embed=view.embed_page(), view=view)
+    try:
+        view = constraints_commands.delete_constraint(i.user.id)
+        await i.response.send_message(embed=view.embed_page(), view=view)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
-class ConfirmView(View):
-            def __init__(self):
-                super().__init__(timeout=60)
-                self.value = None
 
-            @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success)
-            async def confirm(self, interaction: discord.Interaction, button: Button):
-                self.value = True
-                await interaction.response.edit_message(view=None)
-                self.stop()
+@bot.tree.command(name="voir_indisponibilités", description="Consulter les contraintes")
+async def see_constraints(i:discord.Interaction):
+    try:
+        try:
+            constraints = db.request_constraints(i.user.id)
+            view = discordutils.ConstraintsPaginationView(constraints)
+            await i.response.send_message(embed=view.embed_page(), view=view)
+        except:
+            raise discordutils.FailureError
+    except Exception as e:
+        await i.response.send_message(embed=failure_embed(message=str(e)), ephemeral=True)
 
-            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
-            async def cancel(self, interaction: discord.Interaction, button: Button):
-                self.value = False
-                await interaction.response.edit_message(view=None)
-                self.stop()
 
-class ConfirmViewImpossible(View):
-            def __init__(self):
-                super().__init__(timeout=60)
-                self.value = None
 
-            @discord.ui.button(label="Ajouter tout de même", style=discord.ButtonStyle.success, disabled=True)
-            async def confirm(self, interaction: discord.Interaction, button: Button):
-                pass
 
-            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
-            async def cancel(self, interaction: discord.Interaction, button: Button):
-                self.value = False
-                await interaction.response.edit_message(view=None)
-                self.stop()
+###########################
+#     Musics Commands     #
+###########################
 
 @bot.tree.command(name="ajouter_répète", description="Ajouter un nouveau créneau de répétition pour un morceau")
 @app_commands.describe(
@@ -315,7 +240,7 @@ class ConfirmViewImpossible(View):
     duration="durée",
     song="morceau"
 )
-async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str, song:str=None):
+async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: str, song: str = None):
     try:
         if song is None:
             if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
@@ -323,206 +248,48 @@ async def add_rehearsal(i:discord.Interaction, day:str, start:str, duration:str,
             else:
                 raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
+        result = music_commands.add_rehearsal(i.user.id, day, start, duration, song)
 
-        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%';")
+        ping, blocking_message, summary_message, view, request_ping = result[0], result[1], result[2], result[3], result[4]
 
-        if not song_info:
-            raise ValueError(f"Morceau « {song} » non trouvé !")
 
-        song_info = song_info[0]
-
-        ndate = tools.parse_date(day)
-        nstart = tools.parse_time(start)
-
-        start_time = tools.local_to_unixepoch(ndate + nstart)
-        duration = tools.parse_duration(duration)
-
-        instruments = db.get_instruments_names()
-
-        blocks, absent, present = list(), list(), list()
-
-        for j in range(5, len(song_info)-1):
-
-            instrument = instruments[j][0]
-            musicians = song_info[j].split(" ")
-
-            for musician in musicians:
-                if musician and musician not in blocks and musician not in absent and musician not in present:
-
-                    uuid = db.run(f"SELECT uuid, username FROM User WHERE email = '{musician}';")
-                    if uuid:
-                        uuid, username = uuid[0]
-                        blocking_events = db.request_blocking_events(start_time, duration, uuid)
-
-                        if blocking_events:
-                            blocks.append([username, instrument, blocking_events[0]])
-                        else:
-                            present.append([username, uuid, instrument])
-
-                    else:
-                        absent.append([tools.parse_mail(musician), instrument])
-
-        if blocks or absent:
-
-            message = discord.Embed(title=f"Blocages rencontrés : {len(present)} ", colour=tools.get_embed_colour())
-            if len(present) <= 1:
-                message.title += "personne disponible"
-            else:
-                message.title += f"personnes disponibles"
-
-            if absent:
-                absents_message = str()
-                for absent_musician in absent:
-                    absents_message += f"- {absent_musician[0]} ({absent_musician[1]})\n"
-                message.add_field(name="Ces personnes ne sont pas présentes dans la base de données", value=absents_message)
-
-            if blocks:
-                blocks_message = str()
-                for blocked_musician in blocks:
-                    blocks_message += f"- {blocked_musician[0]} ({blocked_musician[1]}) : "
-                    if (type(blocked_musician[2][0]) == str):
-                        blocks_message += blocked_musician[2][0]
-                    else:
-                        blocks_message += "indisponibilité personnelle"
-                    blocks_message += "\n"
-
-                message.add_field(name="Ces personnes ne sont pas disponibles sur ce créneau", value=blocks_message)
-
-            if len(present) > 1:
-                view = ConfirmView()
-            else:
-                view = ConfirmViewImpossible()
-            await i.response.send_message(embed=message, view=view)
+        if request_ping:
+            await i.response.send_message(embed=blocking_message, view=view)
             await view.wait()
             if not view.value:
                 await i.delete_original_response()
-                return
 
-        # TODO : add rehearsal to the calendar
-
-        message = discord.Embed(
-            title="Répétition ajoutée",
-            description=f"Répétition pour {song} {tools.get_special_date_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.",
-            colour=tools.get_embed_colour()
-        )
-
-        present_message = str()
-        ping = str()
-
-        for present_musician in present:
-            ping += f"<@{present_musician[1]}> "
-            present_message += f"- {present_musician[0]} ({present_musician[2]})\n"
-
-        message.add_field(name="Membres présents", value=present_message)
-
-        if blocks or absent:
-            await i.followup.send(content=ping, embed=message)
+        if request_ping:
+            await i.followup.send(content=ping, embed=summary_message)
         else:
-            await i.response.send_message(content=ping, embed=message)
+            await i.response.send_message(content=ping, embed=summary_message)
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
+        message = discordutils.failure_embed(title="Erreur", message=str(e))
         try:
             await i.response.send_message(embed=message, ephemeral=True)
         except:
             await i.followup.send(embed=message)
 
 
-@bot.tree.command(name="voir_indisponibilités", description="Consulter les contraintes")
-
-async def see_constraints(i:discord.Interaction):#, button: discord.ui.Button):
+@bot.tree.command(name="trouver_repète", description="Trouve les créneaux possibles pour répéter un morceau sur les 7 prochains jours")
+@app_commands.describe(
+    song="Nom du morceau (laisser vide si vous êtes dans le thread correspondant)"
+)
+@app_commands.rename(
+    song="morceau"
+)
+async def find_rehearsal(i: discord.Interaction, song: str = None):
     try:
-        constraints = db.request_constraints(i.user.id)
-
-        view = discordutils.ConstraintsPaginationView(constraints)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        if song is None:
+            if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
+                song = i.channel.name
+            else:
+                raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
+        await i.response.send_message(embed=music_commands.find_rehearsal(song))
 
     except Exception as e:
-        message = discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
-
-@bot.tree.command()
-async def pages(i:discord.Interaction):
-    pages = ["Un", "Deux", "Trois"]
-    view = discordutils.PaginationView(pages)
-    await i.response.send_message(embed=view.embed_page(), view=view)
-
-@bot.tree.command(name="ajouter_admin", description="enregistrer quelqu'un comme admin")
-@app_commands.describe(
-    user="Mentionner la personne concernée"
-)
-@app_commands.rename(
-    user="membre"
-)
-
-async def add_admin(i: discord.Interaction, user: discord.User):
-    if i.user.id in tools.get_admins():
-        try:
-            tools.add_admin(user.id)
-            await i.response.send_message(content="Opération effectuée", ephemeral=True)
-        except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
-
-@bot.tree.command(name="ajouter_owner", description="(owner-only) enregistrer quelqu'un comme owner")
-@app_commands.describe(
-    user="Mentionner la personne concernée"
-)
-@app_commands.rename(
-    user="membre"
-)
-async def add_owner(i: discord.Interaction, user: discord.User):
-    #TODO demander la confirmation
-    if i.user.id in tools.get_owners():
-        try:
-            tools.add_admin(user.id)
-            tools.add_owner(user.id)
-            await i.response.send_message(content="Opération effectuée", ephemeral=True)
-        except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
-
-@bot.tree.command(name="couleur_intégrations", description="changer la couleur des intégrations Discord")
-@app_commands.describe(
-    colour="Nouvelle couleur (format hexadécimal XXXXXX)"
-)
-@app_commands.rename(
-    colour="couleur"
-)
-async def change_embed_colour(i: discord.Interaction, colour: str):
-    if i.user.id in tools.get_admins():
-        try:
-            tools.change_embed_colour(colour)
-            await i.response.send_message(embed=discord.Embed(description="Opération effectuée", colour=int(colour, 16)), ephemeral=True)
-
-        except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(content="Tu n'es pas admin :(", ephemeral=True)
-
-
-@bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
-@app_commands.describe(
-    user="Mentionner la personne concernée"
-)
-@app_commands.rename(
-    user="membre"
-)
-
-async def remove_admin(i: discord.Interaction, user: discord.User):
-    if i.user.id in tools.get_owners():
-        if i.user.id == user.id:
-            await i.response.send_message(content="Tu ne peux pas te retirer les droits", ephemeral=True)
-        else:
-            try:
-                tools.remove_admin(user.id)
-                await i.response.send_message(content="Opération effectuée", ephemeral=True)
-            except Exception:
-                await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
+        await i.response.send_message(embed=failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisse vide pour consulter tes morceaux.")
@@ -539,25 +306,12 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
     app_commands.Choice(name="avancé", value=1),
     app_commands.Choice(name="complet", value=2)
 ])
-
 async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
     try:
-        if user is None:
-            uuid = i.user.id
-        else:
-            uuid = user.id
-
-        try:
-            title = f"Infos pour {db.get_user_name(uuid)}"
-        except:
-            if user is None:
-                raise ValueError("Tu n'es pas dans la base de données ! (`/connexion`)")
-            else:
-                raise ValueError("Cette personne ne se trouve pas dans la base de données !")
-        message = discord.Embed(title=title, description=db.get_songs_message(uuid, display), colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=music_commands.info(i.user.id if user is None else user.id, display), ephemeral=True)
     except Exception as e:
-        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
 
 @bot.tree.command(name="morceau", description="obtenir des informations concernant un morceau en particulier.")
 @app_commands.describe(
@@ -567,49 +321,52 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
     song="morceau"
 )
 async def song(i: discord.Interaction, song: str=None):
-        try:
-            if song is None:
-                if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
-                    song = i.channel.name
-                else:
-                    raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
+    try:
+        if song is None:
+            if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
+                song = i.channel.name
+            else:
+                raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
-            title, desc = db.get_song_info_message(song)
-            message = discord.Embed(title=title, description=desc, colour=tools.get_embed_colour())
-            await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=music_commands.song(song), ephemeral=True)
 
-
-        except Exception as e:
-            await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 
 
-@bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
+##########################
+#     Admin Commands     #
+##########################
+#TODO Ajouter les décorateurs admin-only
+
+@bot.tree.command(name="ajouter_admin", description="enregistrer quelqu'un comme admin")
 @app_commands.describe(
-    user="Mentionner la personne désirée (elle ne recevra pas de notification)"
+    user="Mentionner la personne concernée"
 )
 @app_commands.rename(
     user="membre"
 )
-async def profile(i: discord.Interaction, user: discord.User=None):
+async def add_admin(i: discord.Interaction, user: discord.User):
     try:
-        if user is None:
-            uuid = i.user.id
-        else:
-            uuid = user.id
-        try:
-            title = f"Profil de {db.get_user_name(uuid)}"
-        except:
-            if user is None:
-                raise ValueError("Tu n'es pas dans la base de données ! (`/connexion`)")
-            else:
-                raise ValueError("Cette personne ne se trouve pas dans la base de données !")
-
-        message = discord.Embed(title=title, description=db.get_profile_message(uuid), colour=tools.get_embed_colour())
-        await i.response.send_message(embed=message, ephemeral=True)
+        await i.response.send_message(embed=admin_commands.add_admin(i.user.id, user.id), ephemeral=True)
     except Exception as e:
-        await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="couleur_intégrations", description="changer la couleur des intégrations Discord")
+@app_commands.describe(
+    colour="Nouvelle couleur (format hexadécimal XXXXXX)"
+)
+@app_commands.rename(
+    colour="couleur"
+)
+async def change_embed_colour(i: discord.Interaction, colour: str):
+    try:
+        await i.response.send_message(embed=admin_commands.change_embed_colour(i.user.id, colour), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="actualiser", description="Met à jour un calendrier")
@@ -620,19 +377,14 @@ async def profile(i: discord.Interaction, user: discord.User=None):
     calendar="calendrier"
 )
 @app_commands.choices(calendar=calendar_choices)
-
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 
     await i.response.defer()
 
-    if calendar.value == "Spreadsheets":
-        for setlist_id in tools.get_setlists_ids():
-            db.run(f"""DELETE FROM Song WHERE setlist_id = "{setlist_id}";""")
-            print(setlist_id)
-            db.add_setlist(setlist_id, 50)
-        message=discord.Embed(title="Setlist mise à jour", colour=tools.get_embed_colour())
-    else:
-        message=discord.Embed(title=calendar.value, colour=tools.get_embed_colour())
+    try:
+        message = admin_commands.refresh(i.user.id, calendar.value)
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
 
     await i.followup.send(embed=message, ephemeral=True)
 
@@ -644,83 +396,62 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 @app_commands.rename(
     setlist_link="lien"
 )
-
 async def add_setlist(i: discord.Interaction, setlist_link: str):
-    if setlist_link != "":
-        try:
-            tools.add_setlist(googleutils.get_spreadsheet_id(setlist_link))
-            message = discord.Embed(title="Setlist ajoutée", colour=tools.get_embed_colour())
-            await i.response.send_message(embed=message, ephemeral=True)
-        except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Erreur", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(embed=discord.Embed(title="Paramètre vide!", colour=tools.get_embed_colour()), ephemeral=True)
+    try:
+        await i.response.send_message(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
-
 async def delete_setlist(i: discord.Interaction):
-    setlists_names = googleutils.get_setlists_names()
-    view = discordutils.SetlistsPaginationView(setlists_names)
-    view.check_buttons_availability()
-    await i.response.send_message(embed=view.embed_page(), view=view)
-
-class ThreadCreationView(View):
-            def __init__(self):
-                super().__init__(timeout=60)
-                self.value = None
-
-            @discord.ui.button(label="Créer", style=discord.ButtonStyle.success)
-            async def create(self, interaction: discord.Interaction, button: Button):
-                self.value = True
-                await interaction.response.edit_message(view=None)
-                self.stop()
-
-            @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
-            async def cancel(self, interaction: discord.Interaction, button: Button):
-                self.value = False
-                await interaction.response.edit_message(view=None)
-                self.stop()
-
+    try:
+        setlists_names = googleutils.get_setlists_names()
+        view = discordutils.SetlistsPaginationView(setlists_names)
+        view.check_buttons_availability()
+        await i.response.send_message(embed=view.embed_page(), view=view)
+    except Exception as e:
+        await i.response.send_message(embed=failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="créer_fils", description="Créer un fil par morceau dans ce salon")
-
 async def create_threads(i: discord.Interaction):
+    # Too complex to move to admin_commands
     try:
+        db.check_user(i.user.id)
         if i.user.id not in tools.get_admins():
-            raise PermissionError("Tu n'es pas admin :(")
+            raise discordutils.NotAdminError
 
         try:
             songs = db.run("SELECT * FROM Song")
         except:
-            raise("Problème avec les morceaux présents...")
+            raise "Problème avec les morceaux présents..."
 
         existing_threads = [thread.name for thread in i.channel.threads]
         songs = [list(song) for song in songs if song[1] not in existing_threads]
 
         if not songs:
-            await i.response.send_message("Pas de fils à créer !", ephemeral=True)
+            await i.response.send_message(embed=discordutils.information_embed(message="Pas de fils à créer !"), ephemeral=True)
         else:
             await i.response.defer(thinking=False)
 
-            desc = str()
+            description = str()
             for song in songs:
-                desc += f"- {song[1]} ({song[2]})\n"
-            desc = desc[:-1]
+                description += f"- {song[1]} ({song[2]})\n"
+            description = description[:-1]
 
-            view = ThreadCreationView()
+            view = discordutils.ThreadCreationView()
             if len(songs) != 1:
-                await i.edit_original_response(embed=discord.Embed(title=f"{len(songs)} fils manquants", description=desc), view=view)
+                await i.edit_original_response(embed=discordutils.information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
             else:
-                await i.edit_original_response(embed=discord.Embed(title=f"{len(songs)} fils manquants", description=desc, view=view))
+                await i.edit_original_response(embed=discordutils.information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
 
             await view.wait()
             if not view.value:
                 await i.delete_original_response()
                 return
 
-            await i.edit_original_response(embed=discord.Embed(title=f"0/{len(songs)} fil créé...", description=desc))
+            await i.edit_original_response(embed=discordutils.information_embed(title=f"0/{len(songs)} fil créé...", message=description))
 
 
         created = 0
@@ -738,19 +469,19 @@ async def create_threads(i: discord.Interaction):
                 songs[k][1] = ":x: (pas de musiciens dans la DB) " + songs[k][1]
 
 
-            desc = str()
+            description = str()
             for j in range(len(songs)):
                 if j == k+1:
-                    desc += f"- **{songs[j][1]} ({songs[j][2]})**\n"
+                    description += f"- **{songs[j][1]} ({songs[j][2]})**\n"
                 else:
-                    desc += f"- {songs[j][1]} ({songs[j][2]})\n"
+                    description += f"- {songs[j][1]} ({songs[j][2]})\n"
 
-            desc = desc[:-1]
+            description = description[:-1]
 
             if created > 1:
-                await i.edit_original_response(embed=discord.Embed(title=f"{created}/{len(songs)} fils créés...", description=desc))
+                await i.edit_original_response(embed=discordutils.information_embed(title=f"{created}/{len(songs)} fils créés...", message=description))
             else:
-                await i.edit_original_response(embed=discord.Embed(title=f"{created}/{len(songs)} fil créé...", description=desc))
+                await i.edit_original_response(embed=discordutils.information_embed(title=f"{created}/{len(songs)} fil créé...", message=description))
 
             text = str()
             for musician in musicians:
@@ -774,66 +505,10 @@ async def create_threads(i: discord.Interaction):
 
     except Exception as e:
         try:
-            await i.response.send_message(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+            await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
         except:
-            await i.followup.send(embed=discord.Embed(title="Erreur", description=e, colour=tools.get_embed_colour()), ephemeral=True)
+            await i.followup.send(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
-
-@bot.tree.command(name="trouver_repète", description="Trouve les 5 prochains créneaux possibles pour répéter un morceau")
-@app_commands.describe(
-    song="Nom du morceau (laisser vide si vous êtes dans le thread correspondant)"
-)
-@app_commands.rename(
-    song="morceau"
-)
-async def find_rehearsal(i: discord.Interaction, song: str = None):
-    try:
-        if song is None:
-            if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
-                song = i.channel.name
-            else:
-                raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
-        song_info = db.run(f"SELECT * FROM Song WHERE title LIKE '%{song}%';")[0]
-        musicians_uuids = []
-        unregistered_users = []
-        for field in song_info[4:-1]:
-            for email in field.split(" "):
-                if len(email) > 17: # TODO valid email
-                    value = db.run(f"SELECT uuid FROM User WHERE email = '{email}';")
-                    if len(value) > 0:
-                        musicians_uuids.append(value[0][0])
-                    else:
-                        unregistered_users.append(email)
-
-        start_time = int((time.time()//3600+1)*3600)
-        if start_time%tools.DAY_DURATION >= 64800:
-            start_time = int((start_time//tools.DAY_DURATION + 1)*tools.DAY_DURATION + 8*3600) # The next day at 8 AM
-
-        rehearsals = []
-        while len(rehearsals) < 5:
-            for musician_uuid in musicians_uuids:
-                if len(db.request_blocking_events(start_time, 3600, musician_uuid)) == 0:
-                    rehearsals.append(start_time)
-            start_time += 3600
-
-        text = f"""Recherche à partir de {time.strftime("%d/%m %H:%M", time.localtime(start_time))}\nRésultats:\n{[time.strftime("%d/%m %H:%M", time.localtime(value)) for value in rehearsals]}"""
-
-        await i.response.send_message(content=text)
-    except Exception as e:
-        raise e
-
-@bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
-#TODO ajouter un écran de confirmation
-async def reset_database(i: discord.Interaction):
-    if i.user.id in tools.get_owners():
-        try:
-            db.reset()
-            db.init()
-            await i.response.send_message(content="Opération effectuée", ephemeral=True)
-        except Exception:
-            await i.response.send_message(embed=discord.Embed(title="Une erreur est survenue", description=traceback.format_exc(), colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        await i.response.send_message(content="Tu n'es pas owner :(", ephemeral=True)
 
 @bot.tree.command(name="ajouter_instrument", description="Ajouter un instrument dans la BDD")
 @discord.app_commands.guild_only()
@@ -847,8 +522,12 @@ async def reset_database(i: discord.Interaction):
     translation="instrument_francais"
 )
 async def add_instrument(i: discord.Interaction, instrument: str, translation: str):
-    db.add_instrument(instrument, translation)
-    await i.response.send_message(embed=discord.Embed(title="Ajout de l'instrument", description="Effectué", colour=tools.get_embed_colour()), ephemeral=True)
+    try:
+        db.add_instrument(instrument, translation)
+        await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
 
 @bot.tree.command(name="supprimer_table", description="Vider toutes les entrées d'une table de la BDD")
 @app_commands.describe(
@@ -860,16 +539,70 @@ async def add_instrument(i: discord.Interaction, instrument: str, translation: s
 @app_commands.choices(table=table_choices)
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
-async def delete_songs(i: discord.Interaction, table: app_commands.Choice[str]):
-    if table.value == "User":
-        if i.user.id not in tools.get_owners():
-            await i.response.send_message(embed=discord.Embed(title="Opération impossible", description="Il faut être owner pour supprimer les utilisateurs", colour=tools.get_embed_colour()), ephemeral=True)
-    if i.user.id not in tools.get_admins():
-        await i.response.send_message(embed=discord.Embed(title="Opération impossible", description="Il faut être enregistré en admin pour faire cela", colour=tools.get_embed_colour()), ephemeral=True)
-    else:
-        db.run(f"""DELETE FROM {table.value};""")
-        await i.response.send_message(embed=discord.Embed(title=f"Suppression des entrées de {table.value}", description="Effectué", colour=tools.get_embed_colour()), ephemeral=True)
+async def delete_table(i: discord.Interaction, table: app_commands.Choice[str]):
+    try:
+        await i.response.send_message(embed=admin_commands.delete_table(i.user.id, table.value), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
+
+#TODO voir_owners
+
+
+
+
+##################################################################
+#     Owner Commands (in python/commands/admin_commands.py)      #
+##################################################################
+
+@bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
+@app_commands.describe(
+    user="Mentionner la personne concernée"
+)
+@app_commands.rename(
+    user="membre"
+)
+async def remove_admin(i: discord.Interaction, user: discord.User):
+    try:
+        await i.response.send_message(embed=admin_commands.remove_admin(i.user.id, user.id), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="ajouter_owner", description="(owner-only) enregistrer quelqu'un comme owner")
+@app_commands.describe(
+    user="Mentionner la personne concernée"
+)
+@app_commands.rename(
+    user="membre"
+)
+async def add_owner(i: discord.Interaction, user: discord.User):
+    #TODO demander la confirmation
+    if i.user.id in tools.get_owners():
+        try:
+            tools.add_admin(user.id)
+            tools.add_owner(user.id)
+            await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+        except Exception as e:
+            await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+    else:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(discordutils.NotOwnerError)), ephemeral=True)
+
+
+@bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
+#TODO ajouter un écran de confirmation
+async def reset_database(i: discord.Interaction):
+    try:
+        await  i.response.send_message(embed=admin_commands.reinit_db(i.user.id), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+
+
+#########################
+#    End Of Content     #
+#########################
 
 @bot.tree.command(name="order_66", description="Execute order 66")
 @discord.app_commands.guild_only()
@@ -881,6 +614,9 @@ async def order_66(i: discord.Interaction):
 @bot.command()
 async def foo(ctx):
     await ctx.send("miam")
+
+
+
 
 # # # # # # # # # # # # # # #
 #     Outdated content      #
@@ -912,5 +648,12 @@ async def logs(ctx):
     logs_data["logs"] += 1
     message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
     await ctx.author.send(embed=message)
+
+
+
+
+#################################
+#     /!\ DO NOT DELETE /!\     #
+#################################
 
 bot.run(TOKEN)
