@@ -7,11 +7,8 @@ import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord import app_commands
-from google.auth import message
 
 import python.tools as tools
-import json
-from discord.ui import View, Button
 import python.db as db
 import python.discordutils as discordutils
 import python.googleutils as googleutils
