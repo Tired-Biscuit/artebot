@@ -102,12 +102,11 @@ def gcal_to_epoch(gcal_time: str) -> int:
 
 def punctual_constraint_to_epoch(time_string: str) -> int:
     """
-    Returns epoch from punctual constraint string (interprets local time as utc time)
+    Returns epoch from punctual constraint string (YYYYMMDDHHMMSS) (interprets local time as utc time)
 
     @flag punctual_constraint_to_epoch
     """
     return local_datetime_as_epoch(yyyymmddhhmmss_to_datetime(time_string))
-
 
 def week_day_to_week_index(week_day: str):
     """

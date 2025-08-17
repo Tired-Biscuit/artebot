@@ -21,18 +21,63 @@ def create_data_file():
     """
     Creates the data file and initialize all the necessary fields
     """
+    val = {"calendar_ids": [],
+        "setlists": [],
+        "admins": [],
+        "owners": [],
+        "embed_colour": 10070709,
+        "ignored_columns": ["Genre", "Statistiques"],
+        "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
+        "groups": {
+            "1A G1": "fise_1a_g1",
+            "1A G2": "fise_1a_g2",
+            "1A G3": "fise_1a_g3",
+            "1A G4": "fise_1a_g4",
+            "2A G1": "fise_2a_g1",
+            "2A G2": "fise_2a_g2",
+            "2A G3": "fise_2a_g3",
+            "2A G4": "fise_2a_g4",
+            "2A G5": "fise_2a_g5",
+            "2A IAMD": "fise_2a_iamd",
+            "2A IL": "fise_2a_il",
+            "2A LE": "fise_2a_le",
+            "2A SIE": "fise_2a_sie",
+            "2A ISS": "fise_2a_iss",
+            "3A IAMD": "fise_3a_iamd",
+            "3A IL": "fise_3a_il",
+            "3A LE": "fise_3a_le",
+            "3A SIE": "fise_3a_sie",
+            "3A ISS": "fise_3a_iss",
+            "FISA 1A": "fisa_1a",
+            "FISA 2A": "fisa_2a",
+            "FISA 3A": "fisa_3a"
+        }
+    }
     if not os.path.exists("data.json"):
-        data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
+        # data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
         with open("data.json", "w") as f:
-            f.write(json.dumps(data))
+            f.write(json.dumps(val))
     else:
         data = None
         with open("data.json", "r") as f:
             data = f.read()
         if data == "":
-            data = {"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
+            data = val#{"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
             with open("data.json", "w") as f:
                 f.write(json.dumps(data))
+
+def get_groups():
+    """
+    Returns a dictionnary with all groups and their underscored values
+
+    @flag data
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            groups = json.loads(f.read())["groups"]
+            return groups
+    else:
+        return []
 
 def add_calendar(calendar_id):
     """
@@ -40,6 +85,8 @@ def add_calendar(calendar_id):
 
     @flag data
     """
+    if len(calendar_id) <= 5:
+        return
     create_data_file()
     data = {}
     with open("data.json", "r") as f:
@@ -154,6 +201,8 @@ def add_setlist(setlist_id: str):
 
     @flag data
     """
+    if len(setlist_id) <= 5:
+        return
     create_data_file()
     data = None
     with open("data.json", "r") as f:
@@ -213,7 +262,7 @@ def get_instruments_names_translation() -> dict:
     """
     instruments_file = {}
     if os.path.exists("data.sjon"):
-        with open("./data.json", "r", encoding="utf-8") as f:
+        with open("data.json", "r", encoding="utf-8") as f:
             instruments_file = json.load(f)["instruments"]
 
     return instruments_file
@@ -226,7 +275,7 @@ def get_ignored_column_names() -> dict:
     """
     data = {}
     if os.path.exists("data.json"):
-        with open("./data.json", "r", encoding="utf-8") as f:
+        with open("data.json", "r", encoding="utf-8") as f:
             data = json.load(f)["ignored_columns"]
 
     return data
@@ -289,7 +338,7 @@ def download_timetables():
 
     returns: True if operation successful 
     """
-    r = subprocess.call("./scripts/auto_update.sh")
+    r = subprocess.call(os.path.join("scripts","auto_update.sh"))
     return r == 0
 
 
