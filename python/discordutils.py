@@ -220,19 +220,19 @@ class ConstraintRemovalPaginationView(discord.ui.View):
         self.constraints.pop(self.page)
 
 
-class ThreadCreationView(discord.view.View):
+class ThreadCreationView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=60)
         self.value = None
 
     @discord.ui.button(label="Créer", style=discord.ButtonStyle.success)
-    async def create(self, interaction: discord.Interaction, button: discord.view.Button):
+    async def create(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
         await interaction.response.edit_message(view=None)
         self.stop()
 
     @discord.ui.button(label="Annuler", style=discord.ButtonStyle.danger)
-    async def cancel(self, interaction: discord.Interaction, button: discord.view.Button):
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = False
         await interaction.response.edit_message(view=None)
         self.stop()
