@@ -17,7 +17,6 @@ import python.commands.user_commands as user_commands
 import python.commands.constraints_commands as constraints_commands
 import python.commands.musics_commands as music_commands
 import python.commands.admin_commands as admin_commands
-from python.discordutils import failure_embed
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -215,7 +214,7 @@ async def see_constraints(i:discord.Interaction):
         except:
             raise discordutils.FailureError
     except Exception as e:
-        await i.response.send_message(embed=failure_embed(message=str(e)), ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 
@@ -286,7 +285,7 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
         await i.response.send_message(embed=music_commands.find_rehearsal(song))
 
     except Exception as e:
-        await i.response.send_message(embed=failure_embed(message=str(e)))
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisse vide pour consulter tes morceaux.")
@@ -408,7 +407,7 @@ async def delete_setlist(i: discord.Interaction):
         view.check_buttons_availability()
         await i.response.send_message(embed=view.embed_page(), view=view)
     except Exception as e:
-        await i.response.send_message(embed=failure_embed(message=str(e)), ephemeral=True)
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="créer_fils", description="Créer un fil par morceau dans ce salon")
@@ -597,6 +596,21 @@ async def reset_database(i: discord.Interaction):
 
 
 
+################
+#     Test     #
+################
+
+@bot.tree.command(name="test", description="Some test about rehearsal selection")
+async def test(i: discord.Interaction):
+    try:
+        view = discordutils.WeekSelectionView()
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+
+
 #########################
 #    End Of Content     #
 #########################
@@ -645,8 +659,6 @@ async def logs(ctx):
     logs_data["logs"] += 1
     message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
     await ctx.author.send(embed=message)
-
-
 
 
 #################################
