@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import calendar
@@ -159,3 +160,14 @@ def get_first_day_of_week(nbweeks: int) -> int:
     """
     return nbweeks*DAY_DURATION*7-3*DAY_DURATION
 
+def is_week_index_before_today(week_index: int) -> bool:
+    """
+    Returns if week day number (1-7) is before today
+    """
+    return week_index < time.gmtime().tm_wday + 1
+
+def is_week_before_today(week: int) -> bool:
+    """
+    Returns if week is before today's week
+    """
+    return week < get_nbweeks(int(time.time()))
