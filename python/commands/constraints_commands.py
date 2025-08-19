@@ -17,8 +17,8 @@ def punctual_constraint(user_id: int, day: str, start: str = None, end: str = No
 
         nend = tools.parse_time(end) if end else "2359"
 
-        start_unix = timeutils.punctual_constraint_to_epoch(ndate + nstart)
-        end_unix = timeutils.punctual_constraint_to_epoch(ndate + nend)
+        start_unix = timeutils.punctual_constraint_to_epoch(ndate + nstart + "00")
+        end_unix = timeutils.punctual_constraint_to_epoch(ndate + nend + "00")
 
         try:
             constraint = db.run(f"""SELECT * FROM MusicianConstraint WHERE musician_uuid = {user_id} AND start_time = "{start_unix}" AND end_time = "{end_unix}";""")
