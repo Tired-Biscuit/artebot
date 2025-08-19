@@ -5,7 +5,6 @@ import python.db as db
 import python.tools as tools
 import python.discordutils as discordutils
 import python.timeutils as timeutils
-from python.discordutils import FailureError, information_embed
 
 
 
@@ -15,7 +14,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     """
     db.check_user(user_id)
 
-    #TODO revoir cette requête car il y a trop de problèmes possibles avec
+    #TODO revoir cette requête car il y a trop de problèmes possibles avec (error handling, injection...
     try:
         song_info = db.run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
     except:
@@ -118,8 +117,10 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     return ping, blocking_message, summary_message, view, blocking or missing
 
 
-def find_rehearsal(song: str) -> discord.Embed:
+def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.DAY_DURATION) -> discord.Embed:
+    evening_time = 22*3600
     try:
+        # Fetch musicians' emails
         song_info = db.run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
         musicians_uuids = []
         unregistered_users = []
@@ -131,10 +132,10 @@ def find_rehearsal(song: str) -> discord.Embed:
                         musicians_uuids.append(value[0][0])
                     else:
                         unregistered_users.append(email)
+        # Get the current time
+        start_time = int((time.time()//3600+1)*3600) if start_time is None else start_time
 
-        start_time = int((time.time()//3600+1)*3600) #TODO faire la conversion de local vers gmt
-        # TODO prendre un paramètre optionnel
-        if start_time%timeutils.DAY_DURATION >= 64800:
+        if start_time%timeutils.DAY_DURATION >= evening_time:
             start_time = int((start_time//timeutils.DAY_DURATION + 1)*timeutils.DAY_DURATION + 8*3600) # The next day at 8 AM
         current_week = timeutils.get_nbweeks(start_time)
         rehearsal_time = start_time
@@ -174,17 +175,16 @@ def find_rehearsal(song: str) -> discord.Embed:
 
 def info(user_id: int, display: int) -> discord.Embed:
     title = f"Infos pour {db.check_user(user_id)}"
-    message = db.get_songs_message(user_id, display)
     try:
-        return discordutils.information_embed(title=title, message=message)
+        return discordutils.information_embed(title=title, message=db.get_songs_message(user_id, display))
     except Exception:
-        raise FailureError
+        raise discordutils.FailureError
 
 
 def song(song: str) -> discord.Embed:
     # TODO Je croyais que ça ne fonctionnait pas le unpacking implicite de liste/tuple ? Ça a été testé ?
-    title, message = db.get_song_info_message(song)
     try:
-        return information_embed(title=title, message=message)
-    except Exception as e:
+        title, message = db.get_song_info_message(song)
+        return discordutils.information_embed(title=title, message=message)
+    except Exception:
         raise discordutils.FailureError

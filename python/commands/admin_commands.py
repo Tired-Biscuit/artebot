@@ -44,6 +44,21 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
             db.add_setlist(setlist_id, 50)
 
         return discordutils.success_embed(message="Setlist mise à jour")
+    elif calendar == "School":
+        groups = tools.get_groups()
+        for group_id in groups.values():
+            db.run(f"""DELETE FROM SchoolEvent WHERE group_id = "{group_id}";""")
+        tools.download_timetables()
+        db.update_timetables()
+
+        return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
+    elif calendar == "Google":
+        calendars = tools.get_calendars_ids()
+        for calendar_id in calendars:
+            db.run(f"""DELETE FROM GoogleEvent WHERE calendar_id = "{calendar_id}";""")
+        db.update_calendars()
+
+        return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
     else:
         return discordutils.failure_embed(message=calendar)
 

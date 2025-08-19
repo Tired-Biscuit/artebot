@@ -56,6 +56,7 @@ def run(command, *, commit=False):
         cursor.close()
     return result
 
+
 def runscript(script, *, allow_fail=False):
     cursor = db.cursor()
     try:
@@ -71,11 +72,13 @@ def runscript(script, *, allow_fail=False):
         cursor.close()
     return result
 
+
 def reset(*, allow_fail=False):
     with open(reset_path, "r") as f:
         content = f.read()
     result = runscript(content, allow_fail=allow_fail)
     return result if result != [] else "Done"
+
 
 def init():
     with open(init_path, "r") as f:
@@ -132,6 +135,7 @@ def update_timetables():
 
     return run(command)
 
+
 def update_calendar(calendar):
     """
     Updates the database with the latest calendar events from the google calendars in data.json
@@ -162,11 +166,12 @@ def update_calendar(calendar):
         command = command[:-1] + ";" # Remove the last comma and add a semicolon
         return run(command)
 
+
 def update_calendars():
     """
     Downloads Google Calendars in data.json and updates the database
     """
-    calendar_ids = tools.get_setlists_ids()
+    calendar_ids = tools.get_calendars_ids()
 
     i=0
     for calendar_id in calendar_ids:
@@ -174,6 +179,7 @@ def update_calendars():
         result = googleutils.download_calendar(calendar_id)
         if result[0] and len(result[1]) > 0:
             print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}")
+
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """
@@ -190,12 +196,14 @@ def add_user(uuid, username, email, group_id, *, commit=False):
     command = f"""INSERT INTO User VALUES({uuid}, "{username}", "{email}", "{group_id}");"""
     return run(command, commit=commit)
 
+
 def get_user_name(musician_uuid: int) -> str:
     try:
         u = run(f"""SELECT username FROM User WHERE uuid = {musician_uuid};""")[0][0]
     except Exception:
         raise Exception(f"Could not find user with id {musician_uuid}")
     return u
+
 
 def get_user_name_from_email(email: str) -> str:
     try:
@@ -204,6 +212,7 @@ def get_user_name_from_email(email: str) -> str:
         u = tools.parse_mail(email)
     return u
         # raise Exception(f"""Erreur: lors de l'exécution de "SELECT username FROM User WHERE email = '{email}';" : {run(f"SELECT username FROM User WHERE email = '{email}';")}""")
+
 
 def add_punctual_constraint(musician_uuid: int, start_time: int, end_time: int):
     """
@@ -216,6 +225,7 @@ def add_punctual_constraint(musician_uuid: int, start_time: int, end_time: int):
     """
     command = f"""INSERT INTO MusicianConstraint VALUES({musician_uuid}, 0, {start_time}, {end_time}, 0);"""
     return run(command)
+
 
 def add_recurring_constraint(musician_uuid: int, start_time: int, end_time: int, week_day: int):
     """
@@ -231,6 +241,7 @@ def add_recurring_constraint(musician_uuid: int, start_time: int, end_time: int,
     command = f"""INSERT INTO MusicianConstraint VALUES({musician_uuid}, 0, {start_time}, {end_time}, {week_day});"""
     return run(command)
 
+
 def request_constraints(musician_uuid: int) -> list[list[int]]:
     """
     Returns start_time, end_time, week_day of constraints from musician's Discord UUID ordered by time
@@ -242,28 +253,32 @@ def request_constraints(musician_uuid: int) -> list[list[int]]:
     else:
         return constraints
 
-def request_blocking_events(timestamp: int, duration: int, musician_id: str) -> list:
+
+def request_blocking_events(timestamp: int, duration: int, musician_id: int) -> list:
     """
     Returns the result of the request returning all events occuring at the given epoch time (or during the given duration in seconds), for the user with given uuid
+
+    list of [label: str, start_time: int, end_time: int, event_type: bool]
+
     """
     return run(f"""
-        SELECT name, start_time, end_time
+        SELECT name, start_time, end_time, event_type
         FROM (
-            SELECT name, start_time, end_time
+            SELECT name, start_time, end_time, {tools.EVENT_TYPES["School"]} as event_type
             FROM SchoolEvent
             JOIN User ON User.group_id = SchoolEvent.group_id
             WHERE User.uuid = {musician_id}
 
             UNION
 
-            SELECT name, start_time, end_time
+            SELECT name, start_time, end_time, {tools.EVENT_TYPES["Google"]} as event_type
             FROM GoogleEvent
             JOIN User ON GoogleEvent.musicians LIKE '%' || User.email || '%'
             WHERE User.uuid = {musician_id}
 
             UNION
 
-            SELECT week_day, start_time, end_time
+            SELECT week_day, start_time, end_time, {tools.EVENT_TYPES["Constraint"]} as event_type
             FROM MusicianConstraint
             JOIN User ON MusicianConstraint.musician_uuid = user.uuid
             WHERE User.uuid = {musician_id}
@@ -301,6 +316,7 @@ def add_song(song: dict, db_columns: list[str]):
 
     return run(f"""INSERT INTO Song {columns} VALUES {values};""")
 
+
 def add_setlist(setlist_id: str, rows: int):
     """
     Adds all musics in a setlist to the database
@@ -318,6 +334,7 @@ def add_setlist(setlist_id: str, rows: int):
     for row in rows:
         add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
 
+
 def get_instruments_names() -> list[str]:
     """
     Returns a list of all the column names of the Song table in french (including non-instrument columns)
@@ -330,6 +347,7 @@ def get_instruments_names() -> list[str]:
             instruments = json.load(f)["instruments"]
 
     return [instruments[column[1]] if column[1] in instruments else None for column in column_names]
+
 
 def get_songs_message(musician_uuid: int, display:int) -> str:
     email = ""
@@ -413,6 +431,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
 
     return text
 
+
 def get_song_info_message(song: str) -> tuple:
     """
     Returns a summary of a song from its title
@@ -436,8 +455,9 @@ def get_song_info_message(song: str) -> tuple:
                 text += f" {get_user_name_from_email(musician)},"
             text = text[:-1]
             text += "\n"
-            
+
     return f"{song_info[1]} — {song_info[2]}", text
+
 
 def get_profile_message(musician_uuid: int) -> str:
     """
@@ -488,6 +508,7 @@ def get_profile_message(musician_uuid: int) -> str:
                - Nombre de contraintes ajoutées : **{number_of_constraints}**
             """
 
+
 def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
     """""
     Returns a list of IDs of musicians playing on the song, as well as a list of muscians not in the database
@@ -509,8 +530,10 @@ def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
 
     return musicians, not_in_db
 
+
 def remove_constraint(musician_uuid:int, start_time: int, end_time: int, week_day: int):
     run(f"""DELETE FROM MusicianConstraint WHERE musician_uuid = {musician_uuid} AND start_time = {start_time} AND end_time = {end_time} AND week_day = {week_day};""")
+
 
 def add_instrument(instrument: str, translation: str):
     run(f"""ALTER TABLE Song ADD {instrument} TEXT NOT NULL DEFAULT '';""")
