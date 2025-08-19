@@ -488,7 +488,7 @@ def get_profile_message(musician_uuid: int) -> str:
                - Nombre de contraintes ajoutées : **{number_of_constraints}**
             """
 
-def get_song_musicians(song: list) -> (list[int], list[int]):
+def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
     """""
     Returns a list of IDs of musicians playing on the song, as well as a list of muscians not in the database
     """

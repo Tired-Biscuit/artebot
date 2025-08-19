@@ -9,7 +9,7 @@ from python.discordutils import FailureError, information_embed
 
 
 
-def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str = None) -> (str, discord.Embed, discord.Embed, discord.ui.View, bool):
+def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str = None) -> tuple[str, discord.Embed, discord.Embed, discord.ui.View, bool]:
     """
     Returns ping, blocking_message (Embed/None), summary_message (Embed), request_ping (bool)
     """
