@@ -7,6 +7,8 @@ import re
 
 import python.timeutils as timeutils
 
+EVENT_TYPES = {"School": 1, "Google": 2, "Constraint": 3}
+
 CEST = timezone(timedelta(hours=2), name="CEST")
 CET  = timezone(timedelta(hours=1), name="CET")
 
@@ -66,7 +68,7 @@ def create_data_file():
             with open("data.json", "w") as f:
                 f.write(json.dumps(data))
 
-def get_groups():
+def get_groups() -> dict:
     """
     Returns a dictionnary with all groups and their underscored values
 
@@ -77,13 +79,26 @@ def get_groups():
             groups = json.loads(f.read())["groups"]
             return groups
     else:
-        return []
+        return {}
+
+def get_calendars_ids() -> list[str] | None:
+    """
+    Returns a list of the calendars' ids saved in data.json file
+
+    @flag data
+    @flag calendar
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            return data["calendar_ids"]
 
 def add_calendar(calendar_id):
     """
     Adds calendar to data.json
 
     @flag data
+    @flag calendar
     """
     if len(calendar_id) <= 5:
         return
@@ -102,6 +117,7 @@ def remove_calendar(calendar_id):
     Removes calendar from data.json
 
     @flag data
+    @flag calendar
     """
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -189,6 +205,7 @@ def get_setlists_ids() -> list[str] | None:
     Returns a list of the setlists' ids saved in data.json file
 
     @flag data
+    @flag setlist
     """
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -200,6 +217,7 @@ def add_setlist(setlist_id: str):
     Adds a setlist id to the data.json file
 
     @flag data
+    @flag setlist
     """
     if len(setlist_id) <= 5:
         return
@@ -218,6 +236,7 @@ def remove_setlist(index: int):
     Removes a setlist id from the data.json file
 
     @flag data
+    @flag setlist
     """
     create_data_file()
     with open("data.json", "r") as f:
@@ -335,6 +354,8 @@ def add_instrument_translation(instrument: str, translation: str):
 def download_timetables():
     """
     Downloads timetables as .ics files in ./timetables
+
+    Do not forget to call db.update_timetables() to update the database!
 
     returns: True if operation successful 
     """

@@ -17,7 +17,7 @@ def local_datetime_as_epoch(datetime_struct: datetime) -> int:
 
 def utc_datetime_to_local_datetime(utc_datetime: datetime) -> datetime:
     """
-    Converts utc datetime to utc datetime
+    Converts utc datetime to local datetime
 
     @flag utc_to_local
     """
@@ -72,7 +72,7 @@ def gcal_to_datetime(google_calendar_string: str) -> datetime:
     @flag struct
     @flag datetime_struct
     """
-    return datetime.strptime(google_calendar_string, "%Y-%m-%dT%H:%M:%S+02:00")
+    return datetime.strptime(google_calendar_string[:-6], "%Y-%m-%dT%H:%M:%S")
 
 def yyyymmddhhmmss_to_datetime(time_string: str) -> datetime:
     """
