@@ -174,16 +174,17 @@ def find_rehearsal(song: str) -> discord.Embed:
 
 def info(user_id: int, display: int) -> discord.Embed:
     title = f"Infos pour {db.check_user(user_id)}"
+    message = db.get_songs_message(user_id, display)
     try:
-        return discordutils.information_embed(title=title, message=db.get_songs_message(user_id, display))
+        return discordutils.information_embed(title=title, message=message)
     except Exception:
         raise FailureError
 
 
 def song(song: str) -> discord.Embed:
     # TODO Je croyais que ça ne fonctionnait pas le unpacking implicite de liste/tuple ? Ça a été testé ?
+    title, message = db.get_song_info_message(song)
     try:
-        title, message = db.get_song_info_message(song)
         return information_embed(title=title, message=message)
-    except Exception:
+    except Exception as e:
         raise discordutils.FailureError
