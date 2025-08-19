@@ -207,8 +207,8 @@ async def delete_constraint(i: discord.Interaction):
 @bot.tree.command(name="voir_indisponibilités", description="Consulter les contraintes")
 async def see_constraints(i:discord.Interaction):
     try:
+        constraints = db.request_constraints(i.user.id)
         try:
-            constraints = db.request_constraints(i.user.id)
             view = discordutils.ConstraintsPaginationView(constraints)
             await i.response.send_message(embed=view.embed_page(), view=view)
         except:
