@@ -436,7 +436,7 @@ def get_song_info_message(song: str) -> tuple:
                 text += f" {get_user_name_from_email(musician)},"
             text = text[:-1]
             text += "\n"
-    print(text)
+            
     return f"{song_info[1]} — {song_info[2]}", text
 
 def get_profile_message(musician_uuid: int) -> str:

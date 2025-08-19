@@ -109,14 +109,14 @@ class SetlistsPaginationView(discord.ui.View):
         self.page = 0
         self.setlists = setlists
 
-    @discord.ui.button(label="^", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
+    @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page > 0:
             self.page -= 1
             self.check_buttons_availability()
             await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
-    @discord.ui.button(label="v", style=ButtonStyle.blurple, custom_id="next")
+    @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if self.page < len(self.pages) - 1:
         self.page += 1
@@ -166,14 +166,14 @@ class ConstraintRemovalPaginationView(discord.ui.View):
         self.constraints = constraints
         self.musician_uuid = musician_uuid
 
-    @discord.ui.button(label="^", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
+    @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page > 0:
             self.page -= 1
             self.check_buttons_availability()
             await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
-    @discord.ui.button(label="v", style=ButtonStyle.blurple, custom_id="next")
+    @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if self.page < len(self.pages) - 1:
         self.page += 1
