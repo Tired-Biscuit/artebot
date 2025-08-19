@@ -45,7 +45,7 @@ def refresh_token():
                 token.write(creds.to_json())
     return creds
 
-def execute_api_function(function_name: str, opt_param=None) -> (bool, str):
+def execute_api_function(function_name: str, opt_param=None) -> tuple[bool, str]:
     """
     Executes the corresponding API function with optionnal parameters between brackets if needed.
 
@@ -78,7 +78,7 @@ def execute_api_function(function_name: str, opt_param=None) -> (bool, str):
         # The API encountered a problem.
         return (False, error.content)
 
-def download_calendar(calendar_id: str) -> (bool, str|list):
+def download_calendar(calendar_id: str) -> tuple[bool, str|list]:
     """
     Fetch the Google Calendar events
 
