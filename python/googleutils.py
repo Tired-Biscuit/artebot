@@ -5,6 +5,7 @@ from googleapiclient import errors
 from googleapiclient.discovery import build
 
 import python.tools as tools
+import python.timeutils as timeutils
 import requests
 import json
 
@@ -233,7 +234,7 @@ def get_time_cell_content(cell_values: dict) -> int:
     result = ""
     if "userEnteredValue" in cell_values.keys():
         if "numberValue" in cell_values["userEnteredValue"].keys():
-            result = int(float(cell_values["userEnteredValue"]["numberValue"])*tools.DAY_DURATION)
+            result = int(float(cell_values["userEnteredValue"]["numberValue"])*timeutils.DAY_DURATION)
 
     return result
 

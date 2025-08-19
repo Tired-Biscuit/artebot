@@ -55,6 +55,6 @@ CREATE TABLE MusicianConstraint(
     end_time TIME,
     week_day INTEGER,
 
-    CONSTRAINT pk_musician_constraint UNIQUE (setlist_id, musician_uuid, day, start_time, end_time, week_day),
+    CONSTRAINT pk_musician_constraint UNIQUE (musician_uuid, day, start_time, end_time, week_day),
     FOREIGN KEY (musician_uuid) REFERENCES User(uuid)
 )

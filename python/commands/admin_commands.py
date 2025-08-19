@@ -35,13 +35,14 @@ def change_embed_colour(user_id: int, colour: str) -> discord.Embed:
 
 def refresh(user_id: int, calendar: str) -> discord.Embed:
     #TODO à compléter
-    check_user(user_id)
+    db.check_user(user_id)
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
     if calendar == "Spreadsheets":
         for setlist_id in tools.get_setlists_ids():
             db.run(f"""DELETE FROM Song WHERE setlist_id = "{setlist_id}";""")
             db.add_setlist(setlist_id, 50)
+
         return discordutils.success_embed(message="Setlist mise à jour")
     else:
         return discordutils.failure_embed(message=calendar)
