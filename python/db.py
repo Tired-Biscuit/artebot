@@ -362,13 +362,14 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
 
     if display == 2:
         for song in result:
+            song = song[1:]
             text += f"### {song[0]} — {song[1]}\n"
-            for i in range(4, len(song)-1):
+            for i in range(3, len(song)-1):
                 if song[i]:
                     text += "- "
                     if email in song[i]:
                         text += f"**"
-                    text += f"{instruments_names[i][0].capitalize()} :"
+                    text += f"{instruments_names[i+1][0].capitalize()} :"
                     if email in song[i]:
                         text += f"**"
                     musicians = song[i].split(" ")
@@ -379,6 +380,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
 
     else:
         for song in result:
+            song = song[1:]
             if display == 0:
                 text += f"- **{song[0]}** :"
             else:
@@ -390,7 +392,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
                         musicians = song[i].split(" ")
 
                         if email in song[i]:
-                            text += f" {instruments_names[i]}" if display == 0 else f" {instruments_names[i].capitalize()}"
+                            text += f" {instruments_names[i+1][0]}" if display == 0 else f" {instruments_names[i+1][0].capitalize()}"
                             if len(musicians) >= 2:
                                 text += f" (avec"
                                 for musician in musicians:
@@ -527,10 +529,6 @@ def check_user(user_id: int) -> str:
     Also returns the username if successful
     """
     try:
-        username = get_user_name(user_id)
-        if not username:
-            raise Exception("Tu n'es peut-être pas connecté(e), retente de t'enregistrer avec `/connexion`")
-        else:
-            return username[0][0]
+        return get_user_name(user_id)
     except:
-        raise Exception("L'identifiant n'a pas pu être vérifié")
+        raise Exception("L'identifiant n'a pas pu être vérifié. Tu n'es peut-être pas connecté(e), retente de t'enregistrer avec `/connexion`")

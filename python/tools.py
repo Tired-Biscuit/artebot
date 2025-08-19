@@ -27,7 +27,7 @@ def create_data_file():
         "owners": [],
         "embed_colour": 10070709,
         "ignored_columns": ["Genre", "Statistiques"],
-        "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
+        "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["ID"]},
         "groups": {
             "1A G1": "fise_1a_g1",
             "1A G2": "fise_1a_g2",
@@ -261,7 +261,7 @@ def get_instruments_names_translation() -> dict:
     @flag data
     """
     instruments_file = {}
-    if os.path.exists("data.sjon"):
+    if os.path.exists("data.json"):
         with open("data.json", "r", encoding="utf-8") as f:
             instruments_file = json.load(f)["instruments"]
 
