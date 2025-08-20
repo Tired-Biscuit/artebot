@@ -8,6 +8,7 @@ import python.tools as tools
 import python.timeutils as timeutils
 import python.db as db
 
+
 ########################
 #     Custom Views     #
 ########################
@@ -240,13 +241,22 @@ class ThreadCreationView(discord.ui.View):
 
 
 class WeekSelectionView(discord.ui.View):
-    def __init__(self, week: int = None):
+    """
+    View displaying a week's timetable, and allowing navigation between weeks.
+    """
+    def __init__(self, song: str, week: int = None):
         super().__init__()
         self.current_week = timeutils.get_nbweeks(int(time.time()))
+        self.song = song
         self.week = self.current_week if week is None else week
-
+    
     def embed_page(self, message="") -> discord.Embed:
-        return information_embed(title=f"Choisis la semaine: curr: {self.current_week}, sel: {self.week}", message=message)
+        self.update_buttons()
+        # Fetch constraints (recurring and punctual separately)
+        result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
+        # Get the message from the constraints
+        message = tools.week_timetable_string_from_constraints(result[0], result[1])
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(tools.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
 
     def update_buttons(self):
         self.prev_button.disabled = self.week <= self.current_week
@@ -265,7 +275,7 @@ class WeekSelectionView(discord.ui.View):
 
     @discord.ui.button(label="Valider", style=ButtonStyle.green, custom_id="confirm")
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = WeekDaySelectionView(self.week)
+        view = WeekDaySelectionView(self.song, self.week)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
     @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
@@ -278,86 +288,201 @@ class WeekSelectionView(discord.ui.View):
 
 
 class WeekDaySelectionView(discord.ui.View):
-    def __init__(self, week: int = 0):
+    """
+    View disaplying a week's timetable and allowing week day selection
+    """
+    def __init__(self, song: str, week: int = 0):
         super().__init__()
+        self.song = song
         self.week = week
 
     def embed_page(self, message="") -> discord.Embed:
-        return information_embed(title="Jour", message=message)
+        # Fetches the constraints, builds a timetable message, and returns en embed displaying them properly
+        result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
+        message = tools.week_timetable_string_from_constraints(result[0], result[1])
+        self.update_buttons_state()
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(tools.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(1), style=ButtonStyle.blurple, custom_id="monday", disabled=timeutils.is_week_index_before_today(1))
+    def update_buttons_state(self):
+        self.monday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week))
+        self.tuesday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(1))
+        self.wednesday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(2))
+        self.thursday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(3))
+        self.friday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(4))
+        self.saturday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(5))
+
+    @discord.ui.button(label=timeutils.week_index_to_week_day(1), style=ButtonStyle.blurple, custom_id="monday", disabled=True)
     async def monday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view=RehearsalTimeSelectionView(week=self.week, weekdaynb=1)
+        view=ConstraintsDetailsView(song=self.song, week=self.week, weekdaynb=1)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(2), style=ButtonStyle.blurple, custom_id="tuesday", disabled=timeutils.is_week_index_before_today(2))
+    @discord.ui.button(label=timeutils.week_index_to_week_day(2), style=ButtonStyle.blurple, custom_id="tuesday", disabled=True)
     async def tuesday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RehearsalTimeSelectionView(week=self.week, weekdaynb=2)
+        view = ConstraintsDetailsView(song=self.song, week=self.week, weekdaynb=2)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(3), style=ButtonStyle.blurple, custom_id="wednesday", disabled=timeutils.is_week_index_before_today(3))
+    @discord.ui.button(label=timeutils.week_index_to_week_day(3), style=ButtonStyle.blurple, custom_id="wednesday", disabled=True)
     async def wednesday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RehearsalTimeSelectionView(week=self.week, weekdaynb=3)
+        view = ConstraintsDetailsView(song=self.song, week=self.week, weekdaynb=3)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(4), style=ButtonStyle.blurple, custom_id="thursday", disabled=timeutils.is_week_index_before_today(4))
+    @discord.ui.button(label=timeutils.week_index_to_week_day(4), style=ButtonStyle.blurple, custom_id="thursday", disabled=True)
     async def thursday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RehearsalTimeSelectionView(week=self.week, weekdaynb=4)
+        view = ConstraintsDetailsView(song=self.song, week=self.week, weekdaynb=4)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(5), style=ButtonStyle.blurple, custom_id="friday", disabled=timeutils.is_week_index_before_today(5))
+    @discord.ui.button(label=timeutils.week_index_to_week_day(5), style=ButtonStyle.blurple, custom_id="friday", disabled=True)
     async def friday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RehearsalTimeSelectionView(week=self.week, weekdaynb=5)
+        view = RehearsalTimeSelectionView(song=self.song, week=self.week, weekdaynb=5)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label=timeutils.week_index_to_week_day(6), style=ButtonStyle.blurple, custom_id="saturday", disabled=timeutils.is_week_index_before_today(6))
+    @discord.ui.button(label=timeutils.week_index_to_week_day(6), style=ButtonStyle.blurple, custom_id="saturday", disabled=True)
     async def saturday_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RehearsalTimeSelectionView(week=self.week, weekdaynb=6)
+        view = ConstraintsDetailsView(song=self.song, week=self.week, weekdaynb=6)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
-    @discord.ui.button(label="Retour", style=ButtonStyle.red, custom_id="back")
+    @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = WeekSelectionView(self.week)
+        view = WeekSelectionView(self.song, self.week)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
+
+    @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.monday_button.disabled = True
+        self.tuesday_button.disabled = True
+        self.wednesday_button.disabled = True
+        self.thursday_button.disabled = True
+        self.friday_button.disabled = True
+        self.saturday_button.disabled = True
+        self.back_button.disabled = True
+        self.cancel_button.disabled = True
+        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
+
+
+class ConstraintsDetailsView(discord.ui.View):
+    """
+    View displaying all constraints by start time for a given day of a given week
+    """
+    def __init__(self, song: str, week: int = 0, weekdaynb: int = 1):
+        super().__init__()
+        self.song = song
+        self.week = week
+        self.weekdaynb = weekdaynb
+
+    def embed_page(self, message="") -> discord.Embed:
+        # Fetch the musicians
+        result = db.get_all_musicians_uuids_for_song(self.song)
+
+        musicians_uuids = result[0]
+        unregistered_users = result[1]
+
+        data = []
+
+        # For each musician, get constraints and add them in a list if not already present
+        for musician_uuid in musicians_uuids:
+            result = db.request_blocking_events(timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION, timeutils.DAY_DURATION, musician_uuid)
+            data = data + list(set(result) - set(data))
+
+        data = sorted(data, key=lambda x: x[1])
+
+        message = ""
+
+        # Build the string, one line per event
+        for event in data:
+            char = None
+            if event[3] == 1:
+                # School event
+                char = "🟦"
+            elif event[3] == 2 and char is None:
+                # Google event
+                char = "🟨"
+            elif event[3] == 3 and char is None:
+                # Punctual Constraint
+                char = "🟥"
+            else:
+                if char is None:
+                    char = "🟪"
+            message += f"""{char} {tools.time_span_to_string(event[1], event[2])} - {event[0] if event[3] != 3 else "Indisponible"}\n"""
+        message += ""
+        return information_embed(title=tools.get_date_string(timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION), message=message)
+
+    @discord.ui.button(label="Suivant", style=ButtonStyle.green, custom_id="confirm")
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = RehearsalTimeSelectionView(self.song, self.week, self.weekdaynb)
+        await interaction.response.edit_message(embed=view.embed_page(), view=view)
+
+    @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
+    async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = WeekDaySelectionView(self.song, self.week)
+        await interaction.response.edit_message(embed=view.embed_page(), view=view)
+
+    @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.confirm_button.disabled = True
+        self.back_button.disabled = True
+        self.cancel_button.disabled = True
+        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
 
 
 class RehearsalTimeSelectionView(discord.ui.View):
-    def __init__(self, week: int = 0, weekdaynb: int = 1):
+    """
+    View displaying a day timetable, allowing navigation through each time slot from 8:00AM to 10:000PM
+
+    Displays the events happening during the selected time span, and allows creating a rehearsal poll if a time slot is available
+    """
+    def __init__(self, song: str, week: int = 0, weekdaynb: int = 1):
         super().__init__()
+        self.song = song
         self.week = week
         self.weekdaynb = weekdaynb
         self.time = 0
 
     def embed_page(self, message="") -> discord.Embed:
-        return information_embed(title="Choisis l'horaire", message=message)
+        result = db.get_day_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week) + timeutils.DAY_DURATION*(self.weekdaynb - 1))
+        result = tools.day_timetable_string_from_constraints(result[0], result[1], self.time)
+        message = result[0]
+        self.confirm_button.disabled = not result[1]
+        self.update()
+        return information_embed(title=tools.get_date_string(timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION), message=message)
 
-    def update_buttons(self):
+    def update(self):
         limit = 15  # TODO nombre de créneaux dans une journée
-        if self.time <= 0:
+        if self.time < 0:
             self.time = limit + self.time
         elif self.time >= limit:
             self.time = self.time - limit
 
-    @discord.ui.button(label="^", style=ButtonStyle.blurple, custom_id="prev")
+    @discord.ui.button(label="<", style=ButtonStyle.blurple, custom_id="prev")
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.time -= 1
-        self.update_buttons()
+        self.update()
         await interaction.response.edit_message(embed=self.embed_page(button.custom_id), view=self)
 
-    @discord.ui.button(label="v", style=ButtonStyle.blurple, custom_id="next")
+    @discord.ui.button(label=">", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.time += 1
-        self.update_buttons()
+        self.update()
         await interaction.response.edit_message(embed=self.embed_page(button.custom_id), view=self)
 
-    @discord.ui.button(label="Valider", style=ButtonStyle.green, custom_id="confirm")
+    @discord.ui.button(label="Valider", style=ButtonStyle.green, custom_id="confirm", disabled=True)
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.edit_message(embed=self.embed_page(str(self.time)), view=self)
 
-    @discord.ui.button(label="Retour", style=ButtonStyle.red, custom_id="back")
+    @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = WeekDaySelectionView(self.week)
+        view = ConstraintsDetailsView(self.song, self.week, self.weekdaynb)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
+
+    @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.confirm_button.disabled = True
+        self.back_button.disabled = True
+        self.cancel_button.disabled = True
+        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
 
 
 def get_constraint_embed(constraints: list[list[int]], start_time) -> discord.embeds.Embed:

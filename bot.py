@@ -282,7 +282,9 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
                 song = i.channel.name
             else:
                 raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
-        await i.response.send_message(embed=music_commands.find_rehearsal(song))
+
+        view = discordutils.WeekSelectionView(song)
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
 
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
@@ -601,9 +603,9 @@ async def reset_database(i: discord.Interaction):
 ################
 
 @bot.tree.command(name="test", description="Some test about rehearsal selection")
-async def test(i: discord.Interaction):
+async def test(i: discord.Interaction, song: str):
     try:
-        view = discordutils.WeekSelectionView()
+        view = discordutils.WeekSelectionView(song)
         await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)

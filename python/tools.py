@@ -776,3 +776,123 @@ def get_constraints_week_description(constraints: list[list[int]], start_time: i
     # In case of recurring constraints still happening after the last checked constraint, add them
     message = add_missing_recurring_constraints(message, constraints, recurring_constraints, start_time, daynb, timeutils.get_first_day_of_week(weeknb + 1))
     return message
+
+
+def week_timetable_string_from_constraints(recurring_constraints: list[list], punctual_constraints: list[dict]) -> str:
+    """
+    Returns a string displaying a week's timetable given a list of recurring constraints and punctual constraints obtained from db.get_week_constraints_for_rehearsal()
+    """
+    message = "```"
+    message += "       L M M J V S\n"
+    for i in range(15):
+        if i < 2:
+            message += " "
+        message += f"{i+8}h00 "
+        for j in range(6):
+            char = None
+            if punctual_constraints[j]:
+                for key in punctual_constraints[j].keys():
+                    # print(punctual_constraint[j][key][0], punctual_constraint[j][key][2], key, i, i+8, (i+8)*3600)
+                    # if starting in the next hour, or ending in the next hour, or starting before and ending after
+                    if ((i+8)*3600 <= key and key < (i+8+1)*3600) or ((i+8) * 3600 < punctual_constraints[j][key][2] % timeutils.DAY_DURATION and punctual_constraints[j][key][2] % timeutils.DAY_DURATION <= (i + 8 + 1) * 3600) or ((i + 8) * 3600 > key and punctual_constraints[j][key][2] % timeutils.DAY_DURATION > (i + 8 + 1) * 3600):
+                        if punctual_constraints[j][key][3] == 1:
+                            # School event
+                            char = "🟦"
+                        elif punctual_constraints[j][key][3] == 2 and char is None:
+                            # Google event
+                            char = "🟨"
+                        elif punctual_constraints[j][key][3] == 3 and char is None:
+                            # Punctual Constraint
+                            char = "🟥"
+                        else:
+                            if char is None:
+                                char = "🟪"
+            if char is None:
+                for value in recurring_constraints[j]:
+                    if (i + 8) * timeutils.DAY_DURATION <= value[1] and value[1] < (i + 8 + 1) * timeutils.DAY_DURATION:
+                        char = "🟥"
+            if char is None:
+                char = "⬛"
+            message += char
+            message += ""
+        message += "\n"
+    message += "```"
+    return message
+
+
+def day_timetable_string_from_constraints(recurring_constraints: list[list], punctual_constraints: dict, cursor_col: int = 0) -> tuple[str, bool]:
+    """
+    Returns a tuple containing:
+        - a string displaying a day's timetable given a list of recurring constraints and punctual constraints obtained from db.get_week_constraints_for_rehearsal()
+        - a boolean indicating if the selected time slot is available or not
+    """
+    message = "```"
+    constraints_strings = []
+    slots = []
+    available = False
+    for i in range(15):
+        if i < 2:
+            message += " "
+        char = None
+        if punctual_constraints:
+            for key in punctual_constraints.keys():
+                # print(punctual_constraint[j][key][0], punctual_constraint[j][key][2], key, i, i+8, (i+8)*3600)
+                # if starting in the next hour, or ending in the next hour, or starting before and ending after
+                if ((i+8)*3600 <= key and key < (i+8+1)*3600) or ((i+8) * 3600 < punctual_constraints[key][2] % timeutils.DAY_DURATION and punctual_constraints[key][2] % timeutils.DAY_DURATION <= (i + 8 + 1) * 3600) or ((i + 8) * 3600 > key and punctual_constraints[key][2] % timeutils.DAY_DURATION > (i + 8 + 1) * 3600):
+                    if punctual_constraints[key][3] == 1:
+                        # School event
+                        char = "🟦" if i != cursor_col else "🔵"
+                    elif punctual_constraints[key][3] == 2 and char is None:
+                        # Google event
+                        char = "🟨" if i != cursor_col else "🟡"
+                    elif punctual_constraints[key][3] == 3 and char is None:
+                        # Punctual Constraint
+                        char = "🟥" if i != cursor_col else "🔴"
+                    else:
+                        if char is None:
+                            char = "🟪" if i != cursor_col else "🟣"
+                    if i == cursor_col:
+                        dot = None
+                        if punctual_constraints[key][3] == 1:
+                            # School event
+                            dot = "🔵"
+                        elif punctual_constraints[key][3] == 2:
+                            # Google event
+                            dot = "🟡"
+                        elif punctual_constraints[key][3] == 3:
+                            # Punctual Constraint
+                            dot = "🔴"
+                        else:
+                            if dot is None:
+                                char = "🟣"
+                        constraint_string = f""" {dot} {time_span_to_string(punctual_constraints[key][1], punctual_constraints[key][2])} - {punctual_constraints[key][0] if punctual_constraints[key][3] != 3 else "Indisponible"}"""
+                        if constraint_string not in constraints_strings:
+                            constraints_strings.append(constraint_string)
+        if char is None:
+            for value in recurring_constraints:
+                if (i + 8) * timeutils.DAY_DURATION <= value[1] and value[1] < (i + 8 + 1) * timeutils.DAY_DURATION:
+                    char = "🟥" if i != cursor_col else "🔴"
+                    constraint_string = f"""{char} {time_span_to_string(value[1], value[2])} - Indisponible"""
+
+                    if i == cursor_col:
+                        if constraint_string not in constraints_strings:
+                            constraints_strings.append(constraint_string)
+        if char is None:
+            char = "⬛" if i != cursor_col else "⚫"
+
+        slots.append(char)
+
+    for slot in slots:
+        message += slot
+    message += "\n"
+
+    message += f"------{'-' if cursor_col < 2 else ''}{cursor_col+8}h00------\n"
+
+    for i in range(len(constraints_strings)):
+        message += constraints_strings[i] + "\n"
+
+    if len(constraints_strings) == 0:
+        message += "Créneau disponible\n"
+        available = True
+    message += "```"
+    return message, available

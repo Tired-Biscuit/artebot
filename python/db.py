@@ -298,6 +298,103 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: int) -> 
         ;
     """)
 
+
+def get_all_musicians_uuids_for_song(song: str) -> tuple[list[int], list[str]]:
+    """
+    Returns a tuple containing all registered uuids and all unregistered user emails in a song.
+    """
+    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
+    musicians_uuids = []
+    unregistered_users = []
+    for field in song_info[5:-1]:
+        for email in field.split(" "):
+            if len(email) > 17:  # TODO valid email
+                value = run(f"""SELECT uuid FROM User WHERE email = "{email}";""")
+                if len(value) > 0:
+                    musicians_uuids.append(int(value[0][0]))
+                else:
+                    unregistered_users.append(email)
+    return musicians_uuids, unregistered_users
+
+
+def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> (list[list], list[dict]):
+    """
+    Returns a list of recurring constraints for each day of a week, and a list of punctual events for each day as a dictionary with start time as key
+
+    (recurring, punctual)
+    """
+    evening_time = 22*3600
+    # Fetch musicians' emails
+    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
+    # raise not found
+
+    result = get_all_musicians_uuids_for_song(song)
+
+    musicians_uuids = result[0]
+    unregistered_users = result[1]
+
+    # Get the current time
+    start_time = int((time.time()//3600+1)*3600) if start_time is None else start_time
+
+    # if start_time%timeutils.DAY_DURATION >= evening_time:
+        # start_time = int((start_time//timeutils.DAY_DURATION + 1)*timeutils.DAY_DURATION + 8*3600) # The next day at 8 AM
+
+    start_time = timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time))
+
+    punctual_events = [{} for i in range(7)]
+    recurring_events = [[] for i in range(7)]
+
+    for weekdaynb in range(0, 6):
+        for musician_uuid in musicians_uuids:
+            events = request_blocking_events(start_time, timeutils.DAY_DURATION, musician_uuid)
+            for event in events:
+                if event[1] >= start_time:
+                    if event[1] not in list(punctual_events[weekdaynb].keys()) or event[3] == 1:
+                        punctual_events[weekdaynb][event[1]%timeutils.DAY_DURATION] = event
+                else:
+                    recurring_events[weekdaynb].append(event)
+        start_time += timeutils.DAY_DURATION
+    return recurring_events, punctual_events
+
+
+def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> (list[list], list[dict]):
+    """
+    Returns a list of recurring constraints for a day starting from the time given in paramter, and punctual events for the day as a dictionary with start time as key
+
+    (recurring, punctual)
+    """
+    evening_time = 22*3600
+    # Fetch musicians' emails
+    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
+
+    result = get_all_musicians_uuids_for_song(song)
+
+    musicians_uuids = result[0]
+    unregistered_users = result[1]
+
+    # Get the current time
+    start_time = int((time.time()//3600+1)*3600) if start_time is None else start_time
+
+    # if start_time%timeutils.DAY_DURATION >= evening_time:
+        # start_time = int((start_time//timeutils.DAY_DURATION + 1)*timeutils.DAY_DURATION + 8*3600) # The next day at 8 AM
+
+    # start_time = timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time))
+
+    punctual_events = {}
+    recurring_events = []
+
+    for musician_uuid in musicians_uuids:
+        events = request_blocking_events(start_time, timeutils.DAY_DURATION - start_time%(timeutils.DAY_DURATION), musician_uuid)
+        for event in events:
+            if event[1] >= start_time:
+                if event[1] not in list(punctual_events.keys()) or event[3] == 1:
+                    punctual_events[event[1]%timeutils.DAY_DURATION] = event
+            else:
+                recurring_events.append(event)
+    start_time += timeutils.DAY_DURATION
+    return recurring_events, punctual_events
+
+
 def add_song(song: dict, db_columns: list[str]):
     """
     Adds a song int the database in the format of a dictionnary with each field set up to the database

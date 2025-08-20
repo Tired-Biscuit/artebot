@@ -166,6 +166,12 @@ def is_week_index_before_today(week_index: int) -> bool:
     """
     return week_index < time.gmtime().tm_wday + 1
 
+def is_day_before_today(day: int) -> bool:
+    """
+    Returns if a day is before today
+    """
+    return day//DAY_DURATION < time.time()//DAY_DURATION
+
 def is_week_before_today(week: int) -> bool:
     """
     Returns if week is before today's week
