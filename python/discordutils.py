@@ -256,7 +256,7 @@ class WeekSelectionView(discord.ui.View):
         result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
         # Get the message from the constraints
         message = tools.week_timetable_string_from_constraints(result[0], result[1])
-        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(tools.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
 
     def update_buttons(self):
         self.prev_button.disabled = self.week <= self.current_week
@@ -301,7 +301,7 @@ class WeekDaySelectionView(discord.ui.View):
         result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
         message = tools.week_timetable_string_from_constraints(result[0], result[1])
         self.update_buttons_state()
-        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(tools.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
 
     def update_buttons_state(self):
         self.monday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week))
