@@ -115,6 +115,24 @@ def download_calendar(calendar_id: str) -> tuple[bool, str|list]:
     else:
         print("Erreur :", response.status_code, response.text)
         return (False, response.text)
+    
+def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
+    """
+    Add an event into a Google calendar
+
+    Returns success state
+    """
+    creds = refresh_token()
+    url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.post(url, headers=headers, data=json.dumps(event))
+    return response.status_code == 200 or response.status_code == 201
+
 
 def get_spreadsheet_id(spreadsheet_link: str) -> str:
     return spreadsheet_link.split("/")[5]

@@ -3,6 +3,7 @@ from tty import setraw
 
 import discord
 from discord import ButtonStyle
+from datetime import datetime
 
 import python.tools as tools
 import python.timeutils as timeutils
@@ -468,8 +469,30 @@ class RehearsalTimeSelectionView(discord.ui.View):
 
     @discord.ui.button(label="Valider", style=ButtonStyle.green, custom_id="confirm", disabled=True)
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(embed=self.embed_page(str(self.time)), view=self)
+        print(self.time, self.week)
 
+        day_epoch = timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION
+        starttime = day_epoch + (self.time + 6) * 3600
+        endtime = day_epoch + (self.time + 7) * 3600
+
+        success = db.add_rehearsal_to_calendar("a", self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
+        if success:
+            day_datetime = datetime.fromtimestamp(day_epoch)
+            formatted_date = day_datetime.strftime("%Y%m%d")
+
+            summary_message = success_embed(
+                title="Répétition ajoutée",
+                message=f"Répétition pour {self.song} le {tools.get_special_date_string(formatted_date)} à **{tools.formatted_hhmm(tools.parse_time(str(self.time + 6)))}** d'une durée d'**une heure** ajoutée avec succès."
+            )
+        
+            ping = str()
+
+            for present_musician in db.get_all_musicians_uuids_for_song(self.song)[0]:
+                ping += f"<@{present_musician}> "
+
+            await interaction.response.edit_message(content=ping, embed=summary_message, view=None)
+        else:
+            raise "La répétition n'a pas pu être ajoutée au calendrier !"
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = ConstraintsDetailsView(self.song, self.week, self.weekdaynb)

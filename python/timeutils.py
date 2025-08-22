@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import calendar
 
@@ -73,6 +73,41 @@ def gcal_to_datetime(google_calendar_string: str) -> datetime:
     @flag datetime_struct
     """
     return datetime.strptime(google_calendar_string[:-6], "%Y-%m-%dT%H:%M:%S")
+
+def datetime_to_gcal(date: str) -> str:
+    """
+    Parse datetime time string (YYYYMMDDHHMM[SS]) and returns corresponding it in an ISO8601 (RFC 3339) compliant format
+
+    @flag google_calendar
+    """
+    if len(date) == 14:
+        dt = datetime.strptime(date, "%Y%m%d%H%M%S")
+    else:
+        dt = datetime.strptime(date, "%Y%m%d%H%M")
+
+    return dt.isoformat()
+
+def epoch_to_gcal(epoch: str) -> str:
+    """
+    Converts an epoch time (seconds since 1970-01-01 UTC) to a Google Calendar ISO8601 string
+
+    @flag google_calendar
+    @flag epoch
+    """
+    dt = datetime.fromtimestamp(int(epoch))
+    return dt.isoformat()
+
+def add_duration_to_time(hhmm: str, duration: int) -> str:
+    """"
+    Add duration to a datetime time (HHMM)
+    Duration in seconds
+
+    @flag datetime
+    @flag duration
+    """
+    dt = datetime.strptime(hhmm, "%H%M")
+    dt += timedelta(seconds=duration)
+    return dt.strftime("%H%M")
 
 def yyyymmddhhmmss_to_datetime(time_string: str) -> datetime:
     """

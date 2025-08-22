@@ -12,7 +12,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     """
     Returns ping, blocking_message (Embed/None), summary_message (Embed), request_ping (bool)
     """
-    db.check_user(user_id)
+    creator = db.check_user(user_id)
 
     #TODO revoir cette requête car il y a trop de problèmes possibles avec (error handling, injection...
     try:
@@ -60,7 +60,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
                     if blocking_events:
                         blocking.append([username, instrument, blocking_events[0]])
                     else:
-                        present.append([username, uuid, instrument])
+                        present.append([username, uuid, instrument, musician])
 
                 else:
                     missing.append([tools.parse_mail(musician), instrument])
@@ -100,11 +100,10 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         # if not view.value:
         #     await i.delete_original_response()
         #     return
-
-    # TODO : add rehearsal to the calendar
+    success = db.add_rehearsal_to_calendar("test", song, [i[3] for i in present], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
 
     summary_message = discordutils.success_embed(title="Répétition ajoutée", message=f"Répétition pour {song} {tools.get_special_date_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d'une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.")
-
+    
     present_message = str()
     ping = str()
 
@@ -114,7 +113,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
 
     summary_message.add_field(name="Membres présents", value=present_message)
 
-    return ping, blocking_message, summary_message, view, blocking or missing
+    return ping, blocking_message, summary_message, view, blocking or missing, success
 
 
 def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.DAY_DURATION) -> discord.Embed:
