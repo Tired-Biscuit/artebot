@@ -5,13 +5,14 @@ from python.classes.event import Event
 import python.googleutils as googleutils
 
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
 db.TESTING_DATABASE = True
 db.refresh()
 
-try:
+""" try:
     print("Database reset...", db.reset(allow_fail=True))
     print("Database init...", db.init())
 except Exception as e:
@@ -48,3 +49,25 @@ print(db.request_blocking_events(tools.local_to_unixepoch("20250901100000"), 360
 # print(db.request_blocking_google_events(local_to_unixepoch("20250901100000"), "4321"))
 # import python.googleutils as googleutils
 # googleutils.download_calendar("c_2ed13b6f70a955f61b14ee956ea2b25bc153f66b2fb81a565e29881d3fad0882@group.calendar.google.com")
+
+ """
+
+tomorrow = datetime.now() + timedelta(days=1)
+start_time = tomorrow.replace(hour=10, minute=0, second=0, microsecond=0)
+end_time = tomorrow.replace(hour=11, minute=0, second=0, microsecond=0)
+
+event = {
+    "summary": "Test Event",
+    "description": "This is a test event added via API.",
+    "start": {
+        "dateTime": start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timeZone": "Europe/Paris"
+    },
+    "end": {
+        "dateTime": end_time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timeZone": "Europe/Paris"
+    }
+}
+calendar_id = "c_67370f068ccc5eaaafb4d663645dca79e62e8675a5a4619c2510134fb5ec746e@group.calendar.google.com"
+success = googleutils.add_event_to_calendar(calendar_id, event)
+print("Test event added:", success)

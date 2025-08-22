@@ -144,6 +144,7 @@ def update_calendar(calendar):
     command = "INSERT OR REPLACE INTO GoogleEvent VALUES"
 
     for event in calendar:
+
         keys = event.keys()
         if event and "id" in keys and "organizer" in keys and "start" in keys and "end" in keys and "summary" in keys:
             if "location" in keys and event["location"] in ["local", "Local", "LOCAL"]:
@@ -162,6 +163,7 @@ def update_calendar(calendar):
                     missing_fields += " "+field_name
             print(f"Incomplete event data, skipping insertion. Missing fields:{missing_fields}")
 
+    print(command)
     if command != "INSERT OR REPLACE INTO GoogleEvent VALUES":
         command = command[:-1] + ";" # Remove the last comma and add a semicolon
         return run(command)
@@ -179,7 +181,50 @@ def update_calendars():
         result = googleutils.download_calendar(calendar_id)
         if result[0] and len(result[1]) > 0:
             print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}")
+        else:
+            print(f"No event in calendar {i}.")
 
+def add_rehearsal_to_calendar(calendar_id: str, song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
+    
+    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
+
+    if not song_info:
+        raise ValueError(f"Morceau {song} non trouvé")
+
+    song_info = song_info[0]
+
+    instruments_names = get_instruments_names()
+
+    musicians_instruments = dict()
+
+    for i in range(4, len(song_info)-1):
+        if song_info[i]:
+            musicians = song_info[i].split(" ")
+            for musician in musicians:
+                if musician not in musicians_instruments:
+                    musicians_instruments[musician] = instruments_names[i][0].capitalize()
+                else:
+                    musicians_instruments[musician] += ", " + instruments_names[i][0]
+
+    event = {
+        "summary": f"Répétition {song_info[1]}",
+        "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
+        "start": {
+            "dateTime": start_time,
+            "timeZone": "UTC"
+        },
+        "end": {
+            "dateTime": end_time,
+            "timeZone": "UTC"
+        },
+        "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
+        "location": "Local",
+        "creator": {"displayName": creator},
+        "organizer": {"email": song_info[4]},
+        "guestsCanModify": True
+    }
+    calendar_test = os.getenv("CALENDAR_TEST")
+    return googleutils.add_event_to_calendar(calendar_test, event)
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """
@@ -317,7 +362,7 @@ def get_all_musicians_uuids_for_song(song: str) -> tuple[list[int], list[str]]:
     return musicians_uuids, unregistered_users
 
 
-def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> (list[list], list[dict]):
+def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], list[dict]]:
     """
     Returns a list of recurring constraints for each day of a week, and a list of punctual events for each day as a dictionary with start time as key
 
@@ -357,7 +402,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> (li
     return recurring_events, punctual_events
 
 
-def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> (list[list], list[dict]):
+def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], list[dict]]:
     """
     Returns a list of recurring constraints for a day starting from the time given in paramter, and punctual events for the day as a dictionary with start time as key
 

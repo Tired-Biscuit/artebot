@@ -246,7 +246,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
 
         result = music_commands.add_rehearsal(i.user.id, day, start, duration, song)
 
-        ping, blocking_message, summary_message, view, request_ping = result[0], result[1], result[2], result[3], result[4]
+        ping, blocking_message, summary_message, view, request_ping, success = result[0], result[1], result[2], result[3], result[4], result[5]
 
 
         if request_ping:
@@ -255,10 +255,15 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
             if not view.value:
                 await i.delete_original_response()
 
-        if request_ping:
-            await i.followup.send(content=ping, embed=summary_message)
-        else:
-            await i.response.send_message(content=ping, embed=summary_message)
+        if view is None or view.value:
+            if success:
+                if request_ping:
+                    await i.followup.send(content=ping, embed=summary_message)
+                else:
+                    await i.response.send_message(content=ping, embed=summary_message)
+            else:
+                raise "Erreur lors de l'ajout de la répétition au calendrier"
+        
 
     except Exception as e:
         message = discordutils.failure_embed(title="Erreur", message=str(e))
