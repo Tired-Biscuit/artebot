@@ -412,7 +412,7 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 @app_commands.rename(
     setlist_link="lien"
 )
-async def add_setlist(i: discord.Interaction, setlist_link: str, name: str):
+async def add_setlist(i: discord.Interaction, setlist_link: str):
     try:
         await i.response.send_message(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
     except Exception as e:
