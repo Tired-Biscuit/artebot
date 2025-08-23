@@ -148,7 +148,7 @@ def create_calendar(name: str, sheet_id: str) -> str | None:
     }
     body = {
         "summary": name,
-        "description": f"Calendrier pour les répétitions de l'évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}"
+        "description": f"Calendrier pour les répétitions de l’évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}"
     }
     response = requests.post(url, headers=headers, data=json.dumps(body))
     if response.status_code == 200 or response.status_code == 201:
@@ -321,7 +321,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
     for i in range(min(len(column_names), len(row_values))):
 
         if column_names[i] not in translated_columns and column_names[i] not in tools.get_ignored_column_names():
-            print("Attention, un instrument n'est pas enregistré dans la base de données:", column_names[i])
+            print("Attention, un instrument n’est pas enregistré dans la base de données :", column_names[i])
         else:
             for db_column in db_columns:
                 if column_names[i] in translation_dict[db_column]:

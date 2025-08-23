@@ -157,7 +157,7 @@ class SetlistsPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return information_embed(title="Choisissez une setlist à supprimer", message=text)
+        return information_embed(title="Choisis une setlist à supprimer", message=text)
 
 
 class ConstraintRemovalPaginationView(discord.ui.View):
@@ -214,7 +214,7 @@ class ConstraintRemovalPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return information_embed(title="Choisissez une contrainte à supprimer", message=text)
+        return information_embed(title="Choisiss une contrainte à supprimer", message=text)
 
     def remove_constraint(self):
         constraint = self.constraints[self.page]
@@ -481,7 +481,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
 
             summary_message = success_embed(
                 title="Répétition ajoutée",
-                message=f"Répétition pour {self.song} le {tools.get_special_date_string(formatted_date)} à **{tools.formatted_hhmm(tools.parse_time(str(self.time + 8)))}** d'une durée d'**une heure** ajoutée avec succès."
+                message=f"Répétition pour {self.song} le {tools.get_special_date_string(formatted_date)} à **{tools.formatted_hhmm(tools.parse_time(str(self.time + 8)))}** d’une durée d’**une heure** ajoutée avec succès."
             )
         
             ping = str()
@@ -491,7 +491,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
 
             await interaction.response.edit_message(content=ping, embed=summary_message, view=None)
         else:
-            raise Exception("La répétition n'a pas pu être ajoutée au calendrier !")
+            raise Exception("La répétition n’a pas pu être ajoutée au calendrier !")
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = ConstraintsDetailsView(self.song, self.week, self.weekdaynb)
@@ -537,5 +537,5 @@ def information_embed(title: str = "", message: str = "") -> discord.Embed:
 ############################################
 
 FailureError = Exception("Une erreur est survenue")
-NotAdminError = Exception("Tu n'es pas admin :(")
-NotOwnerError = Exception("Tu n'es pas owner, les admins peuvent voir les owners avec /voir_owners")
+NotAdminError = Exception("Tu n’es pas admin :(")
+NotOwnerError = Exception("Tu n’es pas owner, les admins peuvent voir les owners avec /voir_owners")

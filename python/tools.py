@@ -474,7 +474,7 @@ def parse_date(date: str) -> str:
                     month = month[:-1]
                 month = month_map[month]
             except:
-                raise ValueError(f"« {date} » n'est pas reconnu comme une date valide.")
+                raise ValueError(f"« {date} » n’est pas reconnu comme une date valide.")
 
         if year is None:
             year = str(now.year)
@@ -504,7 +504,7 @@ def parse_date(date: str) -> str:
         return (now + timedelta(days=2)).strftime("%Y%m%d")
 
 
-    raise ValueError(f"« {date} » n'est pas reconnu comme une date valide.")
+    raise ValueError(f"« {date} » n’est pas reconnu comme une date valide.")
 
 def parse_time(time_string: str) -> str:
     """
@@ -536,7 +536,7 @@ def parse_time(time_string: str) -> str:
     if time_string in ["Midi", "Noon"]:
         return "1200"
 
-    raise ValueError(f"« {time_string} » n'est pas reconnu comme une heure valide.")
+    raise ValueError(f"« {time_string} » n’est pas reconnu comme une heure valide.")
 
 def parse_duration(duration: str) -> int:
     """
@@ -562,7 +562,7 @@ def parse_duration(duration: str) -> int:
         h, m = match.groups()
         return 3600*int(h) + 60*int(m) if m is not None else 3600*int(h)
 
-    raise ValueError(f"« {duration} » n'est pas reconnu comme une durée valide.")
+    raise ValueError(f"« {duration} » n’est pas reconnu comme une durée valide.")
 
 def parse_mail(mail: str) -> str:
     """
@@ -574,7 +574,6 @@ def parse_mail(mail: str) -> str:
 
     if len(mail) != 2:
         return mail
-        raise ValueError(f"« {mail} » n'est pas reconnu comme une adresse mail valide.")
 
     return mail[0].capitalize() + " " + mail[1].upper()
 
@@ -601,7 +600,7 @@ def get_special_date_string(date: str) -> str:
     today = int(datetime.now().strftime("%Y%m%d"))
 
     if str(today) == date:
-        return "**aujourd'hui**"
+        return "**aujourd’hui**"
 
     if str(today + 1) == date:
         return "**demain**"
@@ -612,7 +611,7 @@ def get_special_date_string(date: str) -> str:
     try:
         return f"le **{date[-2:]}/{date[4:6]}/{date[:4]}**"
     except:
-        raise ValueError(f"« {date} » n'est pas sous le format YYYYMMDD.")
+        raise ValueError(f"« {date} » n’est pas sous le format YYYYMMDD.")
 
 def formatted_time_span_string(start: str, end: str) -> str:
     """
@@ -630,7 +629,7 @@ def formatted_time_span_string(start: str, end: str) -> str:
     """
 
     if len(start) != 4 or len(end) != 4:
-        raise ValueError(f"« {start} » et/ou « {end} » n'est pas sous le format HHMM.")
+        raise ValueError(f"« {start} » et/ou « {end} » n’est pas sous le format HHMM.")
 
     res = ""
 
@@ -638,7 +637,7 @@ def formatted_time_span_string(start: str, end: str) -> str:
         return "**toute la journée**"
 
     if start == "0000":
-        res += "jusqu'"
+        res += "jusqu’"
     else:
         if start[0] == '0':
             start = start[1:]
@@ -685,7 +684,7 @@ def formatted_hhmm(time_string: str) -> str:
     """
 
     if len(time_string) != 4:
-        raise ValueError(f"« {time_string} » n'est pas sous le format HHMM.")
+        raise ValueError(f"« {time_string} » n’est pas sous le format HHMM.")
 
     if time_string == "1200":
         return "midi"

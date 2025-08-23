@@ -70,7 +70,7 @@ def add_setlist(user_id: int, setlist_link: str) -> discord.Embed:
     if setlist_link != "":
         id = googleutils.get_spreadsheet_id(setlist_link)
         tools.add_setlist(id, googleutils.get_sheet_name(id))
-        return discordutils.success_embed(message="Setlist ajoutée, pensez à la mettre à jour!")
+        return discordutils.success_embed(message="Setlist ajoutée, pense à la mettre à jour!")
     else:
         raise discordutils.FailureError
 

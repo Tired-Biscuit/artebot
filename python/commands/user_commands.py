@@ -10,12 +10,12 @@ def connection(user_id: int, mail: str, group: str) -> discord.Embed:
         if db.run(f"""SELECT email FROM User WHERE uuid = {user_id};"""):
             raise ValueError("Tu es déjà dans la base de données ! (`/connexion`)")
     except:
-        raise Exception("L'identifiant n'a pas pu être vérifié")
+        raise Exception("L’identifiant n’a pas pu être vérifié")
 
     try:
         pseudo = tools.parse_mail(mail)
     except:
-        raise ValueError(f"« {mail} » n'est pas une adresse mail valide.")
+        raise ValueError(f"« {mail} » n’est pas une adresse mail valide.")
 
     try:
         # Add user to the database
@@ -31,10 +31,10 @@ def change_mail(user_id: int, mail: str) -> discord.Embed:
     try:
         tools.parse_mail(mail)
     except:
-        raise ValueError("Format de l'adresse mail incorrect !")
+        raise ValueError("Format de l’adresse mail incorrect !")
 
     try:
-        db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{user_id}'")
+        db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{user_id}")
     except:
         raise discordutils.FailureError
 
