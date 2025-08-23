@@ -72,7 +72,7 @@ async def on_ready():
 #     User Commands     #
 #########################
 
-@bot.tree.command(name="connexion", description="S'ajouter à la base de données")
+@bot.tree.command(name="connexion", description="S’ajouter à la base de données")
 @app_commands.describe(
     mail="Ton adresse mail TN.net",
     group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)"
@@ -87,7 +87,7 @@ async def connection(i: discord.Interaction, mail: str, group: app_commands.Choi
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="mail", description="Changer l'adresse mail associée à son compte")
+@bot.tree.command(name="mail", description="Changer l’adresse mail associée à son compte")
 @app_commands.describe(
     mail="La nouvelle adresse mail (TN.net)"
 )
@@ -127,7 +127,7 @@ async def username(i: discord.Interaction, username: str):
 
 
 
-@bot.tree.command(name="profil", description="consulter le profil d'une personne. Laisse vide pour consulter ton profil")
+@bot.tree.command(name="profil", description="consulter le profil d’une personne. Laisse vide pour consulter ton profil")
 @app_commands.describe(
     user="Mentionner la personne désirée (elle ne recevra pas de notification)"
 )
@@ -168,9 +168,9 @@ async def punctual_constraint(i: discord.Interaction, day: str, start: str = Non
 
 @bot.tree.command(name="indisponibilité_récurrente", description="Ajouter une contrainte récurrente")
 @app_commands.describe(
-    day="Jour de la semaine de l'indisponibilité (peut être « Tous »)",
-    start="Heure de début de l'indisponibilité",
-    end="Heure de fin de l'indisponibilité"
+    day="Jour de la semaine de l’indisponibilité (peut être « Tous »)",
+    start="Heure de début de l’indisponibilité",
+    end="Heure de fin de l’indisponibilité"
 )
 @app_commands.choices(day=[
     app_commands.Choice(name="lundi", value=1),
@@ -262,7 +262,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
                 else:
                     await i.response.send_message(content=ping, embed=summary_message)
             else:
-                raise Exception("Erreur lors de l'ajout de la répétition au calendrier")
+                raise Exception("Erreur lors de l’ajout de la répétition au calendrier")
         
 
     except Exception as e:
@@ -275,7 +275,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
 
 @bot.tree.command(name="trouver_repète", description="Trouve les créneaux possibles pour répéter un morceau sur les 7 prochains jours")
 @app_commands.describe(
-    song="Nom du morceau (laisser vide si vous êtes dans le thread correspondant)"
+    song="Nom du morceau (laisser vide si tu es dans le thread correspondant)"
 )
 @app_commands.rename(
     song="morceau"
@@ -300,10 +300,10 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
 
 
-@bot.tree.command(name="info", description="consulter les morceaux d'une personne. Laisse vide pour consulter tes morceaux.")
+@bot.tree.command(name="info", description="consulter les morceaux d’une personne. Laisse vide pour consulter tes morceaux.")
 @app_commands.describe(
     user="Mentionner la personne désirée (elle ne recevra pas de notification)",
-    display="Niveau d'information"
+    display="Niveau d’information"
 )
 @app_commands.rename(
     user="membre",
@@ -357,7 +357,7 @@ async def song(i: discord.Interaction, song: str=None):
 ##########################
 #TODO Ajouter les décorateurs admin-only
 
-@bot.tree.command(name="ajouter_admin", description="enregistrer quelqu'un comme admin")
+@bot.tree.command(name="ajouter_admin", description="enregistrer quelqu’un comme admin")
 @app_commands.describe(
     user="Mentionner la personne concernée"
 )
@@ -542,8 +542,8 @@ async def create_threads(i: discord.Interaction):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 @app_commands.describe(
-    instrument="Nom de l'instrument en anglais",
-    translation="Nom de l'instrument en français"
+    instrument="Nom de l’instrument en anglais",
+    translation="Nom de l’instrument en français"
 )
 @app_commands.rename(
     instrument="instrument_anglais",
@@ -557,7 +557,7 @@ async def add_instrument(i: discord.Interaction, instrument: str, translation: s
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="supprimer_table", description="Vider toutes les entrées d'une table de la BDD")
+@bot.tree.command(name="supprimer_table", description="Vider toutes les entrées d’une table de la base de données")
 @app_commands.describe(
     table="Indiquer la table à vider"
 )
@@ -583,7 +583,7 @@ async def delete_table(i: discord.Interaction, table: app_commands.Choice[str]):
 #     Owner Commands (in python/commands/admin_commands.py)      #
 ##################################################################
 
-@bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d'admin du bot à quelqu'un")
+@bot.tree.command(name="retirer_admin", description="(owner-only) retirer les droits d’admin du bot à quelqu’un")
 @app_commands.describe(
     user="Mentionner la personne concernée"
 )
@@ -597,7 +597,7 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="ajouter_owner", description="(owner-only) enregistrer quelqu'un comme owner")
+@bot.tree.command(name="ajouter_owner", description="(owner-only) enregistrer quelqu’un comme owner")
 @app_commands.describe(
     user="Mentionner la personne concernée"
 )

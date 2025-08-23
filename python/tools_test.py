@@ -40,7 +40,7 @@ assert tools.parse_time("midi") == "1200"
 
 assert tools.formatted_time_span_string("1200", "1300") == "de **12 h** à **13 h**"
 assert tools.formatted_time_span_string("0700", "1251") == "de **7 h** à **12 h 51**"
-assert tools.formatted_time_span_string("0000", "0900") == "jusqu'à **9 h**"
+assert tools.formatted_time_span_string("0000", "0900") == "jusqu’à **9 h**"
 assert tools.formatted_time_span_string("0000", "2359") == "**toute la journée**"
 assert tools.formatted_time_span_string("0446", "2359") == "à partir de **4 h 46**"
 

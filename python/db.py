@@ -693,4 +693,4 @@ def check_user(user_id: int) -> str:
     try:
         return get_user_name(user_id)
     except:
-        raise Exception("L'identifiant n'a pas pu être vérifié. Tu n'es peut-être pas connecté(e), retente de t'enregistrer avec `/connexion`")
+        raise Exception("L’identifiant n’a pas pu être vérifié. Tente de t’enregistrer avec `/connexion`")
