@@ -455,7 +455,7 @@ async def create_threads(i: discord.Interaction):
         except:
             raise Exception("Problème avec les morceaux présents...")
 
-        if i.channel.type != "GUILD_TEXT":
+        if str(i.channel.type) != "text":
             raise Exception("Tu ne trouves pas dans un salon !")
 
         existing_threads = [thread.name for thread in i.channel.threads]
@@ -465,73 +465,11 @@ async def create_threads(i: discord.Interaction):
             await i.response.send_message(embed=discordutils.information_embed(message="Pas de fils à créer !"), ephemeral=True)
         else:
             await i.response.defer(thinking=False)
+            setlists_names = googleutils.get_setlists_names()
+            view = discordutils.SetlistsThreadCreationView(setlists_names)
+            view.check_buttons_availability()
+            await i.followup.send(embed=view.embed_page(), view=view)
 
-            description = str()
-            for song in songs:
-                description += f"- {song[1]} ({song[2]})\n"
-            description = description[:-1]
-
-            view = discordutils.ThreadCreationView()
-            if len(songs) != 1:
-                await i.edit_original_response(embed=discordutils.information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
-            else:
-                await i.edit_original_response(embed=discordutils.information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
-
-            await view.wait()
-            if not view.value:
-                await i.delete_original_response()
-                return
-
-            await i.edit_original_response(embed=discordutils.information_embed(title=f"0/{len(songs)} fil créé...", message=description))
-
-
-        created = 0
-        for k in range(len(songs)):
-            musicians, not_in_db = db.get_song_musicians(songs[k])
-            if musicians:
-                thread = await i.channel.create_thread(
-                    name=songs[k][1],
-                    auto_archive_duration=10080,
-                    reason="Fil pour répétition"
-                )
-                songs[k][1] = ":white_check_mark: " + songs[k][1]
-                created += 1
-            else:
-                songs[k][1] = ":x: (pas de musiciens dans la DB) " + songs[k][1]
-
-
-            description = str()
-            for j in range(len(songs)):
-                if j == k+1:
-                    description += f"- **{songs[j][1]} ({songs[j][2]})**\n"
-                else:
-                    description += f"- {songs[j][1]} ({songs[j][2]})\n"
-
-            description = description[:-1]
-
-            if created > 1:
-                await i.edit_original_response(embed=discordutils.information_embed(title=f"{created}/{len(songs)} fils créés...", message=description))
-            else:
-                await i.edit_original_response(embed=discordutils.information_embed(title=f"{created}/{len(songs)} fil créé...", message=description))
-
-            text = str()
-            for musician in musicians:
-                text += f"<@{musician}> "
-
-            if musicians:
-                await thread.send(text)
-                if not_in_db:
-                    text = f"\n Les personnes suivantes ne sont pas dans la base de données du bot ! Mentionnez-les et demandez leur de se connecter avec `/connexion` !\n"
-                    for musician in not_in_db:
-                        text += f"- {tools.parse_mail(musician)}\n"
-
-                    await thread.send(text)
-
-        if songs:
-            if created > 1:
-                await i.followup.send(f"{created} fils créés avec succès !", ephemeral=True)
-            else:
-                await i.followup.send(f"{created} fil créé avec succès !", ephemeral=True)
 
 
     except Exception as e:

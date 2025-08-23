@@ -564,6 +564,26 @@ def parse_duration(duration: str) -> int:
 
     raise ValueError(f"« {duration} » n’est pas reconnu comme une durée valide.")
 
+accent_data = {"Clement": "Clément",
+               "Angele": "Angèle",
+               "Gael": "Gaël",
+               "Elea-rose": "Éléa-Rose",
+               "Mohamed-emine": "Mohamed Emine",
+               "Raphael": "Raphaël",
+               "Elisa": "Élisa",
+               "Kevin": "Kévin",
+               "Etienne": "Étienne",
+               "Zoe": "Zoé",
+               "Theo": "Théo",
+               "Chloe": "Chloé",
+               "Andre": "André",
+               "Noe": "Noé",
+               "Cedric": "Cédric",
+               "LIENARD": "LIÉNARD",
+               "ESCUDE--COTINAT": "ESCUDE–COTINAT",
+               "JIMENEZ--PIQUEMAL": "JIMENEZ–PIQUEMAL"
+               }
+
 def parse_mail(mail: str) -> str:
     """
     Returns the name of the owner of the mail address ([first_name].[last_name]@[...] format)
@@ -574,8 +594,17 @@ def parse_mail(mail: str) -> str:
 
     if len(mail) != 2:
         return mail
+    if mail[0].capitalize() in accent_data:
+        mail[0] = accent_data[mail[0].capitalize()]
+    else:
+        mail[0] = mail[0].capitalize()
 
-    return mail[0].capitalize() + " " + mail[1].upper()
+    if mail[1].upper() in accent_data:
+        mail[1] = accent_data[mail[1].upper()]
+    else:
+        mail[1] = mail[1].upper()
+
+    return mail[0] + " " + mail[1]
 
 
 
