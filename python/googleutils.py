@@ -221,7 +221,7 @@ def get_setlists_names() -> list[str] | None:
         with open("data.json", "r") as f:
             setlists_ids = json.loads(f.read())["setlists"]
             for setlist_id in setlists_ids:
-                names.append(get_spreadsheet_name(setlist_id))
+                names.append(setlist_id[1])
             return names
     return None
 
