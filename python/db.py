@@ -522,14 +522,13 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
 
     if display == 2:
         for song in result:
-            song = song[1:]
-            text += f"### {song[0]} — {song[1]}\n"
-            for i in range(3, len(song)-1):
+            text += f"### {song[1]} — {song[2]} (*{tools.get_setlist_name(song[0])}*)\n"
+            for i in range(4, len(song)-1):
                 if song[i]:
                     text += "- "
                     if email in song[i]:
                         text += f"**"
-                    text += f"{instruments_names[i+1][0].capitalize()} :"
+                    text += f"{instruments_names[i][0].capitalize()} :"
                     if email in song[i]:
                         text += f"**"
                     musicians = song[i].split(" ")
@@ -540,11 +539,10 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
 
     else:
         for song in result:
-            song = song[1:]
             if display == 0:
-                text += f"- **{song[0]}** :"
+                text += f"- **{song[1]}** :"
             else:
-                text += f"### {song[0]} — {song[1]}\n- "
+                text += f"### {song[1]} — {song[2]} (*{tools.get_setlist_name(song[0])}*)\n- "
 
             musician_list = list()
             for i in range(4, len(song)-1):
@@ -552,7 +550,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
                         musicians = song[i].split(" ")
 
                         if email in song[i]:
-                            text += f" {instruments_names[i+1][0]}" if display == 0 else f" {instruments_names[i+1][0].capitalize()}"
+                            text += f" {instruments_names[i][0]}" if display == 0 else f" {instruments_names[i][0].capitalize()}"
                             if len(musicians) >= 2:
                                 text += f" (avec"
                                 for musician in musicians:
@@ -587,7 +585,7 @@ def get_song_info_message(song: str) -> tuple:
 
     instruments_names = get_instruments_names()
 
-    text = ""
+    text = f"*Setlist : {tools.get_setlist_name(song_info[0])}*\n"
 
     for i in range(4, len(song_info)-1):
         if song_info[i]:

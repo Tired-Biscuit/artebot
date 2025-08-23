@@ -102,7 +102,7 @@ def add_calendar(calendar_id):
     """
     if len(calendar_id) <= 5:
         return
-    create_data_file()
+
     data = {}
     with open("data.json", "r") as f:
         data = json.loads(f.read())
@@ -210,9 +210,9 @@ def get_setlists_ids() -> list[str] | None:
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
             data = json.loads(f.read())
-            return data["setlists"]
+            return [setlist[0] for setlist in data["setlists"]]
 
-def add_setlist(setlist_id: str):
+def add_setlist(setlist_id: str, name:str):
     """
     Adds a setlist id to the data.json file
 
@@ -221,15 +221,51 @@ def add_setlist(setlist_id: str):
     """
     if len(setlist_id) <= 5:
         return
-    create_data_file()
+
     data = None
     with open("data.json", "r") as f:
         data = json.loads(f.read())
     if data != None:
         with open("data.json", "w") as f:
             if setlist_id not in data["setlists"]:
-                data["setlists"].append(setlist_id)
+                data["setlists"].append([setlist_id, name, ""])
                 f.write(json.dumps(data))
+
+def get_setlist_name(setlist_id: str) -> str:
+    """
+    Returns the name of the setlist given its id
+
+    @flag data
+    @flag setlist
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            for setlist in data["setlists"]:
+                if setlist[0] == setlist_id:
+                    return setlist[1]
+    return None
+
+def get_setlist_calendar(setlist_id: str) -> str:
+    """
+    Returns the calendar of the setlist given its id
+
+    @flag data
+    @flag setlist
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            for setlist in data["setlists"]:
+                if setlist[0] == setlist_id:
+                    return setlist[2]
+    return None
+
+def create_setlist_calendar(setlist_id: str) -> str:
+    if get_setlist_calendar(setlist_id) is not None:
+        raise "Cette setlist a déjà un calendrier !"
+    
+    return None
 
 def remove_setlist(index: int):
     """
