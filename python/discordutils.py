@@ -159,6 +159,132 @@ class SetlistsPaginationView(discord.ui.View):
             text += "\n"
         return information_embed(title="Choisis une setlist à supprimer", message=text)
 
+class SetlistsThreadCreationView(discord.ui.View):
+    def __init__(self, setlists: list[str]):
+        super().__init__()
+        self.page = 0
+        self.setlists = setlists
+
+    @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            self.check_buttons_availability()
+            await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # if self.page < len(self.pages) - 1:
+        self.page += 1
+        self.check_buttons_availability()
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="Choisir", style=ButtonStyle.green, custom_id="choose")
+    async def choose_button(self, i: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.choose_button.disabled = True
+
+        songs = db.run(f"""SELECT * FROM Song WHERE setlist_id LIKE "%{tools.get_setlists_ids()[self.page]}%";""")
+
+        songs = [list(song) for song in songs if song[1] not in [thread.name for thread in i.channel.threads]]
+
+        if not songs:
+            await i.response.edit_message(embed=information_embed(title=f"Pas de fils à créer !", message=""), view=None)
+            
+        description = str()
+        for song in songs:
+            description += f"- {song[1]} ({song[2]})\n"
+        description = description[:-1]
+
+        view = ThreadCreationView()
+        
+        if len(songs) != 1:
+            await i.response.edit_message(embed=information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
+        else:
+            await i.response.edit_message(embed=information_embed(title=f"{len(songs)} fils manquants", message=description), view=view)
+
+        await view.wait()
+        if not view.value:
+            await i.delete_original_response()
+        else:
+
+            await i.edit_original_response(embed=information_embed(title=f"0/{len(songs)} fil créé…", message=description))
+
+            created = 0
+            for k in range(len(songs)):
+                musicians, not_in_db = db.get_song_musicians(songs[k])
+                if musicians:
+                    thread = await i.channel.create_thread(
+                        name=songs[k][1],
+                        auto_archive_duration=10080,
+                        reason="Fil pour répétition"
+                    )
+                    songs[k][1] = ":white_check_mark: " + songs[k][1]
+                    created += 1
+                else:
+                    songs[k][1] = ":x: (pas de musiciens dans la DB) " + songs[k][1]
+
+
+                description = str()
+                for j in range(len(songs)):
+                    if j == k+1:
+                        description += f"- **{songs[j][1]} ({songs[j][2]})**\n"
+                    else:
+                        description += f"- {songs[j][1]} ({songs[j][2]})\n"
+
+                description = description[:-1]
+
+                if created > 1:
+                    await i.edit_original_response(embed=information_embed(title=f"{created}/{len(songs)} fils créés…", message=description))
+                else:
+                    await i.edit_original_response(embed=information_embed(title=f"{created}/{len(songs)} fil créé…", message=description))
+
+                text = str()
+                for musician in musicians:
+                    text += f"<@{musician}> "
+
+                if musicians:
+                    await thread.send(text)
+                    if not_in_db:
+                        text = f"\n Les personnes suivantes ne sont pas dans la base de données du bot ! Mentionnez-les et demandez leur de se connecter avec `/connexion` !\n"
+                        for musician in not_in_db:
+                            text += f"- {tools.parse_mail(musician)}\n"
+
+                        await thread.send(text)
+
+            if songs:
+                if created > 1:
+                    await i.followup.send(f"{created} fils créés avec succès !", ephemeral=True)
+                else:
+                    await i.followup.send(f"{created} fil créé avec succès !", ephemeral=True)
+
+    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.choose_button.disabled = True
+        await interaction.response.edit_message(embed=discord.Embed(title="Opération terminée"), view=self)
+
+    def check_buttons_availability(self):
+        self.prev_button.disabled = self.page <= 0
+        self.next_button.disabled  = self.page >= len(self.setlists) - 1
+
+    def embed_page(self) -> discord.Embed:
+        if len(self.setlists) == 0:
+            return discord.Embed(title="Aucune setlist ajoutée")
+        text = ""
+        for i in range(len(self.setlists)):
+            if i == self.page:
+                text += "**"
+            text += self.setlists[i]
+            if i == self.page:
+                text += "**"
+            text += "\n"
+        return information_embed(title="Choisis une setlist pour laquelle créer les fils", message=text)
+
 
 class ConstraintRemovalPaginationView(discord.ui.View):
     def __init__(self, constraints_strings: list[str], constraints: list[list[int]], musician_uuid: int):
