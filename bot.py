@@ -2,6 +2,7 @@
 import os
 import time
 import traceback
+import math
 
 import discord
 from dotenv import load_dotenv
@@ -316,7 +317,19 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
 ])
 async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
     try:
-        await i.response.send_message(embed=music_commands.info(i.user.id if user is None else user.id, display), ephemeral=True)
+        embed = music_commands.info(i.user.id if user is None else user.id, display)
+        if len(embed.description) > 4096:
+            nb = math.ceil(len(embed.description)/4096)
+            nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
+            await i.response.send_message(embed=nembed, ephemeral=True)
+            for j in range(nb-1):
+                if 4096*(j+2) > len(embed.description):
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
+                else:
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
+                await i.followup.send(embed=nembed, ephemeral=True)
+        else:    
+            await i.response.send_message(embed=embed, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
@@ -453,7 +466,7 @@ async def create_threads(i: discord.Interaction):
         try:
             songs = db.run("SELECT * FROM Song")
         except:
-            raise Exception("Problème avec les morceaux présents...")
+            raise Exception("Problème avec les morceaux présents…")
 
         if str(i.channel.type) != "text":
             raise Exception("Tu ne trouves pas dans un salon !")
