@@ -275,7 +275,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
 
 @bot.tree.command(name="trouver_repète", description="Trouve les créneaux possibles pour répéter un morceau sur les 7 prochains jours")
 @app_commands.describe(
-    song="Nom du morceau (laisser vide si tu es dans le thread correspondant)"
+    song="Nom du morceau (laisser vide si tu es dans le fil correspondant)"
 )
 @app_commands.rename(
     song="morceau"
@@ -454,6 +454,9 @@ async def create_threads(i: discord.Interaction):
             songs = db.run("SELECT * FROM Song")
         except:
             raise Exception("Problème avec les morceaux présents...")
+
+        if i.channel.type != "GUILD_TEXT":
+            raise Exception("Tu ne trouves pas dans un salon !")
 
         existing_threads = [thread.name for thread in i.channel.threads]
         songs = [list(song) for song in songs if song[1] not in existing_threads]
