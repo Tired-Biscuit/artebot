@@ -262,7 +262,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
                 else:
                     await i.response.send_message(content=ping, embed=summary_message)
             else:
-                raise "Erreur lors de l'ajout de la répétition au calendrier"
+                raise Exception("Erreur lors de l'ajout de la répétition au calendrier")
         
 
     except Exception as e:
@@ -418,6 +418,18 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
+@bot.tree.command(name="créer_calendrier", description="Créer un calendrier Google lié à la setlist")
+@app_commands.describe(
+    setlist_name="Nom de la setlist"
+)
+@app_commands.rename(
+    setlist_name="nom"
+)
+async def create_calendar(i: discord.Interaction, setlist_name: str):
+    try:
+        await i.response.send_message(embed=admin_commands.create_calendar(i.user.id, setlist_name), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 @bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
 async def delete_setlist(i: discord.Interaction):
@@ -441,7 +453,7 @@ async def create_threads(i: discord.Interaction):
         try:
             songs = db.run("SELECT * FROM Song")
         except:
-            raise "Problème avec les morceaux présents..."
+            raise Exception("Problème avec les morceaux présents...")
 
         existing_threads = [thread.name for thread in i.channel.threads]
         songs = [list(song) for song in songs if song[1] not in existing_threads]

@@ -246,12 +246,28 @@ def get_setlist_name(setlist_id: str) -> str:
                     return setlist[1]
     return None
 
+def get_setlist_id_from_name(setlist_name: str) -> str:
+    """
+    Returns the setlist id given its name
+
+    @flag data
+    @flag setlist
+    """
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as f:
+            data = json.loads(f.read())
+            for setlist in data["setlists"]:
+                if setlist[1] == setlist_name:
+                    return setlist[0]
+    return None
+
 def get_setlist_calendar(setlist_id: str) -> str:
     """
     Returns the calendar of the setlist given its id
 
     @flag data
     @flag setlist
+    @flag calendar
     """
     if os.path.exists("data.json"):
         with open("data.json", "r") as f:
@@ -261,11 +277,24 @@ def get_setlist_calendar(setlist_id: str) -> str:
                     return setlist[2]
     return None
 
-def create_setlist_calendar(setlist_id: str) -> str:
-    if get_setlist_calendar(setlist_id) is not None:
-        raise "Cette setlist a déjà un calendrier !"
-    
-    return None
+def add_calendar_to_setlist(setlist_id: str, calendar_id: str):
+    """
+    Link a calendar to a given setlist
+
+    @flag data
+    @flag setlist
+    @flag calendar
+    """
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data is not None:
+        for setlist in data["setlists"]:
+            if setlist[0] == setlist_id:
+                setlist[2] = calendar_id
+                break
+        with open("data.json", "w") as f:
+            f.write(json.dumps(data))
 
 def remove_setlist(index: int):
     """

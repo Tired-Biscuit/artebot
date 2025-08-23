@@ -133,6 +133,49 @@ def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
     response = requests.post(url, headers=headers, data=json.dumps(event))
     return response.status_code == 200 or response.status_code == 201
 
+def create_calendar(name: str, sheet_id: str) -> str | None:
+    """
+    Creates a calendar for a given sheet
+
+    Returns the id of the newly created calendar
+    """
+    creds = refresh_token()
+    url = "https://www.googleapis.com/calendar/v3/calendars"
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "summary": name,
+        "description": f"Calendrier pour les répétitions de l'évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}"
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(body))
+    if response.status_code == 200 or response.status_code == 201:
+        return response.json()["id"]
+    return None
+
+
+def create_setlist_calendar(setlist_id: str) -> str:
+    """
+    Creates a calendar for a given setlist and updates data.json
+
+    Returns the id of the newly created calendar
+    """
+    calendar = tools.get_setlist_calendar(setlist_id)
+    if calendar:
+        raise Exception(f"Cette setlist a déjà un calendrier ! https://calendar.google.com/calendar/u/0/embed?src={calendar}")
+    
+    result = create_calendar(tools.get_setlist_name(setlist_id), setlist_id)
+
+    if result is None:
+        raise Exception("Problème lors de la création du calendrier")
+    
+    tools.add_calendar(result)
+    tools.add_calendar_to_setlist(setlist_id, result)
+    
+    return result
+
 
 def get_spreadsheet_id(spreadsheet_link: str) -> str:
     return spreadsheet_link.split("/")[5]

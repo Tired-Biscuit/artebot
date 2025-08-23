@@ -184,7 +184,7 @@ def update_calendars():
         else:
             print(f"No event in calendar {i}.")
 
-def add_rehearsal_to_calendar(calendar_id: str, song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
+def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
     
     song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
 
@@ -211,11 +211,11 @@ def add_rehearsal_to_calendar(calendar_id: str, song:str, attendees:list[str], c
         "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
         "start": {
             "dateTime": start_time,
-            "timeZone": "UTC"
+            "timeZone": "W-SU"
         },
         "end": {
             "dateTime": end_time,
-            "timeZone": "UTC"
+            "timeZone": "W-SU"
         },
         "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
         "location": "Local",
@@ -223,8 +223,7 @@ def add_rehearsal_to_calendar(calendar_id: str, song:str, attendees:list[str], c
         "organizer": {"email": song_info[4]},
         "guestsCanModify": True
     }
-    calendar_test = os.getenv("CALENDAR_TEST")
-    return googleutils.add_event_to_calendar(calendar_test, event)
+    return googleutils.add_event_to_calendar(tools.get_setlist_calendar(song_info[0]), event)
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """

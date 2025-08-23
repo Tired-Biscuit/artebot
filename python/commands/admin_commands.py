@@ -76,6 +76,19 @@ def add_setlist(user_id: int, setlist_link: str) -> discord.Embed:
 
 #TODO déplacer remove setlist ici ?
 
+def create_calendar(user_id: int, setlist_name: str) -> discord.Embed:
+    db.check_user(user_id)
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+    setlist_id = tools.get_setlist_id_from_name(setlist_name)
+    if setlist_id is not None:
+        result = googleutils.create_setlist_calendar(setlist_id)
+        if result is not None:
+            return discordutils.success_embed(message=f"Calendrier créé ! Lien : https://calendar.google.com/calendar/u/0/embed?src={result}")
+        else:
+            raise discordutils.FailureError
+    else:
+        raise discordutils.FailureError
 
 def delete_table(user_id: int, table: str) -> discord.Embed:
     if table.value == "User":
