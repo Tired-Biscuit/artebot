@@ -431,26 +431,23 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
-@bot.tree.command(name="créer_calendrier", description="Créer un calendrier Google lié à la setlist")
-@app_commands.describe(
-    setlist_name="Nom de la setlist"
-)
-@app_commands.rename(
-    setlist_name="nom"
-)
-async def create_calendar(i: discord.Interaction, setlist_name: str):
-    try:
-        await i.response.send_message(embed=admin_commands.create_calendar(i.user.id, setlist_name), ephemeral=True)
-    except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 @bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
 async def delete_setlist(i: discord.Interaction):
     try:
         setlists_names = googleutils.get_setlists_names()
-        view = discordutils.SetlistsPaginationView(setlists_names)
-        view.check_buttons_availability()
+        view = discordutils.SetlistRemovalPaginationView(setlists_names)
         await i.response.send_message(embed=view.embed_page(), view=view)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="créer_calendrier", description="Créer un calendrier Google lié à une setlist")
+async def create_calendar(i: discord.Interaction):
+    try:
+        view = discordutils.SetlistChoiceForCalendarView(i.user.id, tools.get_setlists_ids())
+        view.check_buttons_availability()
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 

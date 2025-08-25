@@ -76,11 +76,10 @@ def add_setlist(user_id: int, setlist_link: str) -> discord.Embed:
 
 #TODO déplacer remove setlist ici ?
 
-def create_calendar(user_id: int, setlist_name: str) -> discord.Embed:
+def create_calendar(user_id: int, setlist_id: str) -> discord.Embed:
     db.check_user(user_id)
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
-    setlist_id = tools.get_setlist_id_from_name(setlist_name)
     if setlist_id is not None:
         result = googleutils.create_setlist_calendar(setlist_id)
         if result is not None:

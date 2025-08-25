@@ -8,6 +8,7 @@ from datetime import datetime
 import python.tools as tools
 import python.timeutils as timeutils
 import python.db as db
+import python.commands.admin_commands as admin_commands
 
 
 ########################
@@ -105,7 +106,7 @@ class ConstraintsPaginationView(discord.ui.View):
         return get_constraint_embed(self.constraints, timeutils.get_first_day_of_week(timeutils.get_nbweeks(int(time.time())) + self.page))
 
 
-class SetlistsPaginationView(discord.ui.View):
+class SetlistRemovalPaginationView(discord.ui.View):
     def __init__(self, setlists: list[str]):
         super().__init__()
         self.page = 0
@@ -115,14 +116,12 @@ class SetlistsPaginationView(discord.ui.View):
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.page > 0:
             self.page -= 1
-            self.check_buttons_availability()
             await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
     @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if self.page < len(self.pages) - 1:
         self.page += 1
-        self.check_buttons_availability()
         await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
     @discord.ui.button(label="Supprimer", style=ButtonStyle.red, custom_id="delete")
@@ -157,7 +156,72 @@ class SetlistsPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
+        self.check_buttons_availability()
         return information_embed(title="Choisis une setlist à supprimer", message=text)
+
+
+class SetlistChoiceForCalendarView(discord.ui.View):
+    def __init__(self, user_id: int, setlists_ids: list[str]):
+        super().__init__()
+        self.page = 0
+        self.user_id = user_id
+        self.setlists_ids = setlists_ids
+        self.setlists_names = []
+
+        for setlist_id in self.setlists_ids:
+            self.setlists_names.append(tools.get_setlist_name(setlist_id))
+
+    @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # if self.page < len(self.pages) - 1:
+        self.page += 1
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="Sélectionner", style=ButtonStyle.green, custom_id="confirm")
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.confirm_button.disabled = True
+        await interaction.response.defer()
+        try:
+            embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
+            await interaction.followup.send(embed=embed, view=self)
+        except Exception as e:
+            await interaction.followup.send(embed=failure_embed(message=str(e)))
+
+    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.delete_button.disabled = True
+        await interaction.response.edit_message(embed=discord.Embed(title="Opération terminée"), view=self)
+
+    def check_buttons_availability(self):
+        self.prev_button.disabled = self.page <= 0
+        self.next_button.disabled  = self.page >= len(self.setlists_names) - 1
+
+    def embed_page(self) -> discord.Embed:
+        if len(self.setlists_names) == 0:
+            return discord.Embed(title="Aucune setlist ajoutée")
+        text = ""
+        for i in range(len(self.setlists_names)):
+            if i == self.page:
+                text += "**"
+            text += self.setlists_names[i]
+            if i == self.page:
+                text += "**"
+            text += "\n"
+        self.check_buttons_availability()
+        return information_embed(title="Choisis une setlist à supprimer", message=text)
+
 
 class SetlistsThreadCreationView(discord.ui.View):
     def __init__(self, setlists: list[str]):
