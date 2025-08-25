@@ -6,6 +6,7 @@ from datetime import timezone, timedelta, datetime
 import re
 
 import python.timeutils as timeutils
+from python.googleutils import create_setlist_calendar
 
 EVENT_TYPES = {"School": 1, "Google": 2, "Constraint": 3}
 
@@ -74,12 +75,10 @@ def get_groups() -> dict:
 
     @flag data
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            groups = json.loads(f.read())["groups"]
-            return groups
-    else:
-        return {}
+    create_data_file()
+    with open("data.json", "r") as f:
+        groups = json.loads(f.read())["groups"]
+        return groups
 
 def get_calendars_ids() -> list[str] | None:
     """
@@ -88,10 +87,10 @@ def get_calendars_ids() -> list[str] | None:
     @flag data
     @flag calendar
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            return data["calendar_ids"]
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+        return data["calendar_ids"]
 
 def add_calendar(calendar_id):
     """
@@ -100,6 +99,7 @@ def add_calendar(calendar_id):
     @flag data
     @flag calendar
     """
+    create_data_file()
     if len(calendar_id) <= 5:
         return
 
@@ -119,13 +119,13 @@ def remove_calendar(calendar_id):
     @flag data
     @flag calendar
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        with open("data.json", "w") as f:
-            if calendar_id in data["calendar_ids"]:
-                data["calendar_ids"].remove(calendar_id)
-                f.write(json.dumps(data))
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    with open("data.json", "w") as f:
+        if calendar_id in data["calendar_ids"]:
+            data["calendar_ids"].remove(calendar_id)
+            f.write(json.dumps(data))
 
 def get_admins() -> list[int]:
     """
@@ -133,12 +133,12 @@ def get_admins() -> list[int]:
 
     @flag data
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            admins = json.loads(f.read())["admins"]
-            return admins
-    else:
-        return []
+    create_data_file()
+
+    with open("data.json", "r") as f:
+        admins = json.loads(f.read())["admins"]
+        return admins
+
 
 def add_admin(uuid: int):
     """
@@ -177,12 +177,10 @@ def get_owners() -> list[int]:
 
     @flag data
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            owners = json.loads(f.read())["owners"]
-            return owners
-    else:
-        return []
+    create_data_file()
+    with open("data.json", "r") as f:
+        owners = json.loads(f.read())["owners"]
+        return owners
 
 def add_owner(uuid: int):
     """
@@ -207,10 +205,10 @@ def get_setlists_ids() -> list[str] | None:
     @flag data
     @flag setlist
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            return [setlist[0] for setlist in data["setlists"]]
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+        return [setlist[0] for setlist in data["setlists"]]
 
 def add_setlist(setlist_id: str, name:str):
     """
@@ -219,6 +217,7 @@ def add_setlist(setlist_id: str, name:str):
     @flag data
     @flag setlist
     """
+    create_data_file()
     if len(setlist_id) <= 5:
         return
 
@@ -231,37 +230,37 @@ def add_setlist(setlist_id: str, name:str):
                 data["setlists"].append([setlist_id, name, ""])
                 f.write(json.dumps(data))
 
-def get_setlist_name(setlist_id: str) -> str:
+def get_setlist_name(setlist_id: str) -> str | None:
     """
     Returns the name of the setlist given its id
 
     @flag data
     @flag setlist
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            for setlist in data["setlists"]:
-                if setlist[0] == setlist_id:
-                    return setlist[1]
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+        for setlist in data["setlists"]:
+            if setlist[0] == setlist_id:
+                return setlist[1]
     return None
 
-def get_setlist_id_from_name(setlist_name: str) -> str:
+def get_setlist_id_from_name(setlist_name: str) -> str | None:
     """
     Returns the setlist id given its name
 
     @flag data
     @flag setlist
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            for setlist in data["setlists"]:
-                if setlist[1] == setlist_name:
-                    return setlist[0]
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+        for setlist in data["setlists"]:
+            if setlist[1] == setlist_name:
+                return setlist[0]
     return None
 
-def get_setlist_calendar(setlist_id: str) -> str:
+def get_setlist_calendar_id(setlist_id: str) -> str | None:
     """
     Returns the calendar of the setlist given its id
 
@@ -269,12 +268,12 @@ def get_setlist_calendar(setlist_id: str) -> str:
     @flag setlist
     @flag calendar
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-            for setlist in data["setlists"]:
-                if setlist[0] == setlist_id:
-                    return setlist[2]
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+        for setlist in data["setlists"]:
+            if setlist[0] == setlist_id:
+                return setlist[2]
     return None
 
 def add_calendar_to_setlist(setlist_id: str, calendar_id: str):
@@ -308,7 +307,7 @@ def remove_setlist(index: int):
         data = json.loads(f.read())
     if data != None:
         with open("data.json", "w") as f:
-            data["setlists"].delete(index)
+            data["setlists"].pop(index)
             f.write(json.dumps(data))
 
 def get_embed_colour()-> int:
@@ -317,12 +316,10 @@ def get_embed_colour()-> int:
 
     @flag data
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            colour = json.loads(f.read())["embed_colour"]
-            return colour
-    else:
-        return 10070709
+    create_data_file()
+    with open("data.json", "r") as f:
+        colour = json.loads(f.read())["embed_colour"]
+        return colour
 
 def change_embed_colour(colour: str):
     """
@@ -345,9 +342,9 @@ def get_instruments_names_translation() -> dict:
     @flag data
     """
     instruments_file = {}
-    if os.path.exists("data.json"):
-        with open("data.json", "r", encoding="utf-8") as f:
-            instruments_file = json.load(f)["instruments"]
+    create_data_file()
+    with open("data.json", "r", encoding="utf-8") as f:
+        instruments_file = json.load(f)["instruments"]
 
     return instruments_file
 
@@ -398,16 +395,16 @@ def add_instrument_translation(instrument: str, translation: str):
 
     @flag data
     """
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
-            data = json.loads(f.read())
-        if data != None:
-            with open("data.json", "w") as f:
-                if instrument in list(data["instruments"].keys()):
-                    data["instruments"][instrument].append(translation)
-                else:
-                    data["instruments"][instrument] = [translation]
-                f.write(json.dumps(data))
+    create_data_file()
+    with open("data.json", "r") as f:
+        data = json.loads(f.read())
+    if data != None:
+        with open("data.json", "w") as f:
+            if instrument in list(data["instruments"].keys()):
+                data["instruments"][instrument].append(translation)
+            else:
+                data["instruments"][instrument] = [translation]
+            f.write(json.dumps(data))
 
 
 
