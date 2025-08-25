@@ -58,7 +58,7 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
             db.run(f"""DELETE FROM GoogleEvent WHERE calendar_id = "{calendar_id}";""")
         db.update_calendars()
 
-        return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
+        return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
         return discordutils.failure_embed(message=calendar)
 

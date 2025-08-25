@@ -72,7 +72,8 @@ def gcal_to_datetime(google_calendar_string: str) -> datetime:
     @flag struct
     @flag datetime_struct
     """
-    return datetime.strptime(google_calendar_string[:-6], "%Y-%m-%dT%H:%M:%S")
+    print(google_calendar_string)
+    return datetime.strptime(google_calendar_string.split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
 def datetime_to_gcal(date: str) -> str:
     """
@@ -134,7 +135,12 @@ def gcal_to_epoch(gcal_time: str) -> int:
 
     @flag gcal_to_epoch
     """
-    return local_datetime_as_epoch(gcal_to_datetime(gcal_time))
+    if "Z" not in gcal_time:
+        return local_datetime_as_epoch(gcal_to_datetime(gcal_time))
+    else:
+        print("Wrong calendar timezone")
+        raise Exception("Wrong calendar timezone!")
+
 
 def punctual_constraint_to_epoch(time_string: str) -> int:
     """
