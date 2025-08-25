@@ -3,6 +3,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient import errors
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 import python.tools as tools
 import python.timeutils as timeutils
@@ -86,36 +87,28 @@ def download_calendar(calendar_id: str) -> tuple[bool, str|list]:
                 else, it's a string of the error message
     """
     creds = refresh_token()
+    service = build("calendar", "v3", credentials=creds)
 
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
-
-    headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json"
-    }
-
-    params = {
-        # "timeMin": "2025-06-01T00:00:00Z",
-        # "timeMax": "2025-06-30T23:59:59Z",
-        "singleEvents": True,
-        "orderBy": "startTime"
-    }
-
-    response = requests.get(url, headers=headers)#, params=params)
-
-    if response.status_code == 200:
-        data = response.json()
-
+    try:
+        events_result = service.events().list(
+            calendarId=calendar_id,
+            singleEvents=True,
+            orderBy="startTime",
+            # timeMin="2025-06-01T00:00:00Z",
+            # timeMax="2025-06-30T23:59:59Z",
+        ).execute()
+        events = events_result.get("items", [])
         #TODO delete in production
-        with open("temp_cal.json", "w") as f:
-            f.write(json.dumps(data))
+        # with open("temp_cal.json", "w") as f:
+        #     f.write(json.dumps(data))
 
-        return (True, data["items"])
+        return (True, events)
 
-    else:
-        print("Erreur :", response.status_code, response.text)
-        return (False, response.text)
-    
+    except HttpError as error:
+        response = f"Erreur {error.status_code}: {error}"
+        return (False, response)
+
+
 def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
     """
     Add an event into a Google calendar
@@ -123,15 +116,18 @@ def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
     Returns success state
     """
     creds = refresh_token()
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
-    headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
-    
-    response = requests.post(url, headers=headers, data=json.dumps(event))
-    return response.status_code == 200 or response.status_code == 201
+    service = build('calendar', 'v3', credentials=creds)
+    try:
+        response = service.events().insert(calendarId=calendar_id, body=event).execute()
+    except HttpError as error:
+        response = f"Erreur {error.status_code}: {error}"
+    return response
+
+
+def get_calendar_id(calendar_link: str):
+    if calendar_link is not None:
+        return calendar_link.split("=")[1]
+
 
 def create_calendar(name: str, sheet_id: str) -> str | None:
     """
@@ -140,20 +136,31 @@ def create_calendar(name: str, sheet_id: str) -> str | None:
     Returns the id of the newly created calendar
     """
     creds = refresh_token()
-    url = "https://www.googleapis.com/calendar/v3/calendars"
-    headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
+    service = build('calendar', 'v3', credentials=creds)
     body = {
         "summary": name,
         "description": f"Calendrier pour les répétitions de l’évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}"
     }
-    response = requests.post(url, headers=headers, data=json.dumps(body))
-    if response.status_code == 200 or response.status_code == 201:
-        return response.json()["id"]
-    return None
+    try:
+        response = service.calendars().insert(body=body).execute()
+        response = "https://calendar.google.com/calendar/u/0/embed?src="+response["id"]
+    except HttpError as error:
+        response = f"Erreur {error.status_code}: {error}"
+    return response
+
+
+def delete_calendar(calendar_id: str) -> str:
+    """
+    Deletes a calendar
+    """
+    creds = refresh_token()
+    service = build('calendar', 'v3', credentials=creds)
+
+    try:
+        response = service.calendars().delete(calendarId=calendar_id).execute()
+    except HttpError as error:
+        response = f"Erreur {error.status_code}: {error}"
+    return response
 
 
 def create_setlist_calendar(setlist_id: str) -> str:
@@ -181,21 +188,25 @@ def get_spreadsheet_id(spreadsheet_link: str) -> str:
     return spreadsheet_link.split("/")[5]
 
 def get_sheet_name(spreadsheet_id: str) -> str:
+    """
+    Get the first sheet's name
+    """
     creds = refresh_token()
 
-    # Get the first sheet's name
-    meta_url = f'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}?fields=sheets.properties'
-    meta_headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json"
-    }
-    meta_response = requests.get(meta_url, headers=meta_headers)
-    if meta_response.status_code != 200:
-        print("Erreur:", meta_response.status_code, meta_response.text)
-        return meta_response.text
-    meta_data = meta_response.json()
-    first_sheet_title = meta_data["sheets"][0]["properties"]["title"]
-    return first_sheet_title
+    service = build('sheets', 'v4', credentials=creds)
+
+    request = service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        fields="sheets.properties.title"
+    )
+
+    try:
+        response = request.execute()["sheets"][0]["properties"]["title"]
+    except HttpError as error:
+        response = f"Erreur {error.status_code}: {error}"
+
+    return response
+
 
 def get_spreadsheet_name(spreadsheet_id: str) -> str:
     creds = refresh_token()
