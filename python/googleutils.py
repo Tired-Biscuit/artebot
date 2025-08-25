@@ -9,6 +9,7 @@ import python.tools as tools
 import python.timeutils as timeutils
 import requests
 import json
+import python.db as db
 
 import os
 
@@ -119,15 +120,18 @@ def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
     service = build('calendar', 'v3', credentials=creds)
     try:
         response = service.events().insert(calendarId=calendar_id, body=event).execute()
+        result = download_calendar(calendar_id)
+        if result[0]:
+            db.update_calendar(result[1])
     except HttpError as error:
-        response = f"Erreur {error.status_code}: {error}"
+        raise error
     return response
 
 
 def get_calendar_id(calendar_link: str):
     if calendar_link is not None:
-        return calendar_link.split("=")[1]
-
+        if len(calendar_link.split("=")) > 1:
+            return calendar_link.split("=")[1]
 
 def create_calendar(name: str, sheet_id: str) -> str | None:
     """
@@ -139,7 +143,9 @@ def create_calendar(name: str, sheet_id: str) -> str | None:
     service = build('calendar', 'v3', credentials=creds)
     body = {
         "summary": name,
-        "description": f"Calendrier pour les répétitions de l’évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}"
+        "description": f"Calendrier pour les répétitions de l’évènement « {name} ». Setlist : https://docs.google.com/spreadsheets/d/{sheet_id}",
+        "timeZone": "Europe/Paris"
+
     }
     try:
         response = service.calendars().insert(body=body).execute()
@@ -169,18 +175,18 @@ def create_setlist_calendar(setlist_id: str) -> str:
 
     Returns the id of the newly created calendar
     """
-    calendar = tools.get_setlist_calendar(setlist_id)
+    calendar = get_calendar_id(tools.get_setlist_calendar_url(setlist_id))
     if calendar:
         raise Exception(f"Cette setlist a déjà un calendrier ! https://calendar.google.com/calendar/u/0/embed?src={calendar}")
-    
+
     result = create_calendar(tools.get_setlist_name(setlist_id), setlist_id)
 
     if result is None:
         raise Exception("Problème lors de la création du calendrier")
-    
-    tools.add_calendar(result)
+
+    tools.add_calendar(get_calendar_id(result))
     tools.add_calendar_to_setlist(setlist_id, result)
-    
+
     return result
 
 

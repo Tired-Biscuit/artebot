@@ -9,6 +9,7 @@ import python.tools as tools
 import python.timeutils as timeutils
 import python.db as db
 import python.commands.admin_commands as admin_commands
+import python.googleutils as googleutils
 
 
 ########################
@@ -107,10 +108,14 @@ class ConstraintsPaginationView(discord.ui.View):
 
 
 class SetlistRemovalPaginationView(discord.ui.View):
-    def __init__(self, setlists: list[str]):
+    def __init__(self, setlists_ids: list[str]):
         super().__init__()
         self.page = 0
-        self.setlists = setlists
+        self.setlists_ids = setlists_ids
+        self.setlists_names = []
+
+        for setlist_id in self.setlists_ids:
+            self.setlists_names.append(tools.get_setlist_name(setlist_id))
 
     @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
     async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -130,29 +135,35 @@ class SetlistRemovalPaginationView(discord.ui.View):
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.delete_button.disabled = True
-        tools.remove_setlist(self.page)
-        await interaction.response.edit_message(embed=discord.Embed(title="Setlist supprimée"), view=self)
+        try:
+            tools.remove_setlist(self.page)
+            googleutils.delete_calendar(googleutils.get_calendar_id(tools.get_setlist_calendar_url(self.setlists_names[self.page])))
+            await interaction.response.edit_message(embed=success_embed(message="Setlist supprimée"), view=self)
+        except Exception as e:
+            await interaction.response.edit_message(embed=failure_embed(message=str(e)), view=self)
 
-    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
+    @discord.ui.button(label="Annuler", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.prev_button.disabled = True
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.delete_button.disabled = True
-        await interaction.response.edit_message(embed=discord.Embed(title="Opération terminée"), view=self)
+        await interaction.response.edit_message(embed=discord.Embed(title="Opération annulée"), view=self)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
-        self.next_button.disabled  = self.page >= len(self.setlists) - 1
+        self.next_button.disabled  = self.page >= len(self.setlists_names) - 1
 
     def embed_page(self) -> discord.Embed:
-        if len(self.setlists) == 0:
+        if len(self.setlists_names) == 0:
+            self.cancel_button.disabled = True
+            self.delete_button.disabled = True
             return discord.Embed(title="Aucune setlist ajoutée")
         text = ""
-        for i in range(len(self.setlists)):
+        for i in range(len(self.setlists_names)):
             if i == self.page:
                 text += "**"
-            text += self.setlists[i]
+            text += self.setlists_names[i]
             if i == self.page:
                 text += "**"
             text += "\n"
@@ -190,11 +201,11 @@ class SetlistChoiceForCalendarView(discord.ui.View):
         self.cancel_button.disabled = True
         self.confirm_button.disabled = True
         await interaction.response.defer()
-        try:
-            embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
-            await interaction.followup.send(embed=embed, view=self)
-        except Exception as e:
-            await interaction.followup.send(embed=failure_embed(message=str(e)))
+        # try:
+        embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
+        await interaction.followup.send(embed=embed, view=self)
+        # except Exception as e:
+        #     await interaction.followup.send(embed=failure_embed(message=str(e)))
 
     @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -210,6 +221,8 @@ class SetlistChoiceForCalendarView(discord.ui.View):
 
     def embed_page(self) -> discord.Embed:
         if len(self.setlists_names) == 0:
+            self.confirm_button.disabled = True
+            self.cancel_button.disabled = True
             return discord.Embed(title="Aucune setlist ajoutée")
         text = ""
         for i in range(len(self.setlists_names)):
@@ -220,7 +233,7 @@ class SetlistChoiceForCalendarView(discord.ui.View):
                 text += "**"
             text += "\n"
         self.check_buttons_availability()
-        return information_embed(title="Choisis une setlist à supprimer", message=text)
+        return information_embed(title="Choisis une setlist pour le calendrier", message=text)
 
 
 class SetlistsThreadCreationView(discord.ui.View):
@@ -664,14 +677,12 @@ class RehearsalTimeSelectionView(discord.ui.View):
         starttime = day_epoch + (self.time + 7) * 3600
         endtime = day_epoch + (self.time + 8) * 3600
 
-        success = db.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
-        if success:
-            day_datetime = datetime.fromtimestamp(day_epoch)
-            formatted_date = day_datetime.strftime("%Y%m%d")
+        try:
+            success = db.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
 
             summary_message = success_embed(
                 title="Répétition ajoutée",
-                message=f"Répétition pour {self.song} le {tools.get_special_date_string(formatted_date)} à **{tools.formatted_hhmm(tools.parse_time(str(self.time + 8)))}** d’une durée d’**une heure** ajoutée avec succès."
+                message=f"Répétition pour {self.song} le {tools.get_date_string(day_epoch)} à **{tools.formatted_hhmm(tools.parse_time(str(self.time + 8)))}** d’une durée d’**une heure** ajoutée avec succès."
             )
         
             ping = str()
@@ -680,8 +691,9 @@ class RehearsalTimeSelectionView(discord.ui.View):
                 ping += f"<@{present_musician}> "
 
             await interaction.response.edit_message(content=ping, embed=summary_message, view=None)
-        else:
-            raise Exception("La répétition n’a pas pu être ajoutée au calendrier !")
+        except Exception as e:
+            await interaction.response.edit_message(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"), view=None)
+
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = ConstraintsDetailsView(self.song, self.week, self.weekdaynb)

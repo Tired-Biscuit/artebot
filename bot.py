@@ -289,13 +289,11 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
             else:
                 raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
-        
         if not db.run(f"""SELECT title FROM Song WHERE title LIKE "%{song}%";"""):
             raise ValueError(f"Morceau {song} non trouvé")
-        
 
         view = discordutils.WeekSelectionView(song)
-        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
+        await i.response.send_message(embed=view.embed_page(), view=view)
 
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
@@ -432,11 +430,14 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="supprimer_setlist", description="Supprime une setlist")
+@bot.tree.command(name="supprimer_setlist", description="Retire une setlist")
 async def delete_setlist(i: discord.Interaction):
     try:
-        setlists_names = googleutils.get_setlists_names()
-        view = discordutils.SetlistRemovalPaginationView(setlists_names)
+        db.check_user(i.user.id)
+        if i.user.id not in tools.get_admins():
+            raise discordutils.NotAdminError
+        setlists_ids = tools.get_setlists_ids()
+        view = discordutils.SetlistRemovalPaginationView(setlists_ids)
         await i.response.send_message(embed=view.embed_page(), view=view)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
@@ -445,6 +446,9 @@ async def delete_setlist(i: discord.Interaction):
 @bot.tree.command(name="créer_calendrier", description="Créer un calendrier Google lié à une setlist")
 async def create_calendar(i: discord.Interaction):
     try:
+        db.check_user(i.user.id)
+        if i.user.id not in tools.get_admins():
+            raise discordutils.NotAdminError
         view = discordutils.SetlistChoiceForCalendarView(i.user.id, tools.get_setlists_ids())
         view.check_buttons_availability()
         await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)

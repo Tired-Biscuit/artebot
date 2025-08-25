@@ -260,7 +260,7 @@ def get_setlist_id_from_name(setlist_name: str) -> str | None:
                 return setlist[0]
     return None
 
-def get_setlist_calendar_id(setlist_id: str) -> str | None:
+def get_setlist_calendar_url(setlist_id: str) -> str | None:
     """
     Returns the calendar of the setlist given its id
 
