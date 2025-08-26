@@ -171,6 +171,18 @@ def share_calendar(calendar_id):
     return created_rule
 
 
+def get_calendar_share_link(setlist_id: str) -> str:
+    """
+    Returns the calendar link for a setlist
+
+    @flag data
+    @flag setlist
+    @flag calendar
+    """
+    calendar_id = get_calendar_id(tools.get_setlist_calendar_url(setlist_id))
+    return f"https://calendar.google.com/calendar/u/0/r?cid={calendar_id}"
+
+
 def delete_calendar(calendar_id: str) -> str:
     """
     Deletes a calendar
