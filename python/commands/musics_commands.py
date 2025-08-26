@@ -16,12 +16,11 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
 
     #TODO revoir cette requête car il y a trop de problèmes possibles avec (error handling, injection...
     try:
-        song_info = db.run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
-    except:
-        raise discordutils.FailureError
-
-    if not song_info:
+        song_info = db.get_song_info(song)
+    except db.SongNotFoundError:
         raise ValueError(f"Morceau « {song} » non trouvé !")
+    except Exception:
+        raise discordutils.FailureError
 
     song_info = song_info[0]
 
@@ -46,7 +45,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
             if musician and musician not in blocking and musician not in missing and musician not in present:
 
                 try:
-                    uuid = db.run(f"""SELECT uuid, username FROM User WHERE email = "{musician}";""")
+                    uuid = db.run("""SELECT uuid, username FROM User WHERE email = ?;""", (musician,))
                 except:
                     uuid = None
                 if uuid:
@@ -120,13 +119,13 @@ def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.
     evening_time = 22*3600
     try:
         # Fetch musicians' emails
-        song_info = db.run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
+        song_info = db.get_song_info(song)
         musicians_uuids = []
         unregistered_users = []
         for field in song_info[4:-1]:
             for email in field.split(" "):
                 if len(email) > 17: # TODO valid email
-                    value = db.run(f"""SELECT uuid FROM User WHERE email = "{email}";""")
+                    value = db.run("""SELECT uuid FROM User WHERE email = ?;""", (email,))
                     if len(value) > 0:
                         musicians_uuids.append(value[0][0])
                     else:

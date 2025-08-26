@@ -7,7 +7,7 @@ import python.discordutils as discordutils
 def connection(user_id: int, mail: str, group: str) -> discord.Embed:
     # Check if user is already in the database
     try:
-        if db.run(f"""SELECT email FROM User WHERE uuid = {user_id};"""):
+        if db.run("""SELECT email FROM User WHERE uuid = ?;""", (user_id,)):
             raise ValueError("Tu es déjà dans la base de données ! (`/connexion`)")
     except:
         raise Exception("L’identifiant n’a pas pu être vérifié")
@@ -34,7 +34,7 @@ def change_mail(user_id: int, mail: str) -> discord.Embed:
         raise ValueError("Format de l’adresse mail incorrect !")
 
     try:
-        db.run(f"UPDATE User SET email = '{mail}' WHERE uuid = '{user_id}")
+        db.run("UPDATE User SET email = ? WHERE uuid = ?;", (mail, user_id))
     except:
         raise discordutils.FailureError
 
@@ -44,7 +44,7 @@ def change_group(user_id: int, group: str):
     db.check_user(user_id)
 
     try:
-        db.run(f"""UPDATE User SET group_id = "{group}" WHERE uuid = "{user_id}";""")
+        db.run("""UPDATE User SET group_id = ? WHERE uuid = ?;""", (group, user_id))
     except:
         raise discordutils.FailureError
 
@@ -55,7 +55,7 @@ def change_username(user_id: int, username: str):
     db.check_user(user_id)
 
     try:
-        db.run(f"""UPDATE User SET username = "{username}" WHERE uuid = "{user_id}";""")
+        db.run("""UPDATE User SET username = ? WHERE uuid = ?;""", (username, user_id))
     except:
         raise discordutils.FailureError
 

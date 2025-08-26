@@ -631,7 +631,7 @@ def get_profile_message(musician_uuid: int) -> str:
     info = info[0]
 
     email = info[1]
-    number_of_songs = run(f"""
+    number_of_songs = run("""
             SELECT COUNT(*) FROM Song
             WHERE voice LIKE :email
             OR guitar LIKE :email
@@ -680,7 +680,7 @@ def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
         for musician in inst.split(" "):
 
             if musician:
-                uuid = run(f"""SELECT uuid FROM User WHERE email = "{musician}";""")
+                uuid = run("""SELECT uuid FROM User WHERE email = ?;""", (musician,))
 
                 if uuid and uuid[0][0] not in musicians:
                     musicians.append(uuid[0][0])
@@ -692,11 +692,15 @@ def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
 
 
 def remove_constraint(musician_uuid:int, start_time: int, end_time: int, week_day: int):
-    run(f"""DELETE FROM MusicianConstraint WHERE musician_uuid = {musician_uuid} AND start_time = {start_time} AND end_time = {end_time} AND week_day = {week_day};""")
+    run("""DELETE FROM MusicianConstraint WHERE musician_uuid = ? AND start_time = ? AND end_time = ? AND week_day = ?;""", (musician_uuid, start_time, end_time, week_day))
 
 
 def add_instrument(instrument: str, translation: str):
-    run(f"""ALTER TABLE Song ADD {instrument} TEXT NOT NULL DEFAULT '';""")
+    db_columns = []
+    for col in run("PRAGMA table_info(Song);"):
+        db_columns.append(col[1])
+    if instrument not in db_columns:
+        run(f"""ALTER TABLE Song ADD {instrument} TEXT NOT NULL DEFAULT '';""")
     tools.add_instrument_translation(instrument, translation)
 
 
