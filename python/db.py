@@ -57,6 +57,18 @@ def run(command, *, commit=False):
     return result
 
 
+def run_many(command: str, data: list[tuple]):
+    cursor = db.cursor()
+    try:
+        cursor.executemany(command, data)
+        db.commit()
+        result = cursor.fetchall()
+    except Exception as e:
+        raise Exception(f"Error during request execution:\n            {e}\n\nWhen running the following request:\n\n{command} with parameters:{data}")
+    finally:
+        cursor.close()
+    return result
+
 def runscript(script, *, allow_fail=False):
     cursor = db.cursor()
     try:
@@ -101,7 +113,7 @@ def update_timetables():
         print("Timetables directory does not exist. Please create it and add .ics files.")
         return False
 
-    command = "INSERT OR REPLACE INTO SchoolEvent VALUES"
+    data = []
 
     for filename in os.listdir("timetables"):
         if filename.endswith(".ics"):
@@ -118,7 +130,7 @@ def update_timetables():
                     elif line.startswith("END:VEVENT"):
 
                         if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            command += f"""("{event['uuid']}", "{group}", {event['start_time']}, {event['end_time']}, {(event['end_time'] - event['start_time'])/60}, "{event['name']}"),"""
+                            data.append((event['uuid'], group, event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
                         else:
                             print("Incomplete event data, skipping insertion.")
 
@@ -131,9 +143,9 @@ def update_timetables():
                     elif line.startswith("SUMMARY:"):
                         event["name"] = line.split(":", 1)[1].strip()
 
-    command = command[:-1] + ";" # Remove the last comma and add a semicolon
+    command = "INSERT OR REPLACE INTO SchoolEvent VALUES(?,?,?,?,?,?)"
 
-    return run(command)
+    return run_many(command, data)
 
 
 def update_calendar(calendar):
