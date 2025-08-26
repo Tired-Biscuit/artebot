@@ -88,7 +88,7 @@ def datetime_to_gcal(date: str) -> str:
 
     return dt.isoformat()
 
-def epoch_to_gcal(epoch: str) -> str:
+def epoch_to_gcal(epoch: int) -> str:
     """
     Converts an epoch time (seconds since 1970-01-01 UTC) to a Google Calendar ISO8601 string
 

@@ -42,10 +42,13 @@ def refresh():
 #     Basic functions     #
 ###########################
 
-def run(command, *, commit=False):
+def run(command, data=None, *, commit=False):
     cursor = db.cursor()
     try:
-        cursor.execute(command)
+        if data is None:
+            cursor.execute(command)
+        else:
+            cursor.execute(command, data)
         db.commit()
         result = cursor.fetchall()
     except Exception as e:
@@ -197,7 +200,7 @@ def update_calendars():
 
 def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
     
-    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
+    song_info = run("""SELECT * FROM Song WHERE title LIKE ?;""", ("%"+song+"%",))
 
     if not song_info:
         raise ValueError(f"Morceau {song} non trouvé")
@@ -248,13 +251,14 @@ def add_user(uuid, username, email, group_id, *, commit=False):
         commit (bool): (optional and keyword-only) ask for database commit on successful execution
     """
 
-    command = f"""INSERT INTO User VALUES({uuid}, "{username}", "{email}", "{group_id}");"""
-    return run(command, commit=commit)
+    command = """INSERT INTO User VALUES(?,?,?,?);"""
+    data = (uuid, username, email, group_id)
+    return run(command, data, commit=commit)
 
 
 def get_user_name(musician_uuid: int) -> str:
     try:
-        u = run(f"""SELECT username FROM User WHERE uuid = {musician_uuid};""")[0][0]
+        u = run("""SELECT username FROM User WHERE uuid = ?;""", (musician_uuid,))[0][0]
     except Exception:
         raise Exception(f"Could not find user with id {musician_uuid}")
     return u
@@ -262,7 +266,7 @@ def get_user_name(musician_uuid: int) -> str:
 
 def get_user_name_from_email(email: str) -> str:
     try:
-        u = run(f"""SELECT username FROM User WHERE email = "{email}";""")[0][0]
+        u = run("""SELECT username FROM User WHERE email = ?;""",(email,))[0][0]
     except:
         u = tools.parse_mail(email)
     return u
@@ -278,8 +282,9 @@ def add_punctual_constraint(musician_uuid: int, start_time: int, end_time: int):
         start_time (int): The start time of the constraint in epoch
         end_time (int): The end time of the constraint in epoch
     """
-    command = f"""INSERT INTO MusicianConstraint VALUES({musician_uuid}, 0, {start_time}, {end_time}, 0);"""
-    return run(command)
+    command = """INSERT INTO MusicianConstraint VALUES(?,?,?,?,?);"""
+    data = (musician_uuid, 0, start_time, end_time, 0)
+    return run(command, data)
 
 
 def add_recurring_constraint(musician_uuid: int, start_time: int, end_time: int, week_day: int):
