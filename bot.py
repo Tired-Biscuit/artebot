@@ -672,45 +672,6 @@ async def order_66(i: discord.Interaction):
     await i.response.send_message(embed=discord.Embed(title="Trooper!", description="Execute order 66.", colour=tools.get_embed_colour()), ephemeral=True)
 
 
-@bot.command()
-async def foo(ctx):
-    await ctx.send("miam")
-
-
-
-
-# # # # # # # # # # # # # # #
-#     Outdated content      #
-# # # # # # # # # # # # # # #
-
-@bot.command()
-async def update(ctx, opt=""):
-    text = ""
-    try:
-        if not db.update_db(opt=="force"):
-            title = f"Mise à jour impossible ⌛ temps restant: {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))//3600)} heures {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))%3600//60)} minutes et {int((tools.DELTA_TIME - (time.time() - tools.UPDATE_TIME))%3600%60)} secondes"
-            logs_data["update"]["failed"] += 1
-        else:
-            title = "Mise à jour réussie ✅"
-            logs_data["update"]["successful"] += 1
-    except Exception as e:
-        print(e)
-        text = str(e)
-        title = "Mise à jour impossible ❌"
-        logs_data["update"]["failed"] += 1
-    finally:
-        message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
-        await ctx.author.send(embed=message)
-
-@bot.command()
-async def logs(ctx):
-    title = "Logs"
-    text = f"- info"+"\n"+f"  - réussis : {logs_data['info']['successful']}"+"\n"+f"  - ratés : {logs_data['info']['failed']}"+"\n"+f"- update"+"\n"+f"  - réussis : {logs_data['update']['successful']}"+"\n"+f"  - ratés : {logs_data['update']['failed']}"+"\n"+f"- logs : {logs_data['logs']}"
-    logs_data["logs"] += 1
-    message = discord.Embed(title=title, description=text, colour=tools.get_embed_colour())
-    await ctx.author.send(embed=message)
-
-
 #################################
 #     /!\ DO NOT DELETE /!\     #
 #################################

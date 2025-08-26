@@ -22,8 +22,6 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     except Exception:
         raise discordutils.FailureError
 
-    song_info = song_info[0]
-
     ndate = tools.parse_date(day)
     nstart = tools.parse_time(start)
 
