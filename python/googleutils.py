@@ -147,12 +147,28 @@ def create_calendar(name: str, sheet_id: str) -> str | None:
         "timeZone": "Europe/Paris"
 
     }
+
     try:
         response = service.calendars().insert(body=body).execute()
         response = "https://calendar.google.com/calendar/u/0/embed?src="+response["id"]
     except HttpError as error:
         response = f"Erreur {error.status_code}: {error}"
     return response
+
+
+def share_calendar(calendar_id):
+    creds = refresh_token()
+    service = build('calendar', 'v3', credentials=creds)
+    rule = {
+    'scope': {
+        'type': 'domain',
+        'value': 'telecomnancy.net'  # Remplace par ton domaine Google Workspace
+    },
+    'role': 'writer'
+    }
+
+    created_rule = service.acl().insert(calendarId=calendar_id, body=rule).execute()
+    return created_rule
 
 
 def delete_calendar(calendar_id: str) -> str:
