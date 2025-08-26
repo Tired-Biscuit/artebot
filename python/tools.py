@@ -6,7 +6,6 @@ from datetime import timezone, timedelta, datetime
 import re
 
 import python.timeutils as timeutils
-from python.googleutils import create_setlist_calendar
 
 EVENT_TYPES = {"School": 1, "Google": 2, "Constraint": 3}
 

@@ -143,7 +143,7 @@ def update_timetables():
                     elif line.startswith("SUMMARY:"):
                         event["name"] = line.split(":", 1)[1].strip()
 
-    command = "INSERT OR REPLACE INTO SchoolEvent VALUES(?,?,?,?,?,?)"
+    command = "INSERT OR REPLACE INTO SchoolEvent VALUES(?,?,?,?,?,?);"
 
     return run_many(command, data)
 
@@ -153,7 +153,8 @@ def update_calendar(calendar):
     Updates the database with the latest calendar events from the google calendars in data.json
     """
 
-    command = "INSERT OR REPLACE INTO GoogleEvent VALUES"
+
+    data = []
 
     for event in calendar:
 
@@ -166,7 +167,7 @@ def update_calendar(calendar):
                         musicians +=  f"""{attendee['email']} """
                     musicians = musicians[:-1]
                 if "dateTime" in event['start'].keys() and "dateTime" in event['end'].keys():
-                    command += f"""("{event['id']}","{event['organizer']['email']}", "{musicians}", {timeutils.gcal_to_epoch(event['start']['dateTime'])}, {timeutils.gcal_to_epoch(event['end']['dateTime'])}, "{event['summary']}"),"""
+                    data.append((event['id'], event['organizer']['email'], musicians, timeutils.gcal_to_epoch(event['start']['dateTime']), timeutils.gcal_to_epoch(event['end']['dateTime']), event['summary']))
         else:
             field_names = ["id", "organizer", "start", "end", "summary", "location"]
             missing_fields = ""
@@ -175,10 +176,8 @@ def update_calendar(calendar):
                     missing_fields += " "+field_name
             print(f"Incomplete event data, skipping insertion. Missing fields:{missing_fields}")
 
-    print(command)
-    if command != "INSERT OR REPLACE INTO GoogleEvent VALUES":
-        command = command[:-1] + ";" # Remove the last comma and add a semicolon
-        return run(command)
+    command = "INSERT OR REPLACE INTO GoogleEvent VALUES(?,?,?,?,?,?);"
+    return run_many(command, data)
 
 
 def update_calendars():
