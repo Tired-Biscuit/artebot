@@ -18,6 +18,7 @@ import python.commands.user_commands as user_commands
 import python.commands.constraints_commands as constraints_commands
 import python.commands.musics_commands as music_commands
 import python.commands.admin_commands as admin_commands
+from python.discordutils import information_embed
 
 DEBUG = True # Toggle the dev or production bot
 
@@ -220,7 +221,7 @@ async def see_constraints(i:discord.Interaction):
 @bot.tree.command(name="obtenir_calendrier", description="Obtenir le lien vers le calendrier de la setlist")
 async def get_calendar_link(i:discord.Interaction):
     try:
-
+        await i.response.send_message(embed=information_embed("Développement en cours"))
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 

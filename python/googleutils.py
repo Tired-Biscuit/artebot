@@ -162,9 +162,9 @@ def share_calendar(calendar_id):
     rule = {
     'scope': {
         'type': 'domain',
-        'value': 'telecomnancy.net'  # Remplace par ton domaine Google Workspace
-    },
-    'role': 'writer'
+        'value': 'telecomnancy.net'
+        },
+        'role': 'writer'
     }
 
     created_rule = service.acl().insert(calendarId=calendar_id, body=rule).execute()
