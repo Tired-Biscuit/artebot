@@ -20,8 +20,7 @@ reset_path = os.path.join("sql", "reset.sql")
 if os.path.exists(database_path):
     db = sqlite3.connect(database_path)
 else:
-    with open(database_path, "w") as f:
-        pass
+    db = None
 
 SongNotFoundError = Exception("Could not find song")
 
@@ -105,6 +104,12 @@ def init():
     return result if result != [] else "Done"
 
 
+if db is None:
+    with open(database_path, "w") as f:
+        f.write("")
+        pass
+    db = sqlite3.connect(database_path)
+    init()
 
 
 ###############################
@@ -510,7 +515,7 @@ def get_instruments_names() -> list[str]:
     """
     column_names = run("PRAGMA table_info(Song);")
 
-    with open("data.json", "r", encoding="utf-8") as f:
+    with open(tools.datafile_path, "r", encoding="utf-8") as f:
             instruments = json.load(f)["instruments"]
 
     return [instruments[column[1]] if column[1] in instruments else None for column in column_names]
