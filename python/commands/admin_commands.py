@@ -34,7 +34,6 @@ def change_embed_colour(user_id: int, colour: str) -> discord.Embed:
 
 
 def refresh(user_id: int, calendar: str) -> discord.Embed:
-    #TODO à compléter
     db.check_user(user_id)
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
