@@ -234,8 +234,8 @@ def get_setlists_names() -> list[str] | None:
     @flag data
     """
     names = []
-    if os.path.exists("data.json"):
-        with open("data.json", "r") as f:
+    if os.path.exists(tools.datafile_path):
+        with open(tools.datafile_path, "r") as f:
             setlists_ids = json.loads(f.read())["setlists"]
             for setlist_id in setlists_ids:
                 names.append(setlist_id[1])

@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+  mon-app:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./database:/app/database
+    env_file: .env
+    restart: unless-stopped

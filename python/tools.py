@@ -7,6 +7,8 @@ import re
 
 import python.timeutils as timeutils
 
+datafile_path = os.path.join("data", "data.json")
+
 EVENT_TYPES = {"School": 1, "Google": 2, "Constraint": 3}
 
 CEST = timezone(timedelta(hours=2), name="CEST")
@@ -55,17 +57,18 @@ def create_data_file():
             "FISA 3A": "fisa_3a"
         }
     }
-    if not os.path.exists("data.json"):
+    if not os.path.exists(datafile_path):
+        print("Creating file")
         # data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             f.write(json.dumps(val))
     else:
         data = None
-        with open("data.json", "r") as f:
+        with open(datafile_path, "r") as f:
             data = f.read()
         if data == "":
             data = val#{"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
-            with open("data.json", "w") as f:
+            with open(datafile_path, "w") as f:
                 f.write(json.dumps(data))
 
 def get_groups() -> dict:
@@ -75,7 +78,7 @@ def get_groups() -> dict:
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         groups = json.loads(f.read())["groups"]
         return groups
 
@@ -87,7 +90,7 @@ def get_calendars_ids() -> list[str] | None:
     @flag calendar
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
         return data["calendar_ids"]
 
@@ -103,10 +106,10 @@ def add_calendar(calendar_id):
         return
 
     data = {}
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != {}:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             if calendar_id not in data["calendar_ids"]:
                 data["calendar_ids"].append(calendar_id)
                 f.write(json.dumps(data))
@@ -119,9 +122,9 @@ def remove_calendar(calendar_id):
     @flag calendar
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
-    with open("data.json", "w") as f:
+    with open(datafile_path, "w") as f:
         if calendar_id in data["calendar_ids"]:
             data["calendar_ids"].remove(calendar_id)
             f.write(json.dumps(data))
@@ -134,7 +137,7 @@ def get_admins() -> list[int]:
     """
     create_data_file()
 
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         admins = json.loads(f.read())["admins"]
         return admins
 
@@ -147,10 +150,10 @@ def add_admin(uuid: int):
     """
     create_data_file()
     data = None
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             if uuid not in data["admins"]:
                 data["admins"].append(uuid)
                 f.write(json.dumps(data))
@@ -162,10 +165,10 @@ def remove_admin(uuid: int):
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             if uuid in data["admins"]:
                 data["admins"].remove(uuid)
                 f.write(json.dumps(data))
@@ -177,7 +180,7 @@ def get_owners() -> list[int]:
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         owners = json.loads(f.read())["owners"]
         return owners
 
@@ -189,12 +192,12 @@ def add_owner(uuid: int):
     """
     create_data_file()
     data = None
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
-            if uuid not in data["owner"]:
-                data["owner"].append(uuid)
+        with open(datafile_path, "w") as f:
+            if uuid not in data["owners"]:
+                data["owners"].append(uuid)
                 f.write(json.dumps(data))
 
 def get_setlists_ids() -> list[str] | None:
@@ -205,7 +208,7 @@ def get_setlists_ids() -> list[str] | None:
     @flag setlist
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
         return [setlist[0] for setlist in data["setlists"]]
 
@@ -221,10 +224,10 @@ def add_setlist(setlist_id: str, name:str):
         return
 
     data = None
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             if setlist_id not in data["setlists"]:
                 data["setlists"].append([setlist_id, name, ""])
                 f.write(json.dumps(data))
@@ -237,7 +240,7 @@ def get_setlist_name(setlist_id: str) -> str | None:
     @flag setlist
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
         for setlist in data["setlists"]:
             if setlist[0] == setlist_id:
@@ -252,7 +255,7 @@ def get_setlist_id_from_name(setlist_name: str) -> str | None:
     @flag setlist
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
         for setlist in data["setlists"]:
             if setlist[1] == setlist_name:
@@ -268,7 +271,7 @@ def get_setlist_calendar_url(setlist_id: str) -> str | None:
     @flag calendar
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
         for setlist in data["setlists"]:
             if setlist[0] == setlist_id:
@@ -284,14 +287,14 @@ def add_calendar_to_setlist(setlist_id: str, calendar_id: str):
     @flag calendar
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data is not None:
         for setlist in data["setlists"]:
             if setlist[0] == setlist_id:
                 setlist[2] = calendar_id
                 break
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             f.write(json.dumps(data))
 
 def remove_setlist(index: int):
@@ -302,10 +305,10 @@ def remove_setlist(index: int):
     @flag setlist
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             data["setlists"].pop(index)
             f.write(json.dumps(data))
 
@@ -316,7 +319,7 @@ def get_embed_colour()-> int:
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         colour = json.loads(f.read())["embed_colour"]
         return colour
 
@@ -327,10 +330,10 @@ def change_embed_colour(colour: str):
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             data["embed_colour"] = int(colour, 16)
             f.write(json.dumps(data))
 
@@ -342,7 +345,7 @@ def get_instruments_names_translation() -> dict:
     """
     instruments_file = {}
     create_data_file()
-    with open("data.json", "r", encoding="utf-8") as f:
+    with open(datafile_path, "r", encoding="utf-8") as f:
         instruments_file = json.load(f)["instruments"]
 
     return instruments_file
@@ -354,8 +357,8 @@ def get_ignored_column_names() -> dict:
     @flag data
     """
     data = {}
-    if os.path.exists("data.json"):
-        with open("data.json", "r", encoding="utf-8") as f:
+    if os.path.exists(datafile_path):
+        with open(datafile_path, "r", encoding="utf-8") as f:
             data = json.load(f)["ignored_columns"]
 
     return data
@@ -367,10 +370,10 @@ def add_ignored_column(column: str):
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None and column not in data["ignored_columns"]:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             data["ignored_columns"].append(column)
             f.write(json.dumps(data))
 
@@ -381,10 +384,10 @@ def remove_ignored_column(column: str): #TODO integrate command
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             data["ignored_columns"].remove(column)
             f.write(json.dumps(data))
 
@@ -395,10 +398,10 @@ def add_instrument_translation(instrument: str, translation: str):
     @flag data
     """
     create_data_file()
-    with open("data.json", "r") as f:
+    with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open("data.json", "w") as f:
+        with open(datafile_path, "w") as f:
             if instrument in list(data["instruments"].keys()):
                 if translation not in data["instruments"][instrument]:
                     data["instruments"][instrument].append(translation)
