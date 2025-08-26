@@ -23,6 +23,9 @@ else:
     with open(database_path, "w") as f:
         pass
 
+SongNotFoundError = Exception("Could not find song")
+
+
 def refresh():
     """
     Refreshes the sqlite database instance
@@ -107,6 +110,17 @@ def init():
 ###############################
 #     Database operations     #
 ###############################
+
+def get_song_info(song: str) -> list | None:
+    """
+    Returns song info for given title
+    """
+    song_info = run("""SELECT * FROM Song WHERE title LIKE ?;""", ("%"+song+"%",))
+    if song_info != []:
+        return song_info[0]
+    else:
+        raise SongNotFoundError
+
 
 def update_timetables():
     """
@@ -199,13 +213,8 @@ def update_calendars():
             print(f"No event in calendar {i}.")
 
 def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
-    
-    song_info = run("""SELECT * FROM Song WHERE title LIKE ?;""", ("%"+song+"%",))
 
-    if not song_info:
-        raise ValueError(f"Morceau {song} non trouvé")
-
-    song_info = song_info[0]
+    song_info = get_song_info(song)
 
     instruments_names = get_instruments_names()
 
@@ -298,8 +307,9 @@ def add_recurring_constraint(musician_uuid: int, start_time: int, end_time: int,
         weekDay (int): The day of the week for the recurring event (1-8, where 1 is Monday, and 8 is every day).
     """
 
-    command = f"""INSERT INTO MusicianConstraint VALUES({musician_uuid}, 0, {start_time}, {end_time}, {week_day});"""
-    return run(command)
+    command = """INSERT INTO MusicianConstraint VALUES(?,?,?,?,?);"""
+    data = (musician_uuid, 0, start_time, end_time, week_day)
+    return run(command, data)
 
 
 def request_constraints(musician_uuid: int) -> list[list[int]]:
@@ -307,7 +317,7 @@ def request_constraints(musician_uuid: int) -> list[list[int]]:
     Returns start_time, end_time, week_day of constraints from musician's Discord UUID ordered by time
     """
 
-    constraints: list[list[int]] = run(f"""SELECT start_time, end_time, week_day FROM MusicianConstraint WHERE musician_uuid == {musician_uuid} ORDER BY start_time ASC, week_day ASC;""")
+    constraints: list[list[int]] = run("""SELECT start_time, end_time, week_day FROM MusicianConstraint WHERE musician_uuid == ? ORDER BY start_time ASC, week_day ASC;""", (musician_uuid,))
     if not constraints:
         raise ValueError(f"Pas de contraintes trouvées.")
     else:
@@ -363,13 +373,14 @@ def get_all_musicians_uuids_for_song(song: str) -> tuple[list[int], list[str]]:
     """
     Returns a tuple containing all registered uuids and all unregistered user emails in a song.
     """
-    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
+    song_info = get_song_info(song)
+
     musicians_uuids = []
     unregistered_users = []
     for field in song_info[5:-1]:
         for email in field.split(" "):
             if len(email) > 17:  # TODO valid email
-                value = run(f"""SELECT uuid FROM User WHERE email = "{email}";""")
+                value = run("""SELECT uuid FROM User WHERE email = ?;""", (email,))
                 if len(value) > 0:
                     musicians_uuids.append(int(value[0][0]))
                 else:
@@ -385,8 +396,6 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
     """
     evening_time = 22*3600
     # Fetch musicians' emails
-    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
-    # raise not found
 
     result = get_all_musicians_uuids_for_song(song)
 
@@ -425,7 +434,6 @@ def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tupl
     """
     evening_time = 22*3600
     # Fetch musicians' emails
-    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")[0]
 
     result = get_all_musicians_uuids_for_song(song)
 
@@ -465,13 +473,15 @@ def add_song(song: dict, db_columns: list[str]):
 
     columns = "("
     values = "("
+    data = []
     for key in song.keys():
-        columns += f""""{key}","""
-        values += f""""{song[key]}","""
+        columns += f"{key},"
+        values += "?,"
+        data.append(song[key])
     columns = columns[:-1] + ")"
     values = values[:-1] + ")"
 
-    return run(f"""INSERT INTO Song {columns} VALUES {values};""")
+    return run(f"""INSERT INTO Song {columns} VALUES {values};""", data)
 
 
 def add_setlist(setlist_id: str, rows: int):
@@ -509,24 +519,24 @@ def get_instruments_names() -> list[str]:
 def get_songs_message(musician_uuid: int, display:int) -> str:
     email = ""
 
-    email = run(f"SELECT email FROM User WHERE uuid = '{musician_uuid}'")
+    email = run("""SELECT email FROM User WHERE uuid = ?;""", (musician_uuid,))
     email = email[0][0]
 
-    result = run(f"""
+    result = run("""
         SELECT * FROM Song
-        WHERE voice LIKE "%{email}%"
-        OR guitar LIKE "%{email}%"
-        OR keys LIKE "%{email}%"
-        OR drums LIKE "%{email}%"
-        OR bass LIKE "%{email}%"
-        OR violin LIKE "%{email}%"
-        OR cello LIKE "%{email}%"
-        OR contrabass LIKE "%{email}%"
-        OR accordion LIKE "%{email}%"
-        OR flute LIKE "%{email}%"
-        OR saxophone LIKE "%{email}%"
-        OR brass LIKE "%{email}%";
-    """)
+        WHERE voice LIKE :email
+        OR guitar LIKE :email
+        OR keys LIKE :email
+        OR drums LIKE :email
+        OR bass LIKE :email
+        OR violin LIKE :email
+        OR cello LIKE :email
+        OR contrabass LIKE :email
+        OR accordion LIKE :email
+        OR flute LIKE :email
+        OR saxophone LIKE :email
+        OR brass LIKE :email;
+    """, {"email":f"%{email}%"})
     if not result:
         return "Aucun morceau trouvé !"
     if len(result) == 1:
@@ -591,12 +601,7 @@ def get_song_info_message(song: str) -> tuple:
     """
     Returns a summary of a song from its title
     """
-    song_info = run(f"""SELECT * FROM Song WHERE title LIKE "%{song}%";""")
-
-    if not song_info:
-        raise ValueError(f"Morceau {song} non trouvé")
-
-    song_info = song_info[0]
+    song_info = get_song_info(song)
 
     instruments_names = get_instruments_names()
 
@@ -622,27 +627,27 @@ def get_profile_message(musician_uuid: int) -> str:
     groups = tools.get_groups()
 
 
-    info = run(f"""SELECT username, email, group_id FROM User WHERE uuid = "{musician_uuid}";""")
+    info = run("""SELECT username, email, group_id FROM User WHERE uuid = ?;""", (musician_uuid,))
     info = info[0]
 
     email = info[1]
     number_of_songs = run(f"""
             SELECT COUNT(*) FROM Song
-            WHERE voice LIKE "%{email}%"
-            OR guitar LIKE "%{email}%"
-            OR keys LIKE "%{email}%"
-            OR drums LIKE "%{email}%"
-            OR bass LIKE "%{email}%"
-            OR violin LIKE "%{email}%"
-            OR cello LIKE "%{email}%"
-            OR contrabass LIKE "%{email}%"
-            OR accordion LIKE "%{email}%"
-            OR flute LIKE "%{email}%"
-            OR saxophone LIKE "%{email}%"
-            OR brass LIKE "%{email}%";
-        """)[0][0]
+            WHERE voice LIKE :email
+            OR guitar LIKE :email
+            OR keys LIKE :email
+            OR drums LIKE :email
+            OR bass LIKE :email
+            OR violin LIKE :email
+            OR cello LIKE :email
+            OR contrabass LIKE :email
+            OR accordion LIKE :email
+            OR flute LIKE :email
+            OR saxophone LIKE :email
+            OR brass LIKE :email;
+        """, {"email":f"%{email}%"})[0][0]
 
-    number_of_constraints = run(f"""SELECT COUNT(*) FROM MusicianConstraint WHERE musician_uuid = {musician_uuid};""")[0][0]
+    number_of_constraints = run("""SELECT COUNT(*) FROM MusicianConstraint WHERE musician_uuid = ?;""", (musician_uuid,))[0][0]
 
     group_text = ""
     if info[2]:
