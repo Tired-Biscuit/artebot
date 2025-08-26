@@ -162,7 +162,7 @@ def share_calendar(calendar_id):
     rule = {
     'scope': {
         'type': 'domain',
-        'value': 'telecomnancy.net'
+        'value': 'esial.net'
         },
         'role': 'writer'
     }
