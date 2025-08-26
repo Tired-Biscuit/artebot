@@ -221,7 +221,8 @@ async def see_constraints(i:discord.Interaction):
 @bot.tree.command(name="obtenir_calendrier", description="Obtenir le lien vers le calendrier de la setlist")
 async def get_calendar_link(i:discord.Interaction):
     try:
-        await i.response.send_message(embed=information_embed("Développement en cours"))
+        view = discordutils.SetlistChoiceForCalendarLinkView(i.user.id, tools.get_setlists_ids())
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
