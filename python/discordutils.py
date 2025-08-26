@@ -263,7 +263,7 @@ class SetlistsThreadCreationView(discord.ui.View):
         self.cancel_button.disabled = True
         self.choose_button.disabled = True
 
-        songs = db.run(f"""SELECT * FROM Song WHERE setlist_id LIKE "%{tools.get_setlists_ids()[self.page]}%";""")
+        songs = db.run("""SELECT * FROM Song WHERE setlist_id LIKE ?;""", ("%"+tools.get_setlists_ids()[self.page]+"%",))
 
         songs = [list(song) for song in songs if song[1] not in [thread.name for thread in i.channel.threads]]
 

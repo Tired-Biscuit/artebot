@@ -400,7 +400,8 @@ def add_instrument_translation(instrument: str, translation: str):
     if data != None:
         with open("data.json", "w") as f:
             if instrument in list(data["instruments"].keys()):
-                data["instruments"][instrument].append(translation)
+                if translation not in data["instruments"][instrument]:
+                    data["instruments"][instrument].append(translation)
             else:
                 data["instruments"][instrument] = [translation]
             f.write(json.dumps(data))

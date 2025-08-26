@@ -21,7 +21,7 @@ def punctual_constraint(user_id: int, day: str, start: str = None, end: str = No
         end_unix = timeutils.punctual_constraint_to_epoch(ndate + nend + "00")
 
         try:
-            constraint = db.run(f"""SELECT * FROM MusicianConstraint WHERE musician_uuid = {user_id} AND start_time = "{start_unix}" AND end_time = "{end_unix}";""")
+            constraint = db.run("""SELECT * FROM MusicianConstraint WHERE musician_uuid = ? AND start_time = ? AND end_time = ?;""", (user_id, start_unix, end_unix))
         except:
             raise discordutils.FailureError
 
@@ -48,7 +48,7 @@ def recurring_constraint(user_id: int, day: discord.app_commands.Choice, start: 
         end_epoch = int(nend[:2]) * 3600 + int(nend[2:]) * 60
 
         try:
-            constraint = db.run(f"""SELECT * FROM MusicianConstraint WHERE musician_uuid = {user_id} AND start_time = {start_epoch} AND end_time = {end_epoch} AND week_day = {day.value};""")
+            constraint = db.run("""SELECT * FROM MusicianConstraint WHERE musician_uuid = ? AND start_time = ? AND end_time = ? AND week_day = ?;""", (user_id, start_epoch, end_epoch, day.value))
         except:
             raise discordutils.FailureError
 

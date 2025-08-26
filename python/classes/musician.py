@@ -16,7 +16,7 @@ class Musician:
         self.group: str
 
         if (mail != "" and id == ""):
-            id = db.run(f"SELECT uuid FROM User WHERE email = '{mail}'")
+            id = db.run("SELECT uuid FROM User WHERE email = ?;", (mail,))
 
             if not id:
                 raise ValueError(f"User with email {mail} does not exist.")
@@ -25,7 +25,7 @@ class Musician:
             self.id = id[0][0]
 
         elif (mail == "" and id != ""):
-            mail = db.run(f"SELECT email FROM User WHERE uuid = '{id}'")
+            mail = db.run("SELECT email FROM User WHERE uuid = ?;", (id,))
 
             if not mail:
                 raise ValueError(f"User with uuid {id} does not exist.")
@@ -36,14 +36,14 @@ class Musician:
         else:
             raise ValueError("Either multiple or no parameters were given, or they were null")
 
-        events = db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = '{self.id}' AND week_day = 0;")
+        events = db.run("SELECT * FROM MusicianConstraint WHERE musician_uuid = ? AND week_day = 0;", (self.id,))
 
-        recurring_events = db.run(f"SELECT * FROM MusicianConstraint WHERE musician_uuid = '{self.id}' AND week_day != 0;")
+        recurring_events = db.run("SELECT * FROM MusicianConstraint WHERE musician_uuid = ? AND week_day != 0;", (self.id,))
 
         self.events = constraints_to_events(events)
         self.recurring_events = recurring_constraints_to_events(recurring_events)
 
-        group = db.run(f"SELECT group_id FROM User WHERE email = '{self.mail}'")
+        group = db.run("SELECT group_id FROM User WHERE email = ?;", (self.mail,))
         if not group:
             raise Exception(f"Could not find group id for user with email '{self.mail}' and uuid '{self.id}'")
         self.group = group[0][0]
