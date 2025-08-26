@@ -375,6 +375,8 @@ async def song(i: discord.Interaction, song: str=None):
 @app_commands.rename(
     user="membre"
 )
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def add_admin(i: discord.Interaction, user: discord.User):
     try:
         await i.response.send_message(embed=admin_commands.add_admin(i.user.id, user.id), ephemeral=True)
@@ -389,6 +391,8 @@ async def add_admin(i: discord.Interaction, user: discord.User):
 @app_commands.rename(
     colour="couleur"
 )
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def change_embed_colour(i: discord.Interaction, colour: str):
     try:
         await i.response.send_message(embed=admin_commands.change_embed_colour(i.user.id, colour), ephemeral=True)
@@ -404,6 +408,8 @@ async def change_embed_colour(i: discord.Interaction, colour: str):
     calendar="calendrier"
 )
 @app_commands.choices(calendar=calendar_choices)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 
     await i.response.defer()
@@ -423,6 +429,8 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 @app_commands.rename(
     setlist_link="lien"
 )
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def add_setlist(i: discord.Interaction, setlist_link: str):
     try:
         await i.response.send_message(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
@@ -431,6 +439,8 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 
 
 @bot.tree.command(name="supprimer_setlist", description="Retire une setlist")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def delete_setlist(i: discord.Interaction):
     try:
         db.check_user(i.user.id)
@@ -444,6 +454,8 @@ async def delete_setlist(i: discord.Interaction):
 
 
 @bot.tree.command(name="créer_calendrier", description="Créer un calendrier Google lié à une setlist")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def create_calendar(i: discord.Interaction):
     try:
         db.check_user(i.user.id)
@@ -457,6 +469,8 @@ async def create_calendar(i: discord.Interaction):
 
 
 @bot.tree.command(name="créer_fils", description="Créer un fil par morceau dans ce salon")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def create_threads(i: discord.Interaction):
     # Too complex to move to admin_commands
     try:
@@ -545,6 +559,8 @@ async def delete_table(i: discord.Interaction, table: app_commands.Choice[str]):
 @app_commands.rename(
     user="membre"
 )
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def remove_admin(i: discord.Interaction, user: discord.User):
     try:
         await i.response.send_message(embed=admin_commands.remove_admin(i.user.id, user.id), ephemeral=True)
@@ -559,6 +575,8 @@ async def remove_admin(i: discord.Interaction, user: discord.User):
 @app_commands.rename(
     user="membre"
 )
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 async def add_owner(i: discord.Interaction, user: discord.User):
     #TODO demander la confirmation
     if i.user.id in tools.get_owners():
@@ -573,6 +591,8 @@ async def add_owner(i: discord.Interaction, user: discord.User):
 
 
 @bot.tree.command(name="réinit_db", description="(owner-only) réinitialise la base de données")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
 #TODO ajouter un écran de confirmation
 async def reset_database(i: discord.Interaction):
     try:
