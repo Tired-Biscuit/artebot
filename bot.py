@@ -432,10 +432,11 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_setlist(i: discord.Interaction, setlist_link: str):
+    await i.response.defer()
     try:
-        await i.response.send_message(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
+        await i.followup.send(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 @bot.tree.command(name="supprimer_setlist", description="Retire une setlist")
@@ -449,6 +450,48 @@ async def delete_setlist(i: discord.Interaction):
         setlists_ids = tools.get_setlists_ids()
         view = discordutils.SetlistRemovalPaginationView(setlists_ids)
         await i.response.send_message(embed=view.embed_page(), view=view)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="ajouter_calendrier", description="Ajouter un calendrier Google pour vérifier les contraintes")
+@app_commands.describe(
+    calendar_id="ID du calendrier"
+)
+@app_commands.rename(
+    calendar_id="ID"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def add_calendar(i: discord.Interaction, calendar_id: str):
+    try:
+        db.check_user(i.user.id)
+        if i.user.id not in tools.get_admins():
+            raise discordutils.NotAdminError
+        tools.add_calendar(calendar_id)
+        db.update_calendars()
+        await i.response.send_message(embed=discordutils.success_embed("Ajout réussi"), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="supprimer_calendrier", description="Retier un calendrier Google (dangereux)")
+@app_commands.describe(
+    calendar_id="ID du calendrier"
+)
+@app_commands.rename(
+    calendar_id="ID"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def remove_calendar(i: discord.Interaction, calendar_id: str):
+    try:
+        db.check_user(i.user.id)
+        if i.user.id not in tools.get_admins():
+            raise discordutils.NotAdminError
+        tools.remove_calendar(calendar_id)
+        db.update_calendars()
+        await i.response.send_message(embed=discordutils.success_embed("Ajout réussi"), ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 

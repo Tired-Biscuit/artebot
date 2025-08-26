@@ -9,6 +9,6 @@ COPY . .
 
 VOLUME ["/app/data", "/app/database"]
 
-RUN chmod +x /entrypoint.sh
+RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
