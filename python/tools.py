@@ -6,6 +6,7 @@ from datetime import timezone, timedelta, datetime
 import re
 
 import python.timeutils as timeutils
+from test import calendar_id
 
 datafile_path = os.path.join("data", "data.json")
 
@@ -261,6 +262,7 @@ def get_setlist_id_from_name(setlist_name: str) -> str | None:
             if setlist[1] == setlist_name:
                 return setlist[0]
     return None
+
 
 def get_setlist_calendar_url(setlist_id: str) -> str | None:
     """
