@@ -480,7 +480,7 @@ async def add_calendar(i: discord.Interaction, calendar_id: str):
     calendar_id="ID du calendrier"
 )
 @app_commands.rename(
-    calendar_id="ID"
+    calendar_id="id"
 )
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
