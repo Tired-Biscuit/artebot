@@ -1,6 +1,6 @@
 services:
     artebot:
-        build:
+        build: .
         container_name: artedev
         volumes:
             - data_volume:/data
