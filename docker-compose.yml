@@ -6,7 +6,7 @@ services:
             - data_volume:/data
             - db_volume:/database
         env_file: .env
-        restart: unless_stopped
+        restart: unless-stopped
 
 volumes:
     data_volume:
