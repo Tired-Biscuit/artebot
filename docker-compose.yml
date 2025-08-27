@@ -3,11 +3,12 @@ services:
         build: .
         container_name: artedev
         volumes:
-            - data_volume:/data
-            - db_volume:/database
+            - data_volume:/app/data
+            - db_volume:/app/database
         env_file: .env
         restart: unless-stopped
 
 volumes:
     data_volume:
     db_volume:
+
