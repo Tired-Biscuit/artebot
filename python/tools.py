@@ -5,7 +5,7 @@ import json
 from datetime import timezone, timedelta, datetime
 import re
 
-import timeutils as timeutils
+import python.timeutils as timeutils
 
 datafile_path = os.path.join("data", "data.json")
 
