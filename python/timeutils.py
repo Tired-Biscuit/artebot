@@ -72,7 +72,6 @@ def gcal_to_datetime(google_calendar_string: str) -> datetime:
     @flag struct
     @flag datetime_struct
     """
-    print(google_calendar_string)
     return datetime.strptime(google_calendar_string.split("+")[0], "%Y-%m-%dT%H:%M:%S")
 
 def datetime_to_gcal(date: str) -> str:

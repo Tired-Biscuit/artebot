@@ -6,7 +6,6 @@ from datetime import timezone, timedelta, datetime
 import re
 
 import python.timeutils as timeutils
-from test import calendar_id
 
 datafile_path = os.path.join("data", "data.json")
 
@@ -445,7 +444,7 @@ def parse_date(date: str) -> str:
     now = datetime.now()
 
     match = re.match(
-        r"^(\d{1,2})[\/\-\s]([A-Za-zéa-zA-Z]{3,}\.?|\d{1,2})(?:[\/\-\s](\d{2,4}))?$", date
+        r"^(\d{1,2})[\/\-\s]([A-Za-zéû]{3,}\.?|\d{1,2})(?:[\/\-\s](\d{2,4}))?$", date
     )
 
     month_map = {

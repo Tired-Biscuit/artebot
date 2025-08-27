@@ -239,11 +239,11 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
         "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
         "start": {
             "dateTime": start_time,
-            "timeZone": "W-SU"
+            "timeZone": "Europe/Paris"
         },
         "end": {
             "dateTime": end_time,
-            "timeZone": "W-SU"
+            "timeZone": "Europe/Paris"
         },
         "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
         "location": "Local",
