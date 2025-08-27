@@ -267,7 +267,7 @@ class SetlistChoiceForCalendarLinkView(discord.ui.View):
         self.confirm_button.disabled = True
         await interaction.response.defer()
         # try:
-        embed = tools.get_calendar_link(self.setlists_ids[self.page])
+        embed = success_embed(googleutils.get_calendar_share_link(self.setlists_ids[self.page]))
         await interaction.followup.send(embed=embed, view=self)
         # except Exception as e:
         #     await interaction.followup.send(embed=failure_embed(message=str(e)))
