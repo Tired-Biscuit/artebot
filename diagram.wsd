@@ -1,0 +1,53 @@
+@startuml Diagram
+
+'Needs the PlantUML extension to be seen
+
+class User
+User : int uuid
+User : str email
+User : int group_id
+
+class Song
+Song : str setlist_id
+Song : str title
+Song : str artist
+Song : int length
+Song : str supervisor
+Song : str voice
+Song : str guitar
+Song : str keys
+Song : str drums
+Song : str bass
+Song : str violin
+Song : str cello
+Song : str contrabass
+Song : str accordion
+Song : str flute
+Song : str saxophone
+Song : str horn
+Song : str notes
+
+class SchoolEvent
+SchoolEvent : str uuid
+SchoolEvent : str group_id
+SchoolEvent : int start_time
+SchoolEvent : int end_time
+SchoolEvent : int duration
+SchoolEvent : str name
+
+class GoogleEvent
+GoogleEvent : str uuid
+GoogleEvent : str calendar_id
+GoogleEvent : str musicians
+GoogleEvent : int start_time
+GoogleEvent : int end_time
+GoogleEvent : str name
+
+class MusicianConstraint
+MusicianConstraint : str musician_uuid
+MusicianConstraint : int day
+MusicianConstraint : int start_time
+MusicianConstraint : int end_time
+MusicianConstraint : int week_day
+
+@enduml
