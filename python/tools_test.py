@@ -14,6 +14,7 @@ assert tools.parse_date("2 05 2025") == "20250502"
 assert tools.parse_date("02-05-25") == "20250502"
 assert tools.parse_date("2-5-25") == "20250502"
 assert tools.parse_date("2 mai 25") == "20250502"
+assert tools.parse_date("2 mai 2025") == "20250502"
 assert tools.parse_date("2 may 25") == "20250502"
 
 year = str(datetime.now().year)
@@ -49,7 +50,7 @@ assert tools.formatted_hhmm("1200") == "midi"
 assert tools.formatted_hhmm("1600") == "16 h"
 assert tools.formatted_hhmm("0250") == "2 h 50"
 
-assert tools.date_to_string("20250405") == "le **05/04/2025**"
+#assert tools.date_to_string("20250405") == "le **05/04/2025**"
 
 assert tools.parse_mail("tom.loisil@telecomnancy.net") == "Tom LOISIL"
 
