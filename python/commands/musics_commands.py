@@ -60,7 +60,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
                         present.append([username, uuid, instrument, musician])
 
                 else:
-                    missing.append([tools.parse_mail(musician), instrument])
+                    missing.append([tools.parse_mail(musician), instrument, musician])
     blocking_message = None
     if blocking or missing:
 
@@ -88,7 +88,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
 
             blocking_message.add_field(name="Ces personnes ne sont pas disponibles sur ce créneau", value=blocking_text)
 
-        if len(present) > 1:
+        if len(present)+len(missing) > 1:
             view = discordutils.ConfirmView()
         else:
             view = discordutils.ConfirmViewImpossible()
@@ -97,7 +97,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         # if not view.value:
         #     await i.delete_original_response()
         #     return
-    success = db.add_rehearsal_to_calendar(song, [i[3] for i in present], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
+    success = db.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
 
     summary_message = discordutils.success_embed(title="Répétition ajoutée", message=f"Répétition pour {song} {tools.get_special_date_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d’une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.")
     
@@ -107,6 +107,8 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     for present_musician in present:
         ping += f"<@{present_musician[1]}> "
         present_message += f"- {present_musician[0]} ({present_musician[2]})\n"
+    for m in missing:
+        present_message += f"- {m[0]} ({m[1]})\n"
 
     summary_message.add_field(name="Membres présents", value=present_message)
 
