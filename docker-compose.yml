@@ -1,10 +1,13 @@
-version: '3.9'
-
 services:
-  mon-app:
-    build: .
-    volumes:
-      - ./data:/app/data
-      - ./database:/app/database
-    env_file: .env
-    restart: unless-stopped
+    artebot:
+        build:
+        container_name: artedev
+        volumes:
+            - data_volume:/data
+            - db_volume:/database
+        env_file: .env
+        restart: unless_stopped
+
+volumes:
+    data_volume:
+    db_volume:
