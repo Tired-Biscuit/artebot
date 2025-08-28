@@ -23,7 +23,7 @@ else:
     db = None
 
 SongNotFoundError = Exception("Could not find song")
-
+NoCalendarError = Exception("No calendar is linked")
 
 def refresh():
     """
@@ -251,7 +251,11 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
         "organizer": {"email": song_info[4]},
         "guestsCanModify": True
     }
-    return googleutils.add_event_to_calendar(googleutils.get_calendar_id(tools.get_setlist_calendar_url(song_info[0])), event)
+    calendar_id = tools.get_setlist_calendar_id(song_info[0])
+    if calendar_id:
+        return googleutils.add_event_to_calendar(calendar_id, event)
+    else:
+        raise NoCalendarError
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """
