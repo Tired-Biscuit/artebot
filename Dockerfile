@@ -7,7 +7,13 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY python/ ./python/
+COPY scripts/ ./scripts/
+COPY sql/ ./sql/
+COPY timetables/ ./timetables/
+COPY bot.py .
+COPY entrypoint.sh .
+COPY init.py .
 
 VOLUME ["/app/data", "/app/database"]
 
