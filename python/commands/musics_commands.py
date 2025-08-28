@@ -97,7 +97,13 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         # if not view.value:
         #     await i.delete_original_response()
         #     return
-    success = db.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
+
+    try:
+        success = db.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
+    except db.NoCalendarError:
+        raise Exception("Aucun calendrier n'est lié à la setlist, merci de signaler cela à un admin :)")
+    except Exception:
+        raise discordutils.FailureError
 
     summary_message = discordutils.success_embed(title="Répétition ajoutée", message=f"Répétition pour {song} {tools.get_special_date_string(ndate)} à **{tools.formatted_hhmm(nstart)}** d’une durée de **{tools.duration_to_string(duration)}** ajoutée avec succès.")
     

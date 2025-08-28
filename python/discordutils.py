@@ -136,9 +136,9 @@ class SetlistRemovalPaginationView(discord.ui.View):
         self.delete_button.disabled = True
         try:
             tools.remove_setlist(self.page)
-            calendar_url = tools.get_setlist_calendar_url(self.setlists_names[self.page])
-            if calendar_url:
-                googleutils.delete_calendar(googleutils.get_calendar_id(calendar_url))
+            calendar_id = tools.get_setlist_calendar_id(self.setlists_names[self.page])
+            if calendar_id:
+                googleutils.delete_calendar(calendar_id)
             await interaction.response.edit_message(embed=success_embed(message="Setlist supprimée"), view=self)
         except Exception as e:
             await interaction.response.edit_message(embed=failure_embed(message=str(e)), view=self)
@@ -309,6 +309,7 @@ class SetlistChoiceForCalendarAdd(discord.ui.View):
         self.user_id = user_id
         self.setlists_ids = setlists_ids
         self.setlists_names = []
+        self.calendar_id = calendar_id
 
         for setlist_id in self.setlists_ids:
             self.setlists_names.append(tools.get_setlist_name(setlist_id))
@@ -823,6 +824,8 @@ class RehearsalTimeSelectionView(discord.ui.View):
                 ping += f"<@{present_musician}> "
 
             await interaction.response.edit_message(content=ping, embed=summary_message, view=None)
+        except db.NoCalendarError:
+            await interaction.response.edit_message(embed=failure_embed(message="Aucun calendrier n'est lié à la setlist, merci de rapporter cela à un admin :)"))
         except Exception as e:
             await interaction.response.edit_message(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"), view=None)
 

@@ -3,7 +3,7 @@ import os
 import time
 import traceback
 import math
-
+import json
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
@@ -20,7 +20,7 @@ import python.commands.musics_commands as music_commands
 import python.commands.admin_commands as admin_commands
 from python.discordutils import information_embed
 
-DEBUG = False # Toggle the dev or production bot
+
 
 # db.reset()
 # db.init()
@@ -33,6 +33,9 @@ logs_data = {"update": {"successful":0, "failed":0}, "info":{"successful":0, "fa
 
 # Get tokens
 load_dotenv()
+
+DEBUG = os.getenv('DEBUG') # Toggle the dev or production bot
+
 if DEBUG:
     TOKEN = os.getenv('DEV_TOKEN')
 else:

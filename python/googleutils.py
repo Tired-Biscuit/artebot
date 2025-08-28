@@ -150,7 +150,7 @@ def create_calendar(name: str, sheet_id: str) -> str | None:
 
     try:
         response = service.calendars().insert(body=body).execute()
-        response = "https://calendar.google.com/calendar/u/0/embed?src="+response["id"]
+        response = response["id"]
     except HttpError as error:
         response = f"Erreur {error.status_code}: {error}"
     return response
@@ -179,7 +179,7 @@ def get_calendar_share_link(setlist_id: str) -> str:
     @flag setlist
     @flag calendar
     """
-    calendar_id = get_calendar_id(tools.get_setlist_calendar_url(setlist_id))
+    calendar_id = get_calendar_id(tools.get_setlist_calendar_id(setlist_id))
     return f"https://calendar.google.com/calendar/u/0/r?cid={calendar_id}"
 
 
@@ -203,7 +203,7 @@ def create_setlist_calendar(setlist_id: str) -> str:
 
     Returns the id of the newly created calendar
     """
-    calendar = get_calendar_id(tools.get_setlist_calendar_url(setlist_id))
+    calendar = tools.get_setlist_calendar_id(setlist_id)
     if calendar:
         raise Exception(f"Cette setlist a déjà un calendrier ! https://calendar.google.com/calendar/u/0/embed?src={calendar}")
 
@@ -215,7 +215,7 @@ def create_setlist_calendar(setlist_id: str) -> str:
     tools.add_calendar(get_calendar_id(result))
     tools.add_calendar_to_setlist(setlist_id, result)
 
-    return result
+    return f"https://calendar.google.com/calendar/u/0/r?cid={result}"
 
 
 def get_spreadsheet_id(spreadsheet_link: str) -> str:
