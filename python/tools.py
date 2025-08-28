@@ -69,6 +69,7 @@ def create_data_file():
         if data == "":
             data = val#{"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
             with open(datafile_path, "w") as f:
+                print("Data corrupted, resetting data file")
                 f.write(json.dumps(data))
 
 def get_groups() -> dict:
@@ -109,8 +110,8 @@ def add_calendar(calendar_id):
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != {}:
-        with open(datafile_path, "w") as f:
-            if calendar_id not in data["calendar_ids"]:
+        if calendar_id not in data["calendar_ids"]:
+            with open(datafile_path, "w") as f:
                 data["calendar_ids"].append(calendar_id)
                 f.write(json.dumps(data))
 
@@ -124,8 +125,8 @@ def remove_calendar(calendar_id):
     create_data_file()
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
-    with open(datafile_path, "w") as f:
-        if calendar_id in data["calendar_ids"]:
+    if calendar_id in data["calendar_ids"]:
+        with open(datafile_path, "w") as f:
             data["calendar_ids"].remove(calendar_id)
             f.write(json.dumps(data))
 
@@ -152,9 +153,9 @@ def add_admin(uuid: int):
     data = None
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
-    if data != None:
-        with open(datafile_path, "w") as f:
-            if uuid not in data["admins"]:
+    if data:
+        if uuid not in data["admins"]:
+            with open(datafile_path, "w") as f:
                 data["admins"].append(uuid)
                 f.write(json.dumps(data))
 
@@ -167,9 +168,9 @@ def remove_admin(uuid: int):
     create_data_file()
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
-    if data != None:
-        with open(datafile_path, "w") as f:
-            if uuid in data["admins"]:
+    if data:
+        if uuid in data["admins"]:
+            with open(datafile_path, "w") as f:
                 data["admins"].remove(uuid)
                 f.write(json.dumps(data))
 
@@ -195,8 +196,8 @@ def add_owner(uuid: int):
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open(datafile_path, "w") as f:
-            if uuid not in data["owners"]:
+        if uuid not in data["owners"]:
+            with open(datafile_path, "w") as f:
                 data["owners"].append(uuid)
                 f.write(json.dumps(data))
 
@@ -227,8 +228,8 @@ def add_setlist(setlist_id: str, name:str):
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open(datafile_path, "w") as f:
-            if setlist_id not in data["setlists"]:
+        if setlist_id not in get_setlists_ids():
+            with open(datafile_path, "w") as f:
                 data["setlists"].append([setlist_id, name, ""])
                 f.write(json.dumps(data))
 
@@ -263,9 +264,9 @@ def get_setlist_id_from_name(setlist_name: str) -> str | None:
     return None
 
 
-def get_setlist_calendar_url(setlist_id: str) -> str | None:
+def get_setlist_calendar_id(setlist_id: str) -> str | None:
     """
-    Returns the calendar of the setlist given its id
+    Returns the calendar id of the setlist given its id
 
     @flag data
     @flag setlist
