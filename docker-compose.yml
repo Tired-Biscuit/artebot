@@ -1,10 +1,12 @@
 services:
-    artebot:
-        build: .
+    app:
+        image: gibson-registry.telecomnancy.univ-lorraine.fr/paul.musial/artebot
         container_name: artedev
         volumes:
             - data_volume:/app/data
             - db_volume:/app/database
+            - ./token.json:/app/token.json
+            - ./credentials.json:/app/token.json
         env_file: .env
         restart: unless-stopped
 
