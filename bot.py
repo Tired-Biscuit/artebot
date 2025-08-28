@@ -20,7 +20,7 @@ import python.commands.musics_commands as music_commands
 import python.commands.admin_commands as admin_commands
 from python.discordutils import information_embed
 
-DEBUG = True # Toggle the dev or production bot
+DEBUG = False # Toggle the dev or production bot
 
 # db.reset()
 # db.init()
@@ -373,7 +373,6 @@ async def song(i: discord.Interaction, song: str=None):
 ##########################
 #     Admin Commands     #
 ##########################
-#TODO Ajouter les décorateurs admin-only
 
 @bot.tree.command(name="ajouter_admin", description="enregistrer quelqu’un comme admin")
 @app_commands.describe(
@@ -512,6 +511,27 @@ async def create_calendar(i: discord.Interaction):
         if i.user.id not in tools.get_admins():
             raise discordutils.NotAdminError
         view = discordutils.SetlistChoiceForCalendarView(i.user.id, tools.get_setlists_ids())
+        view.check_buttons_availability()
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="lier_calendrier", description="Lier un calendrier Google à une setlist")
+@app_commands.describe(
+    calendar_id="ID du calendrier"
+)
+@app_commands.rename(
+    calendar_id="id"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def link_calendar(i: discord.Interaction, calendar_id: str):
+    try:
+        db.check_user(i.user.id)
+        if i.user.id not in tools.get_admins():
+            raise discordutils.NotAdminError
+        view = discordutils.SetlistChoiceForCalendarAdd(i.user.id, tools.get_setlists_ids(), calendar_id)
         view.check_buttons_availability()
         await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
