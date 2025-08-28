@@ -33,3 +33,9 @@ DISCORD_TOKEN=... # Token for the production-ready bot here
 DEV_TOKEN=... # Token for the beta bot here
 SCRIPT_ID=... # Id of the API Google Apps script containing the script (in script.js)
 ```
+
+
+Could be useful:
+```shell
+docker run --rm -it -v data_volume:/mnt alpine sh
+```
