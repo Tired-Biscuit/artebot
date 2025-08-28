@@ -69,6 +69,7 @@ def create_data_file():
         if data == "":
             data = val#{"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
             with open(datafile_path, "w") as f:
+                print("Data corrupted, resetting data file")
                 f.write(json.dumps(data))
 
 def get_groups() -> dict:
@@ -227,10 +228,10 @@ def add_setlist(setlist_id: str, name:str):
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
     if data != None:
-        with open(datafile_path, "w") as f:
-            if setlist_id not in data["setlists"]:
-                data["setlists"].append([setlist_id, name, ""])
-                f.write(json.dumps(data))
+        if setlist_id not in get_setlists_ids():
+            with open(datafile_path, "w") as f:
+                    data["setlists"].append([setlist_id, name, ""])
+                    f.write(json.dumps(data))
 
 def get_setlist_name(setlist_id: str) -> str | None:
     """
