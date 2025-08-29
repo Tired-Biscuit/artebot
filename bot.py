@@ -421,14 +421,14 @@ async def change_embed_colour(i: discord.Interaction, colour: str):
 @discord.app_commands.default_permissions(administrator=True)
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 
-    await i.response.defer()
+    await i.response.defer(ephemeral=True)
 
     try:
         message = admin_commands.refresh(i.user.id, calendar.value)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
-    await i.followup.send(embed=message, ephemeral=True)
+    await i.followup.send(embed=message)
 
 
 @bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
@@ -441,11 +441,11 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_setlist(i: discord.Interaction, setlist_link: str):
-    await i.response.defer()
+    await i.response.defer(ephemeral=True)
     try:
-        await i.followup.send(embed=admin_commands.add_setlist(i.user.id, setlist_link), ephemeral=True)
+        await i.followup.send(embed=admin_commands.add_setlist(i.user.id, setlist_link))
     except Exception as e:
-        await i.followup.send(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="supprimer_setlist", description="Retire une setlist")
@@ -565,7 +565,7 @@ async def create_threads(i: discord.Interaction):
         if not songs:
             await i.response.send_message(embed=discordutils.information_embed(message="Pas de fils à créer !"), ephemeral=True)
         else:
-            await i.response.defer(thinking=False)
+            await i.response.defer(thinking=False, ephemeral=True)
             setlists_names = googleutils.get_setlists_names()
             view = discordutils.SetlistsThreadCreationView(setlists_names)
             view.check_buttons_availability()
@@ -577,7 +577,7 @@ async def create_threads(i: discord.Interaction):
         try:
             await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
         except:
-            await i.followup.send(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+            await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="ajouter_instrument", description="Ajouter un instrument dans la BDD")
