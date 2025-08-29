@@ -6,7 +6,7 @@ services:
             - data_volume:/app/data
             - db_volume:/app/database
             - ./token.json:/app/token.json
-            - ./credentials.json:/app/token.json
+            - ./credentials.json:/app/credentials.json
         env_file: .env
         restart: unless-stopped
 

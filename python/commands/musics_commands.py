@@ -1,14 +1,20 @@
+from typing import Tuple, Any, List
+
 import discord
 import time
+
+from discord import Embed
 
 import python.db as db
 import python.tools as tools
 import python.discordutils as discordutils
 import python.timeutils as timeutils
+import python.googleutils as googleutils
+from python.discordutils import ConfirmView, ConfirmViewImpossible
 
 
-
-def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str = None) -> tuple[str, discord.Embed, discord.Embed, discord.ui.View, bool]:
+def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str = None) -> tuple[
+    str | Any, Embed | None, Embed, ConfirmView | ConfirmViewImpossible | None, list[list[str | Any]], bool]:
     """
     Returns ping, blocking_message (Embed/None), summary_message (Embed), request_ping (bool)
     """
@@ -99,8 +105,8 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         #     return
 
     try:
-        success = db.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
-    except db.NoCalendarError:
+        success = googleutils.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
+    except googleutils.NoCalendarError:
         raise Exception("Aucun calendrier n'est lié à la setlist, merci de signaler cela à un admin :)")
     except Exception:
         raise discordutils.FailureError

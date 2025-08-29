@@ -13,6 +13,9 @@ import python.db as db
 
 import os
 
+NoCalendarError = Exception("No calendar is linked")
+
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
     'https://www.googleapis.com/auth/script.projects',
@@ -126,6 +129,50 @@ def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
     except HttpError as error:
         raise error
     return response
+
+
+def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
+
+    song_info = db.get_song_info(song)
+
+    instruments_names = db.get_instruments_names()
+
+    musicians_instruments = dict()
+
+    for i in range(4, len(song_info)-1):
+        if song_info[i]:
+            musicians = song_info[i].split(" ")
+            for musician in musicians:
+                if musician not in musicians_instruments:
+                    musicians_instruments[musician] = instruments_names[i][0].capitalize()
+                else:
+                    musicians_instruments[musician] += ", " + instruments_names[i][0]
+
+    event = {
+        "summary": f"Répétition {song_info[1]}",
+        "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
+        "start": {
+            "dateTime": start_time,
+            "timeZone": "Europe/Paris"
+        },
+        "end": {
+            "dateTime": end_time,
+            "timeZone": "Europe/Paris"
+        },
+        "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
+        "location": "Local",
+        "creator": {"displayName": creator},
+        "organizer": {"email": song_info[4]},
+        "guestsCanModify": True
+    }
+    calendar_id = tools.get_setlist_calendar_id(song_info[0])
+    if calendar_id:
+        result = add_event_to_calendar(calendar_id, event)
+        calendar = download_calendar(calendar_id)
+        db.update_calendar(calendar)
+        return result
+    else:
+        raise NoCalendarError
 
 
 def get_calendar_id(calendar_link: str):
