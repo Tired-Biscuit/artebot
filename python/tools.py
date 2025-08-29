@@ -51,19 +51,19 @@ def create_data_file():
             "2A G42": "fise_2a_g42",
             "2A G51": "fise_2a_g51",
             "2A G52": "fise_2a_g52",
-            "2A IAMD": "fise_2a_iamd0",
-            "2A IL": "fise_2a_il0",
-            "2A LE": "fise_2a_le0",
-            "2A SIE": "fise_2a_sie0",
-            "2A ISS": "fise_2a_iss0",
-            "3A IAMD": "fise_3a_iamd0",
-            "3A IL": "fise_3a_il0",
-            "3A LE": "fise_3a_le0",
-            "3A SIE": "fise_3a_sie0",
-            "3A ISS": "fise_3a_iss0",
-            "FISA 1A": "fisa_1a0",
-            "FISA 2A": "fisa_2a0",
-            "FISA 3A": "fisa_3a0"
+            "2A IAMD0": "fise_2a_iamd0",
+            "2A IL0": "fise_2a_il0",
+            "2A LE0": "fise_2a_le0",
+            "2A SIE0": "fise_2a_sie0",
+            "2A ISS0": "fise_2a_iss0",
+            "3A IAMD0": "fise_3a_iamd0",
+            "3A IL0": "fise_3a_il0",
+            "3A LE0": "fise_3a_le0",
+            "3A SIE0": "fise_3a_sie0",
+            "3A ISS0": "fise_3a_iss0",
+            "FISA 1A0": "fisa_1a0",
+            "FISA 2A0": "fisa_2a0",
+            "FISA 3A0": "fisa_3a0"
         }
     }
 
@@ -449,9 +449,8 @@ def download_timetables():
             if response.status_code == 200:
                 with open(output_path, "wb") as f:
                     f.write(response.content)
-                print(f"Fichier {group}.ics téléchargé avec succès.")
             else:
-                print(f"Erreur {response.status_code} lors du téléchargement de {group}")
+                raise Exception(f"Erreur {request.status_code}")
 
 
 
