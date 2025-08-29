@@ -226,7 +226,7 @@ def get_calendar_share_link(setlist_id: str) -> str:
     @flag setlist
     @flag calendar
     """
-    calendar_id = get_calendar_id(tools.get_setlist_calendar_id(setlist_id))
+    calendar_id = tools.get_setlist_calendar_id(setlist_id)
     return f"https://calendar.google.com/calendar/u/0/r?cid={calendar_id}"
 
 
