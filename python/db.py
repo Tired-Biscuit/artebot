@@ -136,6 +136,11 @@ def update_timetables():
 
     data = []
 
+    subgroups = 0 # bit-wise data: 0b01 = subgroup 1, 0b10 = subgroup 2, 0b11 = subgroups 1 & 2
+    desc = ""
+
+    groups_ids = list(tools.get_groups().values())
+
     for filename in os.listdir("timetables"):
         if filename.endswith(".ics"):
 
@@ -149,11 +154,30 @@ def update_timetables():
                         event = {}
 
                     elif line.startswith("END:VEVENT"):
-
-                        if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            data.append((event['uuid'], group, event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                        if event and "name" in event and "Langues Etrangères LV2" in event["name"]:
+                            pass
                         else:
-                            print("Incomplete event data, skipping insertion.")
+                            if event and "uuid" in event and "start_time" in event and "end_time" in event:
+                                if subgroups & 1 == 1:
+                                    data.append((event['uuid'], group+"1", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                                if subgroups & 2 == 2:
+                                    data.append((event['uuid'], group+"2", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                                if subgroups == 0:
+                                    data.append((event['uuid'], group+"0", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                            else:
+                                print("Incomplete event data, skipping insertion.")
+                        subgroups = 0
+
+                    elif line.startswith("DESCRIPTION:"):
+                        if group+"1" in line:
+                            subgroups += 1
+                        if group+"2" in line:
+                            subgroups += 2
+                        if group+"1" not in line and group+"2" not in line:
+                            if group+"0" in groups_ids:
+                                subgroups = 0
+                            else:
+                                subgroups = 3
 
                     elif line.startswith("UID:"):
                         event["uuid"] = line.split(":", 1)[1].strip()
@@ -622,7 +646,7 @@ def get_profile_message(musician_uuid: int) -> str:
     if info[2]:
         for group in groups:
             if groups[group] == info[2]:
-                group_text = group
+                group_text = group[:-1] if group[-1] == "0" else group
                 break
     else:
         group_text = "extérieur"

@@ -62,13 +62,41 @@ groups = tools.get_groups()
 calendars = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
 tables = ["User", "Song", "MusicianConstraint", "GoogleEvent", "SchoolEvent"]
 
-group_choices = [app_commands.Choice(name=group, value=groups[group]) for group in groups]
+group_choices = []
+for group in groups:
+    choice = app_commands.Choice(name=group[:-1], value=groups[group][:-1])
+    if choice not in group_choices:
+        group_choices.append(choice)
+subgroup_choices = [app_commands.Choice(name=str(i), value=str(i)) for i in range(1,3)]
 calendar_choices = [app_commands.Choice(name=calendars[calendar], value=calendar) for calendar in calendars.keys()]
 table_choices = [app_commands.Choice(name=table, value=table) for table in tables]
 
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
+@bot.tree.command(name="connexion", description="S’ajouter à la base de données")
+@app_commands.describe(
+    mail="Ton adresse mail TN.net",
+    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
+    subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe)"
+)
+@app_commands.rename(
+    group="groupe",
+    subgroup="sous-groupe"
+)
+@app_commands.choices(
+    group=group_choices,
+    subgroup=subgroup_choices
+)
+async def connection(i: discord.Interaction, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
+    try:
+        user_group = ""
+        if group:
+            user_group += group.value
+            user_group += subgroup.value if subgroup else "0"
+        if user_group not in tools.get_groups().values():
+            raise Exception(f"Le groupe {user_group} est invalide")
+        await i.response.send_message(embed=user_commands.connection(i.user.id, mail, user_group), ephemeral=True)
+
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 
@@ -77,19 +105,9 @@ async def on_ready():
 #     User Commands     #
 #########################
 
-@bot.tree.command(name="connexion", description="S’ajouter à la base de données")
-@app_commands.describe(
-    mail="Ton adresse mail TN.net",
-    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)"
-)
-@app_commands.rename(group="groupe")
-@app_commands.choices(group=group_choices)
-async def connection(i: discord.Interaction, mail: str, group: app_commands.Choice[str] = None):
-    try:
-        await i.response.send_message(embed=user_commands.connection(i.user.id, mail, group.value if group else ""), ephemeral=True)
-
-    except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
 
 
 @bot.tree.command(name="mail", description="Changer l’adresse mail associée à son compte")
@@ -106,13 +124,26 @@ async def mail(i: discord.Interaction, mail: str):
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
-    group="Le nouveau groupe (laisser vide si extérieur)"
+    group="Le nouveau groupe (laisser vide si extérieur)",
+    subgroup="Le sous-groupe de TD (laisser vide si pas de sous-groupe)"
 )
-@app_commands.rename(group="groupe")
-@app_commands.choices(group=group_choices)
-async def group(i: discord.Interaction, group: app_commands.Choice[str] = None):
+@app_commands.rename(
+    group="groupe",
+    subgroup="sous-groupe"
+)
+@app_commands.choices(
+    group=group_choices,
+    subgroup=subgroup_choices
+)
+async def group(i: discord.Interaction, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
     try:
-        await i.response.send_message(embed=user_commands.change_group(i.user.id, group.value if group else ""), ephemeral=True)
+        user_group = ""
+        if group:
+            user_group += group.value
+            user_group += subgroup.value if subgroup else "0"
+        if user_group not in tools.get_groups().values():
+            raise Exception(f"Le groupe {user_group} est invalide")
+        await i.response.send_message(embed=user_commands.change_group(i.user.id, user_group), ephemeral=True)
 
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
