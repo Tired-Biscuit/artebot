@@ -550,7 +550,7 @@ class ConstraintRemovalPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return information_embed(title="Choisiss une contrainte à supprimer", message=text)
+        return information_embed(title="Choisis une contrainte à supprimer", message=text)
 
     def remove_constraint(self):
         constraint = self.constraints[self.page]
