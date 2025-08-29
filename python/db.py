@@ -23,7 +23,6 @@ else:
     db = None
 
 SongNotFoundError = Exception("Could not find song")
-NoCalendarError = Exception("No calendar is linked")
 
 def refresh():
     """
@@ -217,45 +216,6 @@ def update_calendars():
         else:
             print(f"No event in calendar {i}.")
 
-def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
-
-    song_info = get_song_info(song)
-
-    instruments_names = get_instruments_names()
-
-    musicians_instruments = dict()
-
-    for i in range(4, len(song_info)-1):
-        if song_info[i]:
-            musicians = song_info[i].split(" ")
-            for musician in musicians:
-                if musician not in musicians_instruments:
-                    musicians_instruments[musician] = instruments_names[i][0].capitalize()
-                else:
-                    musicians_instruments[musician] += ", " + instruments_names[i][0]
-
-    event = {
-        "summary": f"Répétition {song_info[1]}",
-        "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
-        "start": {
-            "dateTime": start_time,
-            "timeZone": "Europe/Paris"
-        },
-        "end": {
-            "dateTime": end_time,
-            "timeZone": "Europe/Paris"
-        },
-        "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
-        "location": "Local",
-        "creator": {"displayName": creator},
-        "organizer": {"email": song_info[4]},
-        "guestsCanModify": True
-    }
-    calendar_id = tools.get_setlist_calendar_id(song_info[0])
-    if calendar_id:
-        return googleutils.add_event_to_calendar(calendar_id, event)
-    else:
-        raise NoCalendarError
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """
