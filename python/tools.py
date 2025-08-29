@@ -1,4 +1,4 @@
-import subprocess
+import requests
 import time
 import os
 import json
@@ -33,30 +33,40 @@ def create_data_file():
         "ignored_columns": ["Genre", "Statistiques"],
         "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
         "groups": {
-            "1A G1": "fise_1a_g1",
-            "1A G2": "fise_1a_g2",
-            "1A G3": "fise_1a_g3",
-            "1A G4": "fise_1a_g4",
-            "2A G1": "fise_2a_g1",
-            "2A G2": "fise_2a_g2",
-            "2A G3": "fise_2a_g3",
-            "2A G4": "fise_2a_g4",
-            "2A G5": "fise_2a_g5",
-            "2A IAMD": "fise_2a_iamd",
-            "2A IL": "fise_2a_il",
-            "2A LE": "fise_2a_le",
-            "2A SIE": "fise_2a_sie",
-            "2A ISS": "fise_2a_iss",
-            "3A IAMD": "fise_3a_iamd",
-            "3A IL": "fise_3a_il",
-            "3A LE": "fise_3a_le",
-            "3A SIE": "fise_3a_sie",
-            "3A ISS": "fise_3a_iss",
-            "FISA 1A": "fisa_1a",
-            "FISA 2A": "fisa_2a",
-            "FISA 3A": "fisa_3a"
+            "1A G11": "fise_1a_g11",
+            "1A G12": "fise_1a_g12",
+            "1A G21": "fise_1a_g21",
+            "1A G22": "fise_1a_g22",
+            "1A G31": "fise_1a_g31",
+            "1A G32": "fise_1a_g32",
+            "1A G41": "fise_1a_g41",
+            "1A G42": "fise_1a_g42",
+            "2A G11": "fise_2a_g11",
+            "2A G12": "fise_2a_g12",
+            "2A G21": "fise_2a_g21",
+            "2A G22": "fise_2a_g22",
+            "2A G31": "fise_2a_g31",
+            "2A G32": "fise_2a_g32",
+            "2A G41": "fise_2a_g41",
+            "2A G42": "fise_2a_g42",
+            "2A G51": "fise_2a_g51",
+            "2A G52": "fise_2a_g52",
+            "2A IAMD": "fise_2a_iamd0",
+            "2A IL": "fise_2a_il0",
+            "2A LE": "fise_2a_le0",
+            "2A SIE": "fise_2a_sie0",
+            "2A ISS": "fise_2a_iss0",
+            "3A IAMD": "fise_3a_iamd0",
+            "3A IL": "fise_3a_il0",
+            "3A LE": "fise_3a_le0",
+            "3A SIE": "fise_3a_sie0",
+            "3A ISS": "fise_3a_iss0",
+            "FISA 1A": "fisa_1a0",
+            "FISA 2A": "fisa_2a0",
+            "FISA 3A": "fisa_3a0"
         }
     }
+
     if not os.path.exists(datafile_path):
         print("Creating file")
         # data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
@@ -426,8 +436,24 @@ def download_timetables():
 
     returns: True if operation successful 
     """
-    r = subprocess.call(os.path.join("scripts","auto_update.sh"))
-    return r == 0
+
+    done = []
+    for group in get_groups().values():
+        if group[:-1] not in done:
+            done.append(group[:-1])
+            url = f"https://edt.telecomnancy.univ-lorraine.fr/static/{group[:-1]}.ics"
+            output_path = os.path.join("timetables", f"{group[:-1]}.ics")
+
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                with open(output_path, "wb") as f:
+                    f.write(response.content)
+                print(f"Fichier {group}.ics téléchargé avec succès.")
+            else:
+                print(f"Erreur {response.status_code} lors du téléchargement de {group}")
+
+
 
 
 
