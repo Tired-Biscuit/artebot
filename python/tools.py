@@ -41,6 +41,8 @@ def create_data_file():
             "1A G32": "fise_1a_g32",
             "1A G41": "fise_1a_g41",
             "1A G42": "fise_1a_g42",
+            "1A G51": "fise_1a_g51",
+            "1A G52": "fise_1a_g52",
             "2A G11": "fise_2a_g11",
             "2A G12": "fise_2a_g12",
             "2A G21": "fise_2a_g21",
