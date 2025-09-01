@@ -34,7 +34,7 @@ CREATE TABLE SchoolEvent(
     duration INT,
     name TEXT,
 
-    CONSTRAINT pk_school_event UNIQUE (uuid, group_id)
+    CONSTRAINT pk_school_event UNIQUE (uuid, group_id, start_time, end_time)
 );
 
 CREATE TABLE GoogleEvent(

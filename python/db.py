@@ -23,7 +23,6 @@ else:
     db = None
 
 SongNotFoundError = Exception("Could not find song")
-NoCalendarError = Exception("No calendar is linked")
 
 def refresh():
     """
@@ -137,6 +136,11 @@ def update_timetables():
 
     data = []
 
+    subgroups = 0 # bit-wise data: 0b01 = subgroup 1, 0b10 = subgroup 2, 0b11 = subgroups 1 & 2
+    desc = ""
+
+    groups_ids = list(tools.get_groups().values())
+
     for filename in os.listdir("timetables"):
         if filename.endswith(".ics"):
 
@@ -150,11 +154,30 @@ def update_timetables():
                         event = {}
 
                     elif line.startswith("END:VEVENT"):
-
-                        if event and "uuid" in event and "start_time" in event and "end_time" in event:
-                            data.append((event['uuid'], group, event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                        if event and "name" in event and "Langues Etrangères LV2" in event["name"]:
+                            pass
                         else:
-                            print("Incomplete event data, skipping insertion.")
+                            if event and "uuid" in event and "start_time" in event and "end_time" in event:
+                                if subgroups & 1 == 1:
+                                    data.append((event['uuid'], group+"1", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                                if subgroups & 2 == 2:
+                                    data.append((event['uuid'], group+"2", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                                if subgroups == 0:
+                                    data.append((event['uuid'], group+"0", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
+                            else:
+                                print("Incomplete event data, skipping insertion.")
+                        subgroups = 0
+
+                    elif line.startswith("DESCRIPTION:"):
+                        if group+"1" in line:
+                            subgroups += 1
+                        if group+"2" in line:
+                            subgroups += 2
+                        if group+"1" not in line and group+"2" not in line:
+                            if group+"0" in groups_ids:
+                                subgroups = 0
+                            else:
+                                subgroups = 3
 
                     elif line.startswith("UID:"):
                         event["uuid"] = line.split(":", 1)[1].strip()
@@ -217,45 +240,6 @@ def update_calendars():
         else:
             print(f"No event in calendar {i}.")
 
-def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
-
-    song_info = get_song_info(song)
-
-    instruments_names = get_instruments_names()
-
-    musicians_instruments = dict()
-
-    for i in range(4, len(song_info)-1):
-        if song_info[i]:
-            musicians = song_info[i].split(" ")
-            for musician in musicians:
-                if musician not in musicians_instruments:
-                    musicians_instruments[musician] = instruments_names[i][0].capitalize()
-                else:
-                    musicians_instruments[musician] += ", " + instruments_names[i][0]
-
-    event = {
-        "summary": f"Répétition {song_info[1]}",
-        "description": f"Répétition pour {song_info[1]} ({song_info[2]})",
-        "start": {
-            "dateTime": start_time,
-            "timeZone": "Europe/Paris"
-        },
-        "end": {
-            "dateTime": end_time,
-            "timeZone": "Europe/Paris"
-        },
-        "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
-        "location": "Local",
-        "creator": {"displayName": creator},
-        "organizer": {"email": song_info[4]},
-        "guestsCanModify": True
-    }
-    calendar_id = tools.get_setlist_calendar_id(song_info[0])
-    if calendar_id:
-        return googleutils.add_event_to_calendar(calendar_id, event)
-    else:
-        raise NoCalendarError
 
 def add_user(uuid, username, email, group_id, *, commit=False):
     """
@@ -662,7 +646,7 @@ def get_profile_message(musician_uuid: int) -> str:
     if info[2]:
         for group in groups:
             if groups[group] == info[2]:
-                group_text = group
+                group_text = group[:-1] if group[-1] == "0" else group
                 break
     else:
         group_text = "extérieur"

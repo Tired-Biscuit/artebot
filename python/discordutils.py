@@ -550,7 +550,7 @@ class ConstraintRemovalPaginationView(discord.ui.View):
             if i == self.page:
                 text += "**"
             text += "\n"
-        return information_embed(title="Choisiss une contrainte à supprimer", message=text)
+        return information_embed(title="Choisis une contrainte à supprimer", message=text)
 
     def remove_constraint(self):
         constraint = self.constraints[self.page]
@@ -811,7 +811,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
         endtime = day_epoch + (self.time + 8) * 3600
 
         try:
-            success = db.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
+            success = googleutils.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
 
             summary_message = success_embed(
                 title="Répétition ajoutée",
@@ -824,7 +824,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
                 ping += f"<@{present_musician}> "
 
             await interaction.response.edit_message(content=ping, embed=summary_message, view=None)
-        except db.NoCalendarError:
+        except googleutils.NoCalendarError:
             await interaction.response.edit_message(embed=failure_embed(message="Aucun calendrier n'est lié à la setlist, merci de rapporter cela à un admin :)"))
         except Exception as e:
             await interaction.response.edit_message(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"), view=None)
