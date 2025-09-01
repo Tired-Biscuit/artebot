@@ -246,11 +246,12 @@ async def see_constraints(i:discord.Interaction):
         constraints = db.request_constraints(i.user.id)
         try:
             view = discordutils.ConstraintsPaginationView(constraints)
-            await i.response.send_message(embed=view.embed_page(), view=view)
+            await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
         except:
             raise discordutils.FailureError
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
 
 @bot.tree.command(name="obtenir_calendrier", description="Obtenir le lien vers le calendrier de la setlist")
 async def get_calendar_link(i:discord.Interaction):

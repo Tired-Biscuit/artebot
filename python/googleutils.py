@@ -256,10 +256,11 @@ def create_setlist_calendar(setlist_id: str) -> str:
 
     result = create_calendar(tools.get_setlist_name(setlist_id), setlist_id)
 
-    if result is None:
+    if not result:
         raise Exception("Problème lors de la création du calendrier")
 
-    tools.add_calendar(get_calendar_id(result))
+
+    tools.add_calendar(result)
     tools.add_calendar_to_setlist(setlist_id, result)
 
     return f"https://calendar.google.com/calendar/u/0/r?cid={result}"
