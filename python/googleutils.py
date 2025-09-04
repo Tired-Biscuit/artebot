@@ -13,8 +13,9 @@ import python.db as db
 
 import os
 
-NoCalendarError = Exception("No calendar is linked")
-
+class NoCalendarError(Exception):
+    def __init__(self):
+        super().__init__("No calendar is linked")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
