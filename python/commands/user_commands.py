@@ -1,14 +1,20 @@
 import discord
 
-import python.db as db
 import python.tools as tools
 import python.discordutils as discordutils
+import python.db as db
+
+class UserAlreadyConnectedError(Exception):
+    def __init__(self):
+        super().__init__("Tu es déjà dans la base de données ! (`/connexion`)")
 
 def connection(user_id: int, mail: str, group: str) -> discord.Embed:
     # Check if user is already in the database
     try:
         if db.run("""SELECT email FROM User WHERE uuid = ?;""", (user_id,)):
-            raise ValueError("Tu es déjà dans la base de données ! (`/connexion`)")
+            raise UserAlreadyConnectedError
+    except UserAlreadyConnectedError:
+        raise UserAlreadyConnectedError
     except:
         raise Exception("L’identifiant n’a pas pu être vérifié")
 
@@ -26,7 +32,6 @@ def connection(user_id: int, mail: str, group: str) -> discord.Embed:
     return discordutils.success_embed(title="Ajout réussi", message=f"{pseudo} a été ajouté à la base de données avec succès. Tu peux changer ton pseudo avec la commande `/pseudo` !")
 
 def change_mail(user_id: int, mail: str) -> discord.Embed:
-    db.check_user(user_id)
 
     try:
         tools.parse_mail(mail)
@@ -34,7 +39,10 @@ def change_mail(user_id: int, mail: str) -> discord.Embed:
         raise ValueError("Format de l’adresse mail incorrect !")
 
     try:
+        db.check_user(user_id)
         db.run("UPDATE User SET email = ? WHERE uuid = ?;", (mail, user_id))
+    except db.UserNotFoundError:
+        db.add_user(user_id, db.get_user_name_from_email(mail), mail, "")
     except:
         raise discordutils.FailureError
 

@@ -873,6 +873,14 @@ def information_embed(title: str = "", message: str = "") -> discord.Embed:
 #     Generic user-firendly Exceptions     #
 ############################################
 
-FailureError = Exception("Une erreur est survenue")
-NotAdminError = Exception("Tu n’es pas admin :(")
-NotOwnerError = Exception("Tu n’es pas owner, les admins peuvent voir les owners avec /voir_owners")
+class FailureError(Exception):
+    def __init__(self):
+        super().__init__("Une erreur est survenue")
+
+class NotAdminError(Exception):
+    def __init__(self):
+        super().__init__("Tu n’es pas admin :(")
+
+class NotOwnerError(Exception):
+    def __init__(self):
+        super().__init__("Tu n’es pas owner, les admins peuvent voir les owners avec /voir_owners")
