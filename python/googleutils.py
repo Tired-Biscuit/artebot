@@ -260,7 +260,7 @@ def create_setlist_calendar(setlist_id: str) -> str:
     if not result:
         raise Exception("Problème lors de la création du calendrier")
 
-
+    share_calendar(result)
     tools.add_calendar(result)
     tools.add_calendar_to_setlist(setlist_id, result)
 
