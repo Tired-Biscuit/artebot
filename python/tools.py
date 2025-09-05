@@ -65,7 +65,8 @@ def create_data_file():
             "3A ISS0": "fise_3a_iss0",
             "FISA 1A0": "fisa_1a0",
             "FISA 2A0": "fisa_2a0",
-            "FISA 3A0": "fisa_3a0"
+            "FISA 3A0": "fisa_3a0",
+            "EXTERNE0": "externe0"
         }
     }
 

@@ -89,14 +89,14 @@ class ConstraintsPaginationView(discord.ui.View):
         if self.page > 0:
             self.page -= 1
             self.check_buttons_availability()
-            await interaction.response.edit_message(embed=self.embed_page(), view=self)
+            await interaction.response.edit_message(embed=self.embed_page(), view=self, ephemeral=True)
 
     @discord.ui.button(label=">", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if self.page < len(self.pages) - 1:
         self.page += 1
         self.check_buttons_availability()
-        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self, ephemeral=True)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
