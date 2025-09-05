@@ -5,7 +5,7 @@ import python.tools as tools
 import python.discordutils as discordutils
 import python.timeutils as timeutils
 import python.googleutils as googleutils
-
+import math
 
 def add_admin(author_id: int, user_id: int) -> discord.Embed:
     if author_id in tools.get_admins():
@@ -60,6 +60,17 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
         return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
         return discordutils.failure_embed(message=calendar)
+
+def see_users(user_id: int) -> discord.Embed:
+    db.check_user(user_id)
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+    result = ""
+    data = db.get_users()
+    for user in data:
+        result += f"{user[0]} {user[1]} {user[2]} {user[3]}\n"
+
+    return discordutils.information_embed(title="Utilisateurs", message=result)
 
 
 def add_setlist(user_id: int, setlist_link: str) -> discord.Embed:

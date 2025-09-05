@@ -25,7 +25,7 @@ def connection(user_id: int, mail: str, group: str) -> discord.Embed:
 
     try:
         # Add user to the database
-        db.add_user(str(user_id), pseudo, mail, group)
+        db.add_user(user_id, pseudo, mail, group)
     except:
         raise discordutils.FailureError
 

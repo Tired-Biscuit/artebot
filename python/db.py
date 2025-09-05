@@ -264,6 +264,13 @@ def add_user(uuid: int, username: str, email: str, group_id: str, *, commit=Fals
     return run(command, data, commit=commit)
 
 
+def get_users() -> list[list] | None:
+    result = run("""SELECT uuid, username, email, group_id FROM User;""")
+
+    if result:
+        return result[1]
+
+
 def get_user_name(musician_uuid: int) -> str:
     try:
         u = run("""SELECT username FROM User WHERE uuid = ?;""", (musician_uuid,))[0][0]
