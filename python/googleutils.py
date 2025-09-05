@@ -169,7 +169,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     calendar_id = tools.get_setlist_calendar_id(song_info[0])
     if calendar_id:
         result = add_event_to_calendar(calendar_id, event)
-        calendar = download_calendar(calendar_id)
+        calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
         return result
     else:

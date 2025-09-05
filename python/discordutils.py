@@ -763,6 +763,17 @@ class ConstraintsDetailsView(discord.ui.View):
         await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
 
 
+class TestView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=10)
+
+    def embed_page(self):
+        return information_embed(message="Test")
+
+    @discord.ui.button(label="Test", style=ButtonStyle.blurple, custom_id="next")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
 class RehearsalTimeSelectionView(discord.ui.View):
     """
     View displaying a day timetable, allowing navigation through each time slot from 8:00AM to 10:000PM

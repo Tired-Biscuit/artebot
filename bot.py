@@ -475,7 +475,6 @@ async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
     group="groupe",
     subgroup="sous-groupe"
 )
-@app_commands.choices(calendar=calendar_choices)
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_user(i: discord.Interaction, user: discord.User, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
@@ -770,11 +769,11 @@ async def reset_database(i: discord.Interaction):
 #     Test     #
 ################
 
-@bot.tree.command(name="test", description="Some test about rehearsal selection")
-async def test(i: discord.Interaction, song: str):
+@bot.tree.command(name="test", description="Some test view")
+async def test(i: discord.Interaction):
     try:
-        view = discordutils.WeekSelectionView(song)
-        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
+        view = discordutils.TestView()
+        await i.response.send_message(embed=view.embed_page(), view=view)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
