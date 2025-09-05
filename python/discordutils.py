@@ -89,14 +89,14 @@ class ConstraintsPaginationView(discord.ui.View):
         if self.page > 0:
             self.page -= 1
             self.check_buttons_availability()
-            await interaction.response.edit_message(embed=self.embed_page(), view=self)
+            await interaction.response.edit_message(embed=self.embed_page(), view=self, ephemeral=True)
 
     @discord.ui.button(label=">", style=ButtonStyle.blurple, custom_id="next")
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if self.page < len(self.pages) - 1:
         self.page += 1
         self.check_buttons_availability()
-        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self, ephemeral=True)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
@@ -763,6 +763,17 @@ class ConstraintsDetailsView(discord.ui.View):
         await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
 
 
+class TestView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=10)
+
+    def embed_page(self):
+        return information_embed(message="Test")
+
+    @discord.ui.button(label="Test", style=ButtonStyle.blurple, custom_id="next")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
 class RehearsalTimeSelectionView(discord.ui.View):
     """
     View displaying a day timetable, allowing navigation through each time slot from 8:00AM to 10:000PM
@@ -873,6 +884,14 @@ def information_embed(title: str = "", message: str = "") -> discord.Embed:
 #     Generic user-firendly Exceptions     #
 ############################################
 
-FailureError = Exception("Une erreur est survenue")
-NotAdminError = Exception("Tu n’es pas admin :(")
-NotOwnerError = Exception("Tu n’es pas owner, les admins peuvent voir les owners avec /voir_owners")
+class FailureError(Exception):
+    def __init__(self):
+        super().__init__("Une erreur est survenue")
+
+class NotAdminError(Exception):
+    def __init__(self):
+        super().__init__("Tu n’es pas admin :(")
+
+class NotOwnerError(Exception):
+    def __init__(self):
+        super().__init__("Tu n’es pas owner, les admins peuvent voir les owners avec /voir_owners")

@@ -453,10 +453,67 @@ async def change_embed_colour(i: discord.Interaction, colour: str):
 @discord.app_commands.default_permissions(administrator=True)
 async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
 
-    await i.response.defer(ephemeral=True)
+    await i.response.defer(ephemeral=False)
 
     try:
         message = admin_commands.refresh(i.user.id, calendar.value)
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
+
+    await i.followup.send(embed=message)
+
+
+@bot.tree.command(name="ajouter_membre", description="Ajoute un membre à la base de données")
+@app_commands.describe(
+    user="Mentionne un membre",
+    mail="mail de l'utilisateur",
+    group="groupe de l'utilisateur",
+    subgroup="demi-groupe (uniquement si 1A ou 2A)"
+)
+@app_commands.rename(
+    user="membre",
+    group="groupe",
+    subgroup="sous-groupe"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def add_user(i: discord.Interaction, user: discord.User, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
+    try:
+        user_group = ""
+        if group:
+            user_group += group.value
+            user_group += subgroup.value if subgroup else "0"
+        if user_group not in tools.get_groups().values():
+            raise Exception(f"Le groupe {user_group} est invalide, vous devez indiquer un sous-groupe si vous êtes 1A ou 2A")
+        db.run("""DELETE FROM User WHERE uuid=?;""", (user.id,))
+        db.add_user(user.id, tools.parse_mail(mail), mail, user_group)
+        await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="consulter_membres", description="Liste tous les membres")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def see_users(i: discord.Interaction):
+
+    await i.response.defer(ephemeral=False)
+
+    try:
+        embed = admin_commands.see_users(i.user.id)
+        if len(embed.description) > 4096:
+            nb = math.ceil(len(embed.description)/4096)
+            nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
+            await i.response.send_message(embed=nembed, ephemeral=True)
+            for j in range(nb-1):
+                if 4096*(j+2) > len(embed.description):
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
+                else:
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
+                await i.followup.send(embed=nembed, ephemeral=True)
+        else:
+            await i.response.send_message(embed=embed, ephemeral=True)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
@@ -712,11 +769,11 @@ async def reset_database(i: discord.Interaction):
 #     Test     #
 ################
 
-@bot.tree.command(name="test", description="Some test about rehearsal selection")
-async def test(i: discord.Interaction, song: str):
+@bot.tree.command(name="test", description="Some test view")
+async def test(i: discord.Interaction):
     try:
-        view = discordutils.WeekSelectionView(song)
-        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
+        view = discordutils.TestView()
+        await i.response.send_message(embed=view.embed_page(), view=view)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 

@@ -13,8 +13,9 @@ import python.db as db
 
 import os
 
-NoCalendarError = Exception("No calendar is linked")
-
+class NoCalendarError(Exception):
+    def __init__(self):
+        super().__init__("No calendar is linked")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
@@ -168,7 +169,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     calendar_id = tools.get_setlist_calendar_id(song_info[0])
     if calendar_id:
         result = add_event_to_calendar(calendar_id, event)
-        calendar = download_calendar(calendar_id)
+        calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
         return result
     else:
@@ -259,7 +260,7 @@ def create_setlist_calendar(setlist_id: str) -> str:
     if not result:
         raise Exception("Problème lors de la création du calendrier")
 
-
+    share_calendar(result)
     tools.add_calendar(result)
     tools.add_calendar_to_setlist(setlist_id, result)
 
@@ -414,7 +415,8 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
     for i in range(min(len(column_names), len(row_values))):
 
         if column_names[i] not in translated_columns and column_names[i] not in tools.get_ignored_column_names():
-            print("Attention, un instrument n’est pas enregistré dans la base de données :", column_names[i])
+            pass
+        #     print("Attention, un instrument n’est pas enregistré dans la base de données :", column_names[i])
         else:
             for db_column in db_columns:
                 if column_names[i] in translation_dict[db_column]:
@@ -430,7 +432,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
 
     song["setlist_id"] = setlist_id
 
-    print("Song:", song)
+    # print("Song:", song)
 
     return song
 

@@ -22,7 +22,13 @@ if os.path.exists(database_path):
 else:
     db = None
 
-SongNotFoundError = Exception("Could not find song")
+class SongNotFoundError(Exception):
+    def __init__(self):
+        super().__init__("Could not find song")
+
+class UserNotFoundError(Exception):
+    def __init__(self):
+        super().__init__("L’identifiant n’a pas pu être vérifié. Tente de t’enregistrer avec `/connexion`")
 
 def refresh():
     """
@@ -241,7 +247,7 @@ def update_calendars():
             print(f"No event in calendar {i}.")
 
 
-def add_user(uuid, username, email, group_id, *, commit=False):
+def add_user(uuid: int, username: str, email: str, group_id: str, *, commit=False):
     """
     Adds a user to the database.
 
@@ -256,6 +262,13 @@ def add_user(uuid, username, email, group_id, *, commit=False):
     command = """INSERT INTO User VALUES(?,?,?,?);"""
     data = (uuid, username, email, group_id)
     return run(command, data, commit=commit)
+
+
+def get_users() -> list[list] | None:
+    result = run("""SELECT uuid, username, email, group_id FROM User;""")
+
+    if result:
+        return result[1]
 
 
 def get_user_name(musician_uuid: int) -> str:
@@ -711,4 +724,4 @@ def check_user(user_id: int) -> str:
     try:
         return get_user_name(user_id)
     except:
-        raise Exception("L’identifiant n’a pas pu être vérifié. Tente de t’enregistrer avec `/connexion`")
+        raise UserNotFoundError
