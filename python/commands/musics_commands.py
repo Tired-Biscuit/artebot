@@ -184,7 +184,11 @@ def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.
 
 
 def info(user_id: int, display: int) -> discord.Embed:
-    title = f"Infos pour {db.check_user(user_id)}"
+    try:
+        title = f"Infos pour {db.check_user(user_id)}"
+    except db.UserNotFoundError:
+        raise Exception("L'utilisateur demandé n'est pas enregistré")
+
     try:
         desc = db.get_songs_message(user_id, display)
         return discordutils.information_embed(title=title, message=desc)
