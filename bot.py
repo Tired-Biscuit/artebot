@@ -705,7 +705,14 @@ async def delete_table(i: discord.Interaction, table: app_commands.Choice[str]):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-#TODO voir_owners
+@bot.tree.command(name="voir_owners", description="Voir les owners")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def see_owners(i: discord.Interaction, user: discord.User):
+    try:
+        await i.response.send_message(embed=admin_commands.see_owners(i.user.id), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 
