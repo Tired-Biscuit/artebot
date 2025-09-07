@@ -332,7 +332,7 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
                 raise EnvironmentError("Tu ne te trouves pas dans un fil ! Spécifie le morceau concerné ou lance la commande dans un fil portant le nom du morceau.")
 
         if not db.run("""SELECT title FROM Song WHERE title LIKE ?;""", ("%"+song+"%",)):
-            raise ValueError(f"Morceau {song} non trouvé")
+            raise ValueError(f"""Morceau {song} non trouvé""")
 
         view = discordutils.WeekSelectionView(song)
         await i.response.send_message(embed=view.embed_page(), view=view)
