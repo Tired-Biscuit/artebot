@@ -271,6 +271,20 @@ def get_users() -> list[list] | None:
         return result
 
 
+def get_owners() -> list[list] | None:
+    owners_uuid = tools.get_owners()
+
+    result = []
+
+    for uuid in owners_uuid:
+        info = run("""SELECT username, email FROM User WHERE uuid = ?;""", (uuid,))
+        if info:
+            result.append(info[0])
+
+    if result:
+        return result
+
+
 def get_user_name(musician_uuid: int) -> str:
     try:
         u = run("""SELECT username FROM User WHERE uuid = ?;""", (musician_uuid,))[0][0]

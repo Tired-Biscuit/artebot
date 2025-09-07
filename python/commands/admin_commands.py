@@ -61,6 +61,22 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
     else:
         return discordutils.failure_embed(message=calendar)
 
+
+def see_owners(user_id: int) -> discord.Embed:
+    db.check_user(user_id)
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+    result = ""
+    data = db.get_owners()
+
+    if data:
+        for owner in data:
+            result += f"{owner[0]} {owner[1]}\n"
+    else:
+        result = "Aucun owner trouvé!"
+    return discordutils.information_embed(title="Owners", message=result)
+
+
 def see_users(user_id: int) -> discord.Embed:
     db.check_user(user_id)
     if user_id not in tools.get_admins():
