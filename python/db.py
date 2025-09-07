@@ -268,7 +268,7 @@ def get_users() -> list[list] | None:
     result = run("""SELECT uuid, username, email, group_id FROM User;""")
 
     if result:
-        return result[1]
+        return result
 
 
 def get_user_name(musician_uuid: int) -> str:
