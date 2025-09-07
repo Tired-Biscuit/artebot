@@ -84,6 +84,19 @@ def execute_api_function(function_name: str, opt_param=None) -> tuple[bool, str]
         # The API encountered a problem.
         return (False, error.content)
 
+
+def test_calendar(calendar_id: str) -> bool | None:
+    """
+    Tries to reach calendar and returns if it is a success or raises an error
+    """
+    creds = refresh_token()
+    service = build("calendar", "v3", credentials=creds)
+
+    result = service.calendars().get(calendarId=calendar_id, fields="summary")
+
+    return result
+
+
 def download_calendar(calendar_id: str) -> tuple[bool, str|list]:
     """
     Fetch the Google Calendar events
@@ -114,11 +127,11 @@ def download_calendar(calendar_id: str) -> tuple[bool, str|list]:
         return (False, response)
 
 
-def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
+def add_event_to_calendar(calendar_id:str, event:dict) -> str:
     """
     Add an event into a Google calendar
 
-    Returns success state
+    Returns event id
     """
     creds = refresh_token()
     service = build('calendar', 'v3', credentials=creds)
@@ -129,10 +142,31 @@ def add_event_to_calendar(calendar_id:str, event:dict) -> bool:
             db.update_calendar(result[1])
     except HttpError as error:
         raise error
+    return response["id"]
+
+
+def remove_event_from_calendar(calendar_id: str, event_id: str) -> bool:
+    """
+    Remove an event from a Google calendar
+
+    Returns success state
+    """
+    creds = refresh_token()
+    service = build('calendar', 'v3', credentials=creds)
+    try:
+        response = service.events().delete(calendarId=calendar_id, eventId=event_id).execute()
+        result = download_calendar(calendar_id)
+        if result[0]:
+            db.update_calendar(result[1])
+    except HttpError as error:
+        raise error
     return response
 
 
 def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_time:str, end_time:str) -> bool:
+    """
+    Adds rehearsal to Google Calendar and returns if operation was successful
+    """
 
     song_info = db.get_song_info(song)
 
@@ -171,7 +205,8 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
         result = add_event_to_calendar(calendar_id, event)
         calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
-        return result
+        if result:
+            return True
     else:
         raise NoCalendarError
 
