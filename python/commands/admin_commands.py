@@ -108,7 +108,10 @@ def create_calendar(user_id: int, setlist_id: str) -> discord.Embed:
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
     if setlist_id is not None:
-        result = googleutils.create_setlist_calendar(setlist_id)
+        try:
+            result = googleutils.create_setlist_calendar(setlist_id)
+        except googleutils.ExistingCalendarError as e:
+            raise e
         if result:
             return discordutils.success_embed(message=f"Calendrier créé ! Lien : https://calendar.google.com/calendar/u/0/embed?src={result}")
         else:

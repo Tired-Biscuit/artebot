@@ -13,9 +13,14 @@ import python.db as db
 
 import os
 
+
 class NoCalendarError(Exception):
     def __init__(self):
         super().__init__("No calendar is linked")
+
+class ExistingCalendarError(Exception):
+    def __init__(self, calendar_id):
+        super().__init__(f"Cette setlist a déjà un calendrier ! https://calendar.google.com/calendar/u/0/r?cid={calendar_id}")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
@@ -288,7 +293,7 @@ def create_setlist_calendar(setlist_id: str) -> str:
     """
     calendar = tools.get_setlist_calendar_id(setlist_id)
     if calendar:
-        raise Exception(f"Cette setlist a déjà un calendrier ! https://calendar.google.com/calendar/u/0/embed?src={calendar}")
+        raise ExistingCalendarError(calendar)
 
     result = create_calendar(tools.get_setlist_name(setlist_id), setlist_id)
 
