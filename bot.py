@@ -316,7 +316,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
             await i.followup.send(embed=message)
 
 
-@bot.tree.command(name="trouver_repète", description="Trouve les créneaux possibles pour répéter un morceau sur les 7 prochains jours")
+@bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
 @app_commands.describe(
     song="Nom du morceau (laisser vide si tu es dans le fil correspondant)"
 )
