@@ -172,7 +172,7 @@ class SetlistRemovalPaginationView(discord.ui.View):
         return information_embed(title="Choisis une setlist à supprimer", message=text)
 
 
-class SetlistChoiceForCalendarView(discord.ui.View):
+class SetlistChoiceForCalendarCreationView(discord.ui.View):
     def __init__(self, user_id: int, setlists_ids: list[str]):
         super().__init__()
         self.page = 0
@@ -201,12 +201,12 @@ class SetlistChoiceForCalendarView(discord.ui.View):
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.confirm_button.disabled = True
-        await interaction.response.defer()
-        # try:
-        embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
-        await interaction.followup.send(embed=embed, view=self)
-        # except Exception as e:
-            # await interaction.followup.send(embed=failure_embed(message=str(e)))
+        await interaction.response.defer(thinking=True)
+        try:
+            embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
+            await interaction.followup.send(embed=embed, view=self)
+        except Exception as e:
+            await interaction.followup.send(embed=failure_embed(message=str(e)))
 
     @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -266,9 +266,9 @@ class SetlistChoiceForCalendarLinkView(discord.ui.View):
         self.next_button.disabled = True
         self.cancel_button.disabled = True
         self.confirm_button.disabled = True
-        await interaction.response.defer()
+        await interaction.response.defer(thinking=True)
         try:
-            embed = success_embed(googleutils.get_calendar_share_link(self.setlists_ids[self.page]))
+            embed = success_embed(message=googleutils.get_calendar_share_link(self.setlists_ids[self.page]))
             await interaction.followup.send(embed=embed, view=self)
         except Exception as e:
             await interaction.followup.send(embed=failure_embed(message=str(e)))
@@ -755,8 +755,6 @@ class ConstraintsDetailsView(discord.ui.View):
 
     @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.prev_button.disabled = True
-        self.next_button.disabled = True
         self.confirm_button.disabled = True
         self.back_button.disabled = True
         self.cancel_button.disabled = True
@@ -818,8 +816,8 @@ class RehearsalTimeSelectionView(discord.ui.View):
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         day_epoch = timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION
-        starttime = day_epoch + (self.time + 7) * 3600
-        endtime = day_epoch + (self.time + 8) * 3600
+        starttime = day_epoch + (self.time + 8) * 3600
+        endtime = day_epoch + (self.time + 9) * 3600
 
         try:
             success = googleutils.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))

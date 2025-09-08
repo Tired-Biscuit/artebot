@@ -47,9 +47,10 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
         groups = tools.get_groups()
         for group_id in groups.values():
             db.run("""DELETE FROM SchoolEvent WHERE group_id = ?;""", (group_id,))
-        tools.download_timetables()
+        errors = tools.download_timetables()
         db.update_timetables()
-
+        if errors != "":
+            raise Exception(errors)
         return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
     elif calendar == "Google":
         calendars = tools.get_calendars_ids()
@@ -60,6 +61,22 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
         return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
         return discordutils.failure_embed(message=calendar)
+
+
+def see_owners(user_id: int) -> discord.Embed:
+    db.check_user(user_id)
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+    result = ""
+    data = db.get_owners()
+
+    if data:
+        for owner in data:
+            result += f"{owner[0]} {owner[1]}\n"
+    else:
+        result = "Aucun owner trouvé!"
+    return discordutils.information_embed(title="Owners", message=result)
+
 
 def see_users(user_id: int) -> discord.Embed:
     db.check_user(user_id)
@@ -91,9 +108,12 @@ def create_calendar(user_id: int, setlist_id: str) -> discord.Embed:
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
     if setlist_id is not None:
-        result = googleutils.create_setlist_calendar(setlist_id)
+        try:
+            result = googleutils.create_setlist_calendar(setlist_id)
+        except googleutils.ExistingCalendarError as e:
+            raise e
         if result:
-            return discordutils.success_embed(message=f"Calendrier créé ! Lien : https://calendar.google.com/calendar/u/0/embed?src={result}")
+            return discordutils.success_embed(message=googleutils.get_calendar_share_link(setlist_id))
         else:
             raise discordutils.FailureError
     else:

@@ -268,7 +268,21 @@ def get_users() -> list[list] | None:
     result = run("""SELECT uuid, username, email, group_id FROM User;""")
 
     if result:
-        return result[1]
+        return result
+
+
+def get_owners() -> list[list] | None:
+    owners_uuid = tools.get_owners()
+
+    result = []
+
+    for uuid in owners_uuid:
+        info = run("""SELECT username, email FROM User WHERE uuid = ?;""", (uuid,))
+        if info:
+            result.append(info[0])
+
+    if result:
+        return result
 
 
 def get_user_name(musician_uuid: int) -> str:
@@ -432,7 +446,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
     return recurring_events, punctual_events
 
 
-def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], list[dict]]:
+def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], dict]:
     """
     Returns a list of recurring constraints for a day starting from the time given in paramter, and punctual events for the day as a dictionary with start time as key
 
