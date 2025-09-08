@@ -202,11 +202,11 @@ class SetlistChoiceForCalendarView(discord.ui.View):
         self.cancel_button.disabled = True
         self.confirm_button.disabled = True
         await interaction.response.defer()
-        # try:
-        embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
-        await interaction.followup.send(embed=embed, view=self)
-        # except Exception as e:
-            # await interaction.followup.send(embed=failure_embed(message=str(e)))
+        try:
+            embed = admin_commands.create_calendar(self.user_id, self.setlists_ids[self.page])
+            await interaction.followup.send(embed=embed, view=self)
+        except Exception as e:
+            await interaction.followup.send(embed=failure_embed(message=str(e)))
 
     @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
