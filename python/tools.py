@@ -445,7 +445,7 @@ def download_timetables() -> str:
     returns: errors if something went wrong else an empty string
     """
     errors = ""
-    done = []
+    done = ["externe"]
     for group in get_groups().values():
         if group[:-1] not in done:
             done.append(group[:-1])
