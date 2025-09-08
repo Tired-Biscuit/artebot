@@ -235,7 +235,7 @@ async def recurring_constraint(i: discord.Interaction, day: app_commands.Choice[
 async def delete_constraint(i: discord.Interaction):
     try:
         view = constraints_commands.delete_constraint(i.user.id)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
@@ -316,7 +316,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
             await i.followup.send(embed=message)
 
 
-@bot.tree.command(name="trouver_repète", description="Trouve les créneaux possibles pour répéter un morceau sur les 7 prochains jours")
+@bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
 @app_commands.describe(
     song="Nom du morceau (laisser vide si tu es dans le fil correspondant)"
 )
