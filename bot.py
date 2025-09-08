@@ -235,7 +235,7 @@ async def recurring_constraint(i: discord.Interaction, day: app_commands.Choice[
 async def delete_constraint(i: discord.Interaction):
     try:
         view = constraints_commands.delete_constraint(i.user.id)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
