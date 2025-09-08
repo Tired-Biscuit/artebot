@@ -431,15 +431,15 @@ def add_instrument_translation(instrument: str, translation: str):
 #     Download operations     #
 ###############################
 
-def download_timetables():
+def download_timetables() -> str:
     """
     Downloads timetables as .ics files in ./timetables
 
     Do not forget to call db.update_timetables() to update the database!
 
-    returns: True if operation successful 
+    returns: errors if something went wrong else an empty string
     """
-
+    errors = ""
     done = []
     for group in get_groups().values():
         if group[:-1] not in done:
@@ -453,8 +453,8 @@ def download_timetables():
                 with open(output_path, "wb") as f:
                     f.write(response.content)
             else:
-                raise Exception(f"Erreur {request.status_code}")
-
+                errors += str(response.status_code) + " for " + str(group[:-1]) + "\n"
+    return errors
 
 
 

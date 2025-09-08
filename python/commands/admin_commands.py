@@ -47,9 +47,10 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
         groups = tools.get_groups()
         for group_id in groups.values():
             db.run("""DELETE FROM SchoolEvent WHERE group_id = ?;""", (group_id,))
-        tools.download_timetables()
+        errors = tools.download_timetables()
         db.update_timetables()
-
+        if errors != "":
+            raise Exception(errors)
         return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
     elif calendar == "Google":
         calendars = tools.get_calendars_ids()
