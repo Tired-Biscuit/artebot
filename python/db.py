@@ -363,8 +363,6 @@ def request_blocking_events(timestamp: int, duration: int, musician_id: int) -> 
 
             SELECT name, start_time, end_time, {tools.EVENT_TYPES["Google"]} as event_type
             FROM GoogleEvent
-            JOIN User ON GoogleEvent.musicians LIKE '%' || User.email || '%'
-            WHERE User.uuid = {musician_id}
 
             UNION
 
