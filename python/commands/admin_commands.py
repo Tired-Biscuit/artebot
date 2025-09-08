@@ -113,7 +113,7 @@ def create_calendar(user_id: int, setlist_id: str) -> discord.Embed:
         except googleutils.ExistingCalendarError as e:
             raise e
         if result:
-            return discordutils.success_embed(message=f"Calendrier créé ! Lien : https://calendar.google.com/calendar/u/0/embed?src={result}")
+            return discordutils.success_embed(message=googleutils.get_calendar_share_link(setlist_id))
         else:
             raise discordutils.FailureError
     else:

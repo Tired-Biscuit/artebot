@@ -142,6 +142,11 @@ def remove_calendar(calendar_id):
         with open(datafile_path, "w") as f:
             data["calendar_ids"].remove(calendar_id)
             f.write(json.dumps(data))
+    for setlist in data["setlists"]:
+        if calendar_id == setlist[2]:
+            with open(datafile_path, "w") as f:
+                data["setlists"][2] = ""
+                f.write(json.dumps(data))
 
 def get_admins() -> list[int]:
     """
@@ -932,7 +937,7 @@ def week_timetable_string_from_constraints(recurring_constraints: list[list], pu
                                 char = "🟪"
             if char is None:
                 for value in recurring_constraints[j]:
-                    if (i + 8) * timeutils.DAY_DURATION <= value[1] and value[1] < (i + 8 + 1) * timeutils.DAY_DURATION:
+                    if ((i + 8) * 3600 <= value[1] and value[1] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 <= value[2] and value[2] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 >= value[1] and value[2] > (i + 8 + 1) * 3600):
                         char = "🟥"
             if char is None:
                 char = "⬛"
@@ -993,7 +998,7 @@ def day_timetable_string_from_constraints(recurring_constraints: list[list], pun
                             constraints_strings.append(constraint_string)
         if char is None:
             for value in recurring_constraints:
-                if (i + 8) * timeutils.DAY_DURATION <= value[1] and value[1] < (i + 8 + 1) * timeutils.DAY_DURATION:
+                if ((i + 8) * 3600 <= value[1] and value[1] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 <= value[2] and value[2] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 >= value[1] and value[2] > (i + 8 + 1) * 3600):
                     char = "🟥" if i != cursor_col else "🔴"
                     constraint_string = f"""{char} {time_span_to_string(value[1], value[2])} - Indisponible"""
 

@@ -446,7 +446,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
     return recurring_events, punctual_events
 
 
-def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], list[dict]]:
+def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tuple[list[list], dict]:
     """
     Returns a list of recurring constraints for a day starting from the time given in paramter, and punctual events for the day as a dictionary with start time as key
 
