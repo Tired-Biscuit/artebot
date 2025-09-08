@@ -573,7 +573,7 @@ async def add_calendar(i: discord.Interaction, calendar_id: str):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="supprimer_calendrier", description="Retier un calendrier Google (dangereux)")
+@bot.tree.command(name="supprimer_calendrier", description="Retirer un calendrier Google (dangereux). Retire uniquement le calendrier du bot.")
 @app_commands.describe(
     calendar_id="ID du calendrier"
 )
@@ -589,7 +589,7 @@ async def remove_calendar(i: discord.Interaction, calendar_id: str):
             raise discordutils.NotAdminError
         tools.remove_calendar(calendar_id)
         db.update_calendars()
-        await i.response.send_message(embed=discordutils.success_embed("Ajout réussi"), ephemeral=True)
+        await i.response.send_message(embed=discordutils.success_embed("Suppression réussie"), ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
@@ -602,7 +602,7 @@ async def create_calendar(i: discord.Interaction):
         db.check_user(i.user.id)
         if i.user.id not in tools.get_admins():
             raise discordutils.NotAdminError
-        view = discordutils.SetlistChoiceForCalendarView(i.user.id, tools.get_setlists_ids())
+        view = discordutils.SetlistChoiceForCalendarCreationView(i.user.id, tools.get_setlists_ids())
         view.check_buttons_availability()
         await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
