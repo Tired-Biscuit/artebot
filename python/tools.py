@@ -790,6 +790,15 @@ def epoch_to_ddmm(epoch_time: int) -> str:
     """
     return time.strftime("%d/%m", time.gmtime(epoch_time))
 
+def epoch_to_YYYYMMDD(epoch_time: int) -> str:
+    """
+    Returns the date in YYYYYMMDD format
+
+    @flag to_string
+    @flag to_yyyymmdd
+    """
+    return time.strftime("%Y%d%m", time.gmtime(epoch_time))
+
 def get_constraint_description(constraint: list[int]) -> str:
     """
     Returns a user-friendly text for the corresponding constraint
