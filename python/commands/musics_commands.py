@@ -216,6 +216,6 @@ def get_rehearsals(user_id: int) -> discord.Embed:
                     message += f"- {event[0]} {tools.get_special_date_string(tools.epoch_to_YYYYMMDD(event[1]))} {tools.time_span_to_string(event[1], event[2])}\n"
             return discordutils.information_embed(message=message)
         else:
-            raise discordutils.FailureError
+            raise Exception("Pas de répètes trouvées")
     except:
         raise discordutils.FailureError
