@@ -722,6 +722,16 @@ def add_instrument(instrument: str, translation: str):
     tools.add_instrument_translation(instrument, translation)
 
 
+def get_rehearsals(user_id: int):
+    events = run(f"""
+    SELECT name, start_time, end_time, {tools.EVENT_TYPES["Google"]} as event_type
+    FROM GoogleEvent
+    JOIN User ON GoogleEvent.musicians LIKE '%' || User.email || '%'
+    WHERE User.uuid = ?
+    """, (user_id,))
+    return events
+
+
 
 
 #############################

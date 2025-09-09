@@ -341,7 +341,7 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
 
 
-@bot.tree.command(name="info", description="consulter les morceaux d’une personne. Laisse vide pour consulter tes morceaux.")
+@bot.tree.command(name="info", description="Consulter les morceaux d’une personne. Laisse vide pour consulter tes morceaux.")
 @app_commands.describe(
     user="Mentionner la personne désirée (elle ne recevra pas de notification)",
     display="Niveau d’information"
@@ -374,7 +374,7 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="morceau", description="obtenir des informations concernant un morceau en particulier.")
+@bot.tree.command(name="morceau", description="Obtenir des informations concernant un morceau en particulier.")
 @app_commands.describe(
     song="Nom du morceau (peut être vide si tu te trouves dans un fil portant le nom du morceau !)"
 )
@@ -399,6 +399,26 @@ async def song(i: discord.Interaction, song: str=None):
 
         await i.response.send_message(embed=music_commands.song(song), ephemeral=True)
 
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="voir_répètes", description="Consulter les répètes.")
+async def see_rehearsals(i: discord.Interaction):
+    try:
+        embed = music_commands.get_rehearsals(i.user.id)
+        if len(embed.description) > 4096:
+            nb = math.ceil(len(embed.description)/4096)
+            nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
+            await i.response.send_message(embed=nembed, ephemeral=True)
+            for j in range(nb-1):
+                if 4096*(j+2) > len(embed.description):
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
+                else:
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
+                await i.followup.send(embed=nembed, ephemeral=True)
+        else:
+            await i.response.send_message(embed=embed, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 

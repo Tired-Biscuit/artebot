@@ -10,11 +10,10 @@ import python.tools as tools
 import python.discordutils as discordutils
 import python.timeutils as timeutils
 import python.googleutils as googleutils
-from python.discordutils import ConfirmView, ConfirmViewImpossible
 
 
 def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str = None) -> tuple[
-    str | Any, Embed | None, Embed, ConfirmView | ConfirmViewImpossible | None, list[list[str | Any]], bool]:
+    str | Any, Embed | None, Embed, discordutils.ConfirmView | discordutils.ConfirmViewImpossible | None, list[list[str | Any]], bool]:
     """
     Returns ping, blocking_message (Embed/None), summary_message (Embed), request_ping (bool)
     """
@@ -202,4 +201,21 @@ def song(song: str) -> discord.Embed:
         title, message = db.get_song_info_message(song)
         return discordutils.information_embed(title=title, message=message)
     except Exception:
+        raise discordutils.FailureError
+
+
+def get_rehearsals(user_id: int) -> discord.Embed:
+    db.check_user(user_id)
+
+    try:
+        events = db.get_rehearsals(user_id)
+        if events:
+            message = ""
+            for event in events:
+                if event[1] > int(time.time()):
+                    message += f"- {event[0]} {tools.get_special_date_string(tools.epoch_to_YYYYMMDD(event[1]))} {tools.time_span_to_string(event[1], event[2])}\n"
+            return discordutils.information_embed(message=message)
+        else:
+            raise discordutils.FailureError
+    except:
         raise discordutils.FailureError
