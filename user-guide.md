@@ -141,3 +141,13 @@ Obtenir des informations concernant un morceau en particulier.
 
 ### **/voir\_répètes**
 Affiche une liste de toutes les répétitions planifiées.
+
+# FAQ
+
+---
+
+## J'ai ajouté une répète manuellement dans le calendrier mais elle n'apparaît pas dans le bot.
+
+C'est probablement que le le lieu de la répétition n'a pas été indiqué comme étant *local*. Le local n'est donc pas réservé et le bot ignore cette répétition.
+
+---
