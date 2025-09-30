@@ -6,7 +6,7 @@ import math
 import json
 import discord
 from dotenv import load_dotenv
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 import python.tools as tools
@@ -52,6 +52,8 @@ if DEBUG:
 else:
     bot = commands.Bot(command_prefix='$', intents=intents)
 
+asking_refresh = {"School":False, "Google":False, "Setlist":False}
+
 
 
 # # # # # # # # # # # # # # #
@@ -75,7 +77,7 @@ table_choices = [app_commands.Choice(name=table, value=table) for table in table
 @app_commands.describe(
     mail="Ton adresse mail TN.net",
     group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
-    subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe)"
+    subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe existant)"
 )
 @app_commands.rename(
     group="groupe",
@@ -260,6 +262,30 @@ async def get_calendar_link(i:discord.Interaction):
         await i.response.send_message(embed=view.embed_page(), view=view, ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d'un calendrier")
+@app_commands.describe(
+    calendar="Indiquer la ressource à mettre à jour"
+)
+@app_commands.rename(
+    calendar="calendrier"
+)
+@app_commands.choices(calendar=calendar_choices)
+async def ask_refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+    try:
+        global asking_refresh
+        if asking_refresh[calendar.value]:
+            message = discordutils.information_embed(f"L'actualisation se fera dans {scheduled_task.time} minutes")
+        else:
+            asking_refresh[calendar.value] = True
+            message = discordutils.information_embed(f"Demande enregistrée, l'actualisation se fera dans {scheduled_task.time} minutes")
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
+
+    await i.response.send_message(embed=message)
+
+
 
 
 ###########################
@@ -808,6 +834,21 @@ async def test(i: discord.Interaction):
 
 
 #########################
+#    Scheduled tasks    #
+#########################
+
+@tasks.loop(seconds=5)
+async def scheduled_task():
+    print("A")
+
+
+async def startup():
+    await scheduled_task.start()
+
+
+
+
+#########################
 #    End Of Content     #
 #########################
 
@@ -822,4 +863,5 @@ async def order_66(i: discord.Interaction):
 #     /!\ DO NOT DELETE /!\     #
 #################################
 
+bot.setup_hook = startup
 bot.run(TOKEN)
