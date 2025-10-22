@@ -40,7 +40,7 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
     if calendar == "Spreadsheets":
         for setlist_id in tools.get_setlists_ids():
             db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
-            db.add_setlist(setlist_id, 50)
+            db.add_setlist(setlist_id, 200)
 
         return discordutils.success_embed(message="Setlist mise à jour")
     elif calendar == "School":

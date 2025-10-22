@@ -539,7 +539,7 @@ async def add_user(i: discord.Interaction, user: discord.User, mail: str, group:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="consulter_membres", description="Liste tous les membres")
+@bot.tree.command(name="voir_membres", description="Consulte tous les membres inscrits")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def see_users(i: discord.Interaction):
@@ -551,7 +551,7 @@ async def see_users(i: discord.Interaction):
         if len(embed.description) > 4096:
             nb = math.ceil(len(embed.description)/4096)
             nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.response.send_message(embed=nembed, ephemeral=True)
+            await i.followup.send(embed=nembed, ephemeral=True)
             for j in range(nb-1):
                 if 4096*(j+2) > len(embed.description):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
@@ -559,11 +559,11 @@ async def see_users(i: discord.Interaction):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
                 await i.followup.send(embed=nembed, ephemeral=True)
         else:
-            await i.response.send_message(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed, ephemeral=True)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
-    await i.followup.send(embed=message)
+        await i.followup.send(embed=message)
 
 
 @bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
@@ -863,5 +863,5 @@ async def order_66(i: discord.Interaction):
 #     /!\ DO NOT DELETE /!\     #
 #################################
 
-bot.setup_hook = startup
+# bot.setup_hook = startup
 bot.run(TOKEN)
