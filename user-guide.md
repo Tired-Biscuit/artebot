@@ -8,7 +8,7 @@
 S’ajouter à la base de données.
 Sélectionner un groupe scolaire sans choisir de sous-groupe déclenche une erreur si le groupe n'est pas un groupe FISA ou d'approfondissement.
 
-**Attention**: Dans certains cas précis, l'enregistrement peut avoir eu lieu malgré une erreur, vérifier avec ```/profil``` et modifier toute valeur erronnée avec la commande correspondante (```/mail```, ```/groupe```, ```/pseudo```).
+**Attention**: Dans certains cas précis, l'enregistrement peut avoir eu lieu malgré une erreur, vérifier avec ```/profil``` et modifier toute valeur erronée avec la commande correspondante (```/mail```, ```/groupe```, ```/pseudo```).
 * **mail** : Ton adresse mail TN.net
 * **groupe** : Groupe scolaire auquel tu appartiens (laisser vide si extérieur)
 * **sous-groupe** : Sous-groupe de TD (laisser vide si pas de sous-groupe existant)
@@ -120,7 +120,7 @@ Affiche un message interactif montrant successivement:
 
 **Note:** le calendrier est automatiquement mis à jour. En cas d'erreur, penser à vérifier dans le Google Calendar avant de réitérer la commande, il peut y avoir de la désynchronisation entre ce qui est affiché dans le bot et le calendrier.
 
-Pour forcer une répétition, utiliser ```/ajouter_répète```, mais vérifiez à nouveau le Google Calendar, et edmandez l'actualisation si nécessaire.
+Pour forcer une répétition, utiliser ```/ajouter_répète```, mais vérifiez à nouveau le Google Calendar, et demandez l'actualisation si nécessaire.
 
 ---
 
