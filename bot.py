@@ -76,7 +76,7 @@ table_choices = [app_commands.Choice(name=table, value=table) for table in table
 @bot.tree.command(name="connexion", description="S’ajouter à la base de données")
 @app_commands.describe(
     mail="Ton adresse mail TN.net",
-    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
+    group="Groupe scolaire auquel tu appartiens",
     subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe existant)"
 )
 @app_commands.rename(
@@ -93,6 +93,8 @@ async def connection(i: discord.Interaction, mail: str, group: app_commands.Choi
         if group:
             user_group += group.value
             user_group += subgroup.value if subgroup else "0"
+        else:
+            raise Exception(f"Aucun groupe n'a été renseigné!")
         if user_group not in tools.get_groups().values():
             raise Exception(f"Le groupe {user_group} est invalide")
         await i.response.send_message(embed=user_commands.connection(i.user.id, mail, user_group), ephemeral=True)
@@ -564,6 +566,24 @@ async def see_users(i: discord.Interaction):
         message = discordutils.failure_embed(message=str(e))
 
         await i.followup.send(embed=message)
+
+
+@bot.tree.command(name="supprimer_membre", description="Retire un membre")
+@app_commands.describe(
+    mail="Indique le mail"
+)
+@app_commands.rename(
+    mail="mail"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def delete_user(i: discord.Interaction, mail: str):
+    try:
+        db.run("DELETE FROM User WHERE email = ?;", (mail,))
+        await i.response.send_message(embed=discordutils.information_embed("Suppression réussie."), ephemeral=True)
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
