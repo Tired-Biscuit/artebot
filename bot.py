@@ -544,22 +544,22 @@ async def add_user(i: discord.Interaction, user: discord.User, mail: str, group:
 @discord.app_commands.default_permissions(administrator=True)
 async def see_users(i: discord.Interaction):
 
-    await i.response.defer(ephemeral=False)
+    await i.response.defer(ephemeral=True)
 
     try:
         embed = admin_commands.see_users(i.user.id)
         if len(embed.description) > 4096:
             nb = math.ceil(len(embed.description)/4096)
             nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.followup.send(embed=nembed, ephemeral=True)
+            await i.followup.send(embed=nembed)
             for j in range(nb-1):
                 if 4096*(j+2) > len(embed.description):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
                 else:
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed, ephemeral=True)
+                await i.followup.send(embed=nembed)
         else:
-            await i.followup.send(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
