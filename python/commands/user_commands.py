@@ -73,8 +73,8 @@ def change_username(user_id: int, username: str):
 
 
 def profile(user_id: int) -> discord.Embed:
-    title = f"Profil de {db.check_user(user_id)}"
     try:
+        title = f"Profil de {db.check_user(user_id)}"
         return discordutils.information_embed(title=title, message=db.get_profile_message(user_id))
     except Exception:
-        raise discordutils.FailureError
+        raise Exception("L'utilisateur demandé n'est pas enregistré")
