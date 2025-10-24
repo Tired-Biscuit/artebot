@@ -621,7 +621,7 @@ class WeekSelectionView(discord.ui.View):
         self.next_button.disabled = True
         self.confirm_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
 
 class WeekDaySelectionView(discord.ui.View):
@@ -693,7 +693,7 @@ class WeekDaySelectionView(discord.ui.View):
         self.saturday_button.disabled = True
         self.back_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
 
 class ConstraintsDetailsView(discord.ui.View):
@@ -758,7 +758,7 @@ class ConstraintsDetailsView(discord.ui.View):
         self.confirm_button.disabled = True
         self.back_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
 
 class TestView(discord.ui.View):
@@ -851,7 +851,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
         self.confirm_button.disabled = True
         self.back_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=information_embed(title="Recherche annulée"), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
 
 def get_constraint_embed(constraints: list[list[int]], start_time) -> discord.embeds.Embed:
