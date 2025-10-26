@@ -308,6 +308,7 @@ async def ask_refresh(i: discord.Interaction, calendar: app_commands.Choice[str]
     song="morceau"
 )
 async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: str, song: str = None):
+    await i.response.defer()
     try:
         if song is None:
             if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
@@ -321,7 +322,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
 
 
         if request_ping:
-            await i.response.send_message(embed=blocking_message, view=view)
+            await i.followup.send(embed=blocking_message, view=view)
             await view.wait()
             if not view.value:
                 await i.delete_original_response()
@@ -331,17 +332,14 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
                 if request_ping:
                     await i.followup.send(content=ping, embed=summary_message)
                 else:
-                    await i.response.send_message(content=ping, embed=summary_message)
+                    await i.followup.send(content=ping, embed=summary_message)
             else:
                 raise Exception("Erreur lors de l’ajout de la répétition au calendrier")
         
 
     except Exception as e:
         message = discordutils.failure_embed(title="Erreur", message=str(e))
-        try:
-            await i.response.send_message(embed=message, ephemeral=True)
-        except:
-            await i.followup.send(embed=message)
+        await i.followup.send(embed=message)
 
 
 @bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
@@ -384,22 +382,24 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
     app_commands.Choice(name="complet", value=2)
 ])
 async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
+    await i.response.defer(ephemeral=True)
+    
     try:
         embed = music_commands.info(i.user.id if user is None else user.id, display)
         if len(embed.description) > 4096:
             nb = math.ceil(len(embed.description)/4096)
             nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.response.send_message(embed=nembed, ephemeral=True)
+            await i.followup.send(embed=nembed)
             for j in range(nb-1):
                 if 4096*(j+2) > len(embed.description):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
                 else:
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed, ephemeral=True)
+                await i.followup.send(embed=nembed)
         else:    
-            await i.response.send_message(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed)
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="morceau", description="Obtenir des informations concernant un morceau en particulier.")
@@ -607,15 +607,16 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def delete_setlist(i: discord.Interaction):
+    i.response.defer(ephemeral=False)
     try:
         db.check_user(i.user.id)
         if i.user.id not in tools.get_admins():
             raise discordutils.NotAdminError
         setlists_ids = tools.get_setlists_ids()
         view = discordutils.SetlistRemovalPaginationView(setlists_ids)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        await i.followup.send(embed=view.embed_page(), view=view)
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="ajouter_calendrier", description="Ajouter un calendrier Google pour vérifier les contraintes")

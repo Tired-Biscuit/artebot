@@ -816,11 +816,12 @@ class RehearsalTimeSelectionView(discord.ui.View):
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         day_epoch = timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION
-        starttime = day_epoch + (self.time + 8) * 3600
-        endtime = day_epoch + (self.time + 9) * 3600
+        starttime = day_epoch + (self.time + 7) * 3600
+        endtime = day_epoch + (self.time + 8) * 3600
 
         try:
             await interaction.response.defer()
+            print(timeutils.epoch_to_gcal(starttime))
             success = googleutils.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
 
             summary_message = success_embed(
@@ -833,11 +834,11 @@ class RehearsalTimeSelectionView(discord.ui.View):
             for present_musician in db.get_all_musicians_uuids_for_song(self.song)[0]:
                 ping += f"<@{present_musician}> "
 
-            await interaction.followup.send(content=ping, embed=summary_message, view=None)
+            await interaction.followup.send(content=ping, embed=summary_message)
         except googleutils.NoCalendarError:
             await interaction.followup.send(embed=failure_embed(message="Aucun calendrier n'est lié à la setlist, merci de rapporter cela à un admin :)"))
         except Exception as e:
-            await interaction.followup.send(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"), view=None)
+            await interaction.followup.send(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"))
 
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
