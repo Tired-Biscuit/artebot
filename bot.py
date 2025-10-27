@@ -6,7 +6,7 @@ import math
 import json
 import discord
 from dotenv import load_dotenv
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 import python.tools as tools
@@ -52,6 +52,8 @@ if DEBUG:
 else:
     bot = commands.Bot(command_prefix='$', intents=intents)
 
+asking_refresh = {"School":False, "Google":False, "Setlist":False}
+
 
 
 # # # # # # # # # # # # # # #
@@ -74,8 +76,8 @@ table_choices = [app_commands.Choice(name=table, value=table) for table in table
 @bot.tree.command(name="connexion", description="S’ajouter à la base de données")
 @app_commands.describe(
     mail="Ton adresse mail TN.net",
-    group="Groupe scolaire auquel tu appartiens (laisser vide si extérieur)",
-    subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe)"
+    group="Groupe scolaire auquel tu appartiens",
+    subgroup="Sous-groupe de TD (laisser vide si pas de sous-groupe existant)"
 )
 @app_commands.rename(
     group="groupe",
@@ -91,6 +93,8 @@ async def connection(i: discord.Interaction, mail: str, group: app_commands.Choi
         if group:
             user_group += group.value
             user_group += subgroup.value if subgroup else "0"
+        else:
+            raise Exception(f"Aucun groupe n'a été renseigné!")
         if user_group not in tools.get_groups().values():
             raise Exception(f"Le groupe {user_group} est invalide")
         await i.response.send_message(embed=user_commands.connection(i.user.id, mail, user_group), ephemeral=True)
@@ -262,6 +266,30 @@ async def get_calendar_link(i:discord.Interaction):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
+@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d'un calendrier")
+@app_commands.describe(
+    calendar="Indiquer la ressource à mettre à jour"
+)
+@app_commands.rename(
+    calendar="calendrier"
+)
+@app_commands.choices(calendar=calendar_choices)
+async def ask_refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+    try:
+        global asking_refresh
+        if asking_refresh[calendar.value]:
+            message = discordutils.information_embed(f"L'actualisation se fera dans {scheduled_task.time} minutes")
+        else:
+            asking_refresh[calendar.value] = True
+            message = discordutils.information_embed(f"Demande enregistrée, l'actualisation se fera dans {scheduled_task.time} minutes")
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
+
+    await i.response.send_message(embed=message)
+
+
+
+
 ###########################
 #     Musics Commands     #
 ###########################
@@ -280,6 +308,7 @@ async def get_calendar_link(i:discord.Interaction):
     song="morceau"
 )
 async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: str, song: str = None):
+    await i.response.defer()
     try:
         if song is None:
             if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
@@ -293,7 +322,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
 
 
         if request_ping:
-            await i.response.send_message(embed=blocking_message, view=view)
+            await i.followup.send(embed=blocking_message, view=view)
             await view.wait()
             if not view.value:
                 await i.delete_original_response()
@@ -303,17 +332,14 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
                 if request_ping:
                     await i.followup.send(content=ping, embed=summary_message)
                 else:
-                    await i.response.send_message(content=ping, embed=summary_message)
+                    await i.followup.send(content=ping, embed=summary_message)
             else:
                 raise Exception("Erreur lors de l’ajout de la répétition au calendrier")
         
 
     except Exception as e:
         message = discordutils.failure_embed(title="Erreur", message=str(e))
-        try:
-            await i.response.send_message(embed=message, ephemeral=True)
-        except:
-            await i.followup.send(embed=message)
+        await i.followup.send(embed=message)
 
 
 @bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
@@ -356,22 +382,24 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
     app_commands.Choice(name="complet", value=2)
 ])
 async def info(i: discord.Interaction, user: discord.User=None, display: int = 2):
+    await i.response.defer(ephemeral=True)
+    
     try:
         embed = music_commands.info(i.user.id if user is None else user.id, display)
         if len(embed.description) > 4096:
             nb = math.ceil(len(embed.description)/4096)
             nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.response.send_message(embed=nembed, ephemeral=True)
+            await i.followup.send(embed=nembed)
             for j in range(nb-1):
                 if 4096*(j+2) > len(embed.description):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
                 else:
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed, ephemeral=True)
+                await i.followup.send(embed=nembed)
         else:    
-            await i.response.send_message(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed)
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="morceau", description="Obtenir des informations concernant un morceau en particulier.")
@@ -513,31 +541,49 @@ async def add_user(i: discord.Interaction, user: discord.User, mail: str, group:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="consulter_membres", description="Liste tous les membres")
+@bot.tree.command(name="voir_membres", description="Consulte tous les membres inscrits")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def see_users(i: discord.Interaction):
 
-    await i.response.defer(ephemeral=False)
+    await i.response.defer(ephemeral=True)
 
     try:
         embed = admin_commands.see_users(i.user.id)
         if len(embed.description) > 4096:
             nb = math.ceil(len(embed.description)/4096)
             nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.response.send_message(embed=nembed, ephemeral=True)
+            await i.followup.send(embed=nembed)
             for j in range(nb-1):
                 if 4096*(j+2) > len(embed.description):
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
                 else:
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed, ephemeral=True)
+                await i.followup.send(embed=nembed)
         else:
-            await i.response.send_message(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
-    await i.followup.send(embed=message)
+        await i.followup.send(embed=message)
+
+
+@bot.tree.command(name="supprimer_membre", description="Retire un membre")
+@app_commands.describe(
+    mail="Indique le mail"
+)
+@app_commands.rename(
+    mail="mail"
+)
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def delete_user(i: discord.Interaction, mail: str):
+    try:
+        db.run("DELETE FROM User WHERE email = ?;", (mail,))
+        await i.response.send_message(embed=discordutils.information_embed("Suppression réussie."), ephemeral=True)
+    except Exception as e:
+        message = discordutils.failure_embed(message=str(e))
+        await i.response.send_message(embed=message, ephemeral=True)
 
 
 @bot.tree.command(name="ajouter_setlist", description="Ajoute une setlist")
@@ -561,15 +607,16 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def delete_setlist(i: discord.Interaction):
+    i.response.defer(ephemeral=False)
     try:
         db.check_user(i.user.id)
         if i.user.id not in tools.get_admins():
             raise discordutils.NotAdminError
         setlists_ids = tools.get_setlists_ids()
         view = discordutils.SetlistRemovalPaginationView(setlists_ids)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        await i.followup.send(embed=view.embed_page(), view=view)
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="ajouter_calendrier", description="Ajouter un calendrier Google pour vérifier les contraintes")
@@ -808,6 +855,21 @@ async def test(i: discord.Interaction):
 
 
 #########################
+#    Scheduled tasks    #
+#########################
+
+@tasks.loop(seconds=5)
+async def scheduled_task():
+    print("A")
+
+
+async def startup():
+    await scheduled_task.start()
+
+
+
+
+#########################
 #    End Of Content     #
 #########################
 
@@ -822,4 +884,5 @@ async def order_66(i: discord.Interaction):
 #     /!\ DO NOT DELETE /!\     #
 #################################
 
+# bot.setup_hook = startup
 bot.run(TOKEN)
