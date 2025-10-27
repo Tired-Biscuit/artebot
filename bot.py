@@ -61,7 +61,7 @@ asking_refresh = {"School":False, "Google":False, "Setlist":False}
 # # # # # # # # # # # # # # #
 
 groups = tools.get_groups()
-calendars = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
+sources = {"Google":"Google", "School":"École", "Spreadsheets":"Setlist"}
 tables = ["User", "Song", "MusicianConstraint", "GoogleEvent", "SchoolEvent"]
 
 group_choices = []
@@ -70,7 +70,7 @@ for group in groups:
     if choice not in group_choices:
         group_choices.append(choice)
 subgroup_choices = [app_commands.Choice(name=str(i), value=str(i)) for i in range(1,3)]
-calendar_choices = [app_commands.Choice(name=calendars[calendar], value=calendar) for calendar in calendars.keys()]
+source_choices = [app_commands.Choice(name=sources[source], value=source) for source in sources.keys()]
 table_choices = [app_commands.Choice(name=table, value=table) for table in tables]
 
 @bot.tree.command(name="connexion", description="S’ajouter à la base de données")
@@ -266,21 +266,21 @@ async def get_calendar_link(i:discord.Interaction):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d'un calendrier")
+@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d'une ressource")
 @app_commands.describe(
-    calendar="Indiquer la ressource à mettre à jour"
+    source="Indiquer la ressource à mettre à jour"
 )
 @app_commands.rename(
-    calendar="calendrier"
+    source="source"
 )
-@app_commands.choices(calendar=calendar_choices)
-async def ask_refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+@app_commands.choices(source=source_choices)
+async def ask_refresh(i: discord.Interaction, source: app_commands.Choice[str]):
     try:
         global asking_refresh
-        if asking_refresh[calendar.value]:
+        if asking_refresh[source.value]:
             message = discordutils.information_embed(f"L'actualisation se fera dans {scheduled_task.time} minutes")
         else:
-            asking_refresh[calendar.value] = True
+            asking_refresh[source.value] = True
             message = discordutils.information_embed(f"Demande enregistrée, l'actualisation se fera dans {scheduled_task.time} minutes")
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
@@ -489,26 +489,51 @@ async def change_embed_colour(i: discord.Interaction, colour: str):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="actualiser", description="Met à jour un calendrier")
+@bot.tree.command(name="actualiser", description="Met à jour une ressource")
 @app_commands.describe(
-    calendar="Indiquer la ressource à mettre à jour"
+    source="Indiquer la ressource à mettre à jour"
 )
 @app_commands.rename(
-    calendar="calendrier"
+    source="ressource"
 )
-@app_commands.choices(calendar=calendar_choices)
+@app_commands.choices(source=source_choices)
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
-async def refresh(i: discord.Interaction, calendar: app_commands.Choice[str]):
+async def refresh(i: discord.Interaction, source: app_commands.Choice[str]):
 
     await i.response.defer(ephemeral=False)
 
     try:
-        message = admin_commands.refresh(i.user.id, calendar.value)
+        message = admin_commands.refresh(i.user.id, source.value)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
     await i.followup.send(embed=message)
+
+@bot.tree.command(name="nettoyer", description="Nettoie les données erronnées de la base de données")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def cleanup(i: discord.Interaction):
+
+    await i.response.defer(ephemeral=True)
+
+    try:
+        embed=admin_commands.cleanup(i.user.id)
+        if len(embed.description) > 4096:
+            nb = math.ceil(len(embed.description)/4096)
+            nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
+            await i.followup.send(embed=nembed)
+            for j in range(nb-1):
+                if 4096*(j+2) > len(embed.description):
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
+                else:
+                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
+                await i.followup.send(embed=nembed)
+        else:
+            await i.followup.send(embed=embed)
+    except Exception as e:
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
+        raise e
 
 
 @bot.tree.command(name="ajouter_membre", description="Ajoute un membre à la base de données")
@@ -607,7 +632,7 @@ async def add_setlist(i: discord.Interaction, setlist_link: str):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def delete_setlist(i: discord.Interaction):
-    i.response.defer(ephemeral=False)
+    await i.response.defer(ephemeral=False)
     try:
         db.check_user(i.user.id)
         if i.user.id not in tools.get_admins():

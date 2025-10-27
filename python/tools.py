@@ -219,7 +219,7 @@ def add_owner(uuid: int):
                 data["owners"].append(uuid)
                 f.write(json.dumps(data))
 
-def get_setlists_ids() -> list[str] | None:
+def get_setlists_ids() -> tuple[str] | None:
     """
     Returns a list of the setlists' ids saved in data.json file
 
@@ -229,7 +229,7 @@ def get_setlists_ids() -> list[str] | None:
     create_data_file()
     with open(datafile_path, "r") as f:
         data = json.loads(f.read())
-        return [setlist[0] for setlist in data["setlists"]]
+        return tuple(setlist[0] for setlist in data["setlists"])
 
 def add_setlist(setlist_id: str, name:str):
     """
