@@ -14,7 +14,7 @@ def connection(user_id: int, mail: str, group: str) -> discord.Embed:
         if db.run("""SELECT email FROM User WHERE uuid = ?;""", (user_id,)):
             raise UserAlreadyConnectedError
         if db.run("""SELECT uuid FROM User WHERE email == ?;""", (mail,)):
-            raise Exception("L'addresse mail est déjà prise, contactez un admin.")
+            raise Exception("Cette addresse mail est déjà prise, contacte un admin.")
     except UserAlreadyConnectedError:
         raise UserAlreadyConnectedError
     except:
@@ -77,4 +77,4 @@ def profile(user_id: int) -> discord.Embed:
         title = f"Profil de {db.check_user(user_id)}"
         return discordutils.information_embed(title=title, message=db.get_profile_message(user_id))
     except Exception:
-        raise Exception("L'utilisateur demandé n'est pas enregistré")
+        raise Exception("L’utilisateur demandé n'est pas enregistré")

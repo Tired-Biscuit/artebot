@@ -836,7 +836,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
 
             await interaction.followup.send(content=ping, embed=summary_message)
         except googleutils.NoCalendarError:
-            await interaction.followup.send(embed=failure_embed(message="Aucun calendrier n'est lié à la setlist, merci de rapporter cela à un admin :)"))
+            await interaction.followup.send(embed=failure_embed(message="Aucun calendrier n’est lié à la setlist, merci de rapporter cela à un admin :)"))
         except Exception as e:
             await interaction.followup.send(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"))
 
