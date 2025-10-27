@@ -106,7 +106,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     try:
         success = googleutils.add_rehearsal_to_calendar(song, [i[3] for i in present]+[m[2] for m in missing], creator, timeutils.datetime_to_gcal(ndate+nstart), timeutils.datetime_to_gcal(ndate+timeutils.add_duration_to_time(nstart, duration)))
     except googleutils.NoCalendarError:
-        raise Exception("Aucun calendrier n'est lié à la setlist, merci de signaler cela à un admin :)")
+        raise Exception("Aucun calendrier n’est lié à la setlist, merci de signaler cela à un admin :)")
     except Exception:
         raise discordutils.FailureError
 
@@ -186,7 +186,7 @@ def info(user_id: int, display: int) -> discord.Embed:
     try:
         title = f"Infos pour {db.check_user(user_id)}"
     except db.UserNotFoundError:
-        raise Exception("L'utilisateur demandé n'est pas enregistré")
+        raise Exception("L’utilisateur demandé n’est pas enregistré")
 
     try:
         desc = db.get_songs_message(user_id, display)

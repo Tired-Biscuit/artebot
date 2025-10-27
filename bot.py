@@ -94,7 +94,7 @@ async def connection(i: discord.Interaction, mail: str, group: app_commands.Choi
             user_group += group.value
             user_group += subgroup.value if subgroup else "0"
         else:
-            raise Exception(f"Aucun groupe n'a été renseigné!")
+            raise Exception(f"Aucun groupe n’a été renseigné !")
         if user_group not in tools.get_groups().values():
             raise Exception(f"Le groupe {user_group} est invalide")
         await i.response.send_message(embed=user_commands.connection(i.user.id, mail, user_group), ephemeral=True)
@@ -266,7 +266,7 @@ async def get_calendar_link(i:discord.Interaction):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
-@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d'une ressource")
+@bot.tree.command(name="demander_actualisation", description="Demande la mise à jour d’une ressource")
 @app_commands.describe(
     source="Indiquer la ressource à mettre à jour"
 )
@@ -278,10 +278,10 @@ async def ask_refresh(i: discord.Interaction, source: app_commands.Choice[str]):
     try:
         global asking_refresh
         if asking_refresh[source.value]:
-            message = discordutils.information_embed(f"L'actualisation se fera dans {scheduled_task.time} minutes")
+            message = discordutils.information_embed(f"L’actualisation se fera dans {scheduled_task.time} minutes")
         else:
             asking_refresh[source.value] = True
-            message = discordutils.information_embed(f"Demande enregistrée, l'actualisation se fera dans {scheduled_task.time} minutes")
+            message = discordutils.information_embed(f"Demande enregistrée, l’actualisation se fera dans {scheduled_task.time} minutes")
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
@@ -395,7 +395,7 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
                 else:
                     nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed)
+                await i.followup.send(embed=nembed, ephemeral=True)
         else:    
             await i.followup.send(embed=embed)
     except Exception as e:
@@ -539,8 +539,8 @@ async def cleanup(i: discord.Interaction):
 @bot.tree.command(name="ajouter_membre", description="Ajoute un membre à la base de données")
 @app_commands.describe(
     user="Mentionne un membre",
-    mail="mail de l'utilisateur",
-    group="groupe de l'utilisateur",
+    mail="mail de l’utilisateur",
+    group="groupe de l’utilisateur",
     subgroup="demi-groupe (uniquement si 1A ou 2A)"
 )
 @app_commands.rename(
@@ -557,7 +557,7 @@ async def add_user(i: discord.Interaction, user: discord.User, mail: str, group:
             user_group += group.value
             user_group += subgroup.value if subgroup else "0"
         if user_group not in tools.get_groups().values():
-            raise Exception(f"Le groupe {user_group} est invalide, vous devez indiquer un sous-groupe si vous êtes 1A ou 2A")
+            raise Exception(f"Le groupe {user_group} est invalide, tu dois indiquer un sous-groupe si tu es en 1A ou en 2A")
         db.run("""DELETE FROM User WHERE uuid=?;""", (user.id,))
         db.add_user(user.id, tools.parse_mail(mail), mail, user_group)
         await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
