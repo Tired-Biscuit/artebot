@@ -731,7 +731,13 @@ def get_rehearsals(user_id: int):
     """, (user_id,))
     return events
 
-
+def cleanup():
+    """
+    Cleans any outdated content in the database
+    """
+    setlist_ids = tools.get_setlists_ids()
+    placeholders = ', '.join(['?'] * len(setlist_ids))
+    run(f"DELETE FROM Song WHERE setlist_id NOT IN ({placeholders});", setlist_ids)
 
 
 #############################

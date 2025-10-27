@@ -33,17 +33,17 @@ def change_embed_colour(user_id: int, colour: str) -> discord.Embed:
         raise discordutils.NotAdminError
 
 
-def refresh(user_id: int, calendar: str) -> discord.Embed:
+def refresh(user_id: int, source: str) -> discord.Embed:
     db.check_user(user_id)
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
-    if calendar == "Spreadsheets":
+    if source == "Spreadsheets":
         for setlist_id in tools.get_setlists_ids():
             db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
             db.add_setlist(setlist_id, 200)
 
         return discordutils.success_embed(message="Setlist mise à jour")
-    elif calendar == "School":
+    elif source == "School":
         groups = tools.get_groups()
         for group_id in groups.values():
             db.run("""DELETE FROM SchoolEvent WHERE group_id = ?;""", (group_id,))
@@ -52,7 +52,7 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
         if errors != "":
             raise Exception(errors)
         return discordutils.success_embed(message="Emplois du temps scolaire mis à jour")
-    elif calendar == "Google":
+    elif source == "Google":
         calendars = tools.get_calendars_ids()
         for calendar_id in calendars:
             db.run("""DELETE FROM GoogleEvent WHERE calendar_id = ?;""", (calendar_id,))
@@ -60,8 +60,19 @@ def refresh(user_id: int, calendar: str) -> discord.Embed:
 
         return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
-        return discordutils.failure_embed(message=calendar)
+        return discordutils.failure_embed(message=source)
 
+def cleanup(user_id: int) -> discord.Embed:
+    db.check_user(user_id)
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+
+    try:
+        db.cleanup()
+        return discordutils.information_embed(message="Nettoyage réussi")
+    except Exception as e:
+        raise e
+        raise discordutils.FailureError
 
 def see_owners(user_id: int) -> discord.Embed:
     db.check_user(user_id)
