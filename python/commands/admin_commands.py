@@ -33,10 +33,11 @@ def change_embed_colour(user_id: int, colour: str) -> discord.Embed:
         raise discordutils.NotAdminError
 
 
-def refresh(user_id: int, source: str) -> discord.Embed:
-    db.check_user(user_id)
-    if user_id not in tools.get_admins():
-        raise discordutils.NotAdminError
+def refresh(user_id: int|None, source: str, force=False) -> discord.Embed:
+    if not force:
+        db.check_user(user_id)
+        if user_id not in tools.get_admins():
+            raise discordutils.NotAdminError
     if source == "Spreadsheets":
         for setlist_id in tools.get_setlists_ids():
             db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
@@ -60,7 +61,7 @@ def refresh(user_id: int, source: str) -> discord.Embed:
 
         return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
-        return discordutils.failure_embed(message=source)
+        return discordutils.failure_embed(title="Erreur, la ressource demandée n'existe pas", message=source)
 
 def cleanup(user_id: int) -> discord.Embed:
     db.check_user(user_id)
