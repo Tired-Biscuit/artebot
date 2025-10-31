@@ -47,7 +47,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-asking_refresh = {"School":False, "Google":False, "Setlist":False}
+asking_refresh = {"School":False, "Google":False, "Spreadsheets":False}
 
 # Create bot
 class ArteBot(commands.Bot):
@@ -379,6 +379,8 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
     song="morceau"
 )
 async def find_rehearsal(i: discord.Interaction, song: str = None):
+    await i.response.defer(ephemeral=True)
+
     try:
         if song is None:
             if str(i.channel.type) == "public_thread" or str(i.channel.type) == "private_thread":
@@ -390,10 +392,10 @@ async def find_rehearsal(i: discord.Interaction, song: str = None):
             raise ValueError(f"""Morceau {song} non trouvé""")
 
         view = discordutils.WeekSelectionView(song)
-        await i.response.send_message(embed=view.embed_page(), view=view)
+        await i.followup.send(embed=view.embed_page(), view=view)
 
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)))
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="info", description="Consulter les morceaux d’une personne. Laisse vide pour consulter tes morceaux.")

@@ -61,7 +61,7 @@ def refresh(user_id: int|None, source: str, force=False) -> discord.Embed:
 
         return discordutils.success_embed(message="Agendas Google mis à jour")
     else:
-        return discordutils.failure_embed(message=source)
+        return discordutils.failure_embed(title="Erreur, la ressource demandée n'existe pas", message=source)
 
 def cleanup(user_id: int) -> discord.Embed:
     db.check_user(user_id)
