@@ -5,6 +5,7 @@ import traceback
 import math
 import json
 import discord
+import datetime
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -46,13 +47,35 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+asking_refresh = {"School":False, "Google":False, "Setlist":False}
+
+# Create bot
+class ArteBot(commands.Bot):
+    def __init__(self, command_prefix: str, intents: discord.Intents):
+        super().__init__(command_prefix=command_prefix, intents=intents)
+        self.last_update_call = 0
+
+    @tasks.loop(minutes=2)
+    async def scheduled_update(self):
+        for key in asking_refresh:
+            if asking_refresh[key]:
+                admin_commands.refresh(None, key, True)
+                asking_refresh[key] = False
+        self.last_update_call = time.time()
+
+    @scheduled_update.before_loop
+    async def before_scheduled_update(self):
+        await self.wait_until_ready()
+
+    def get_next_scheduled_update_time(self) -> int:
+        return int(math.ceil((self.scheduled_update.minutes*60 + self.last_update_call - time.time())/60))
+
 # Set command prefix
 if DEBUG:
-    bot = commands.Bot(command_prefix='/', intents=intents)
+    bot = ArteBot(command_prefix='$', intents=intents)
 else:
-    bot = commands.Bot(command_prefix='$', intents=intents)
+    bot = ArteBot(command_prefix='/', intents=intents)
 
-asking_refresh = {"School":False, "Google":False, "Setlist":False}
 
 
 
@@ -278,10 +301,16 @@ async def ask_refresh(i: discord.Interaction, source: app_commands.Choice[str]):
     try:
         global asking_refresh
         if asking_refresh[source.value]:
-            message = discordutils.information_embed(f"L’actualisation se fera dans {scheduled_task.time} minutes")
+            remaining_time = bot.get_next_scheduled_update_time()
+            content = f"L’actualisation se fera dans {remaining_time} minute"
+            content += "s" if remaining_time > 1 else ""
+            message = discordutils.information_embed(content)
         else:
             asking_refresh[source.value] = True
-            message = discordutils.information_embed(f"Demande enregistrée, l’actualisation se fera dans {scheduled_task.time} minutes")
+            remaining_time = bot.get_next_scheduled_update_time()
+            content = f"Demande enregistrée, l’actualisation se fera dans {bot.get_next_scheduled_update_time()} minute"
+            content += "s" if remaining_time > 1 else ""
+            message = discordutils.information_embed(content)
     except Exception as e:
         message = discordutils.failure_embed(message=str(e))
 
@@ -880,21 +909,6 @@ async def test(i: discord.Interaction):
 
 
 #########################
-#    Scheduled tasks    #
-#########################
-
-@tasks.loop(seconds=5)
-async def scheduled_task():
-    print("A")
-
-
-async def startup():
-    await scheduled_task.start()
-
-
-
-
-#########################
 #    End Of Content     #
 #########################
 
@@ -909,5 +923,9 @@ async def order_66(i: discord.Interaction):
 #     /!\ DO NOT DELETE /!\     #
 #################################
 
-# bot.setup_hook = startup
+@bot.event
+async def on_ready():
+    if not bot.scheduled_update.is_running():
+        await bot.scheduled_update.start()
+
 bot.run(TOKEN)
