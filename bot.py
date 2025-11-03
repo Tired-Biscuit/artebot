@@ -55,7 +55,7 @@ class ArteBot(commands.Bot):
         super().__init__(command_prefix=command_prefix, intents=intents)
         self.last_update_call = 0
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=15)
     async def scheduled_update(self):
         for key in asking_refresh:
             if asking_refresh[key]:
