@@ -55,7 +55,7 @@ class ArteBot(commands.Bot):
         super().__init__(command_prefix=command_prefix, intents=intents)
         self.last_update_call = 0
 
-    @tasks.loop(minutes=2)
+    @tasks.loop(minutes=15)
     async def scheduled_update(self):
         for key in asking_refresh:
             if asking_refresh[key]:
@@ -363,13 +363,16 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
                 else:
                     await i.followup.send(content=ping, embed=summary_message)
             else:
-                raise Exception("Erreur lors de l’ajout de la répétition au calendrier")
+                raise Exception("Erreur lors de l’envoi du message de la répétition, impossible de ping tout le monde")
         
 
+    except discordutils.FailureError as e:
+        message = discordutils.failure_embed(title="Erreur", message=str(e))
+        await i.followup.send(embed=message)
+        raise e.originalError
     except Exception as e:
         message = discordutils.failure_embed(title="Erreur", message=str(e))
         await i.followup.send(embed=message)
-
 
 @bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
 @app_commands.describe(
