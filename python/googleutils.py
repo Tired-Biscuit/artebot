@@ -207,7 +207,11 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     }
     calendar_id = tools.get_setlist_calendar_id(song_info[0])
     if calendar_id:
-        result = add_event_to_calendar(calendar_id, event)
+        try:
+            result = add_event_to_calendar(calendar_id, event)
+        except Exception as e:
+            print("The following request was not successful:", event)
+            raise e
         calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
         if result:
