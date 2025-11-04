@@ -96,7 +96,7 @@ class ConstraintsPaginationView(discord.ui.View):
         # if self.page < len(self.pages) - 1:
         self.page += 1
         self.check_buttons_availability()
-        await interaction.response.edit_message(embed=self.embed_page(), view=self, ephemeral=True)
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
     def check_buttons_availability(self):
         self.prev_button.disabled = self.page <= 0
@@ -839,6 +839,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
             await interaction.followup.send(embed=failure_embed(message="Aucun calendrier n’est lié à la setlist, merci de rapporter cela à un admin :)"))
         except Exception as e:
             await interaction.followup.send(embed=failure_embed(message="La répétition n’a pas pu être ajoutée au calendrier !"))
+            raise e
 
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -885,8 +886,10 @@ def information_embed(title: str = "", message: str = "") -> discord.Embed:
 ############################################
 
 class FailureError(Exception):
-    def __init__(self):
+
+    def __init__(self, originalError: Exception = Exception("Original error has not been given")):
         super().__init__("Une erreur est survenue")
+        self.originalError = originalError
 
 class NotAdminError(Exception):
     def __init__(self):

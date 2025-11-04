@@ -24,8 +24,8 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         song_info = db.get_song_info(song)
     except db.SongNotFoundError:
         raise ValueError(f"Morceau « {song} » non trouvé !")
-    except Exception:
-        raise discordutils.FailureError
+    except Exception as e:
+        raise discordutils.FailureError(e)
 
     ndate = tools.parse_date(day)
     nstart = tools.parse_time(start)
