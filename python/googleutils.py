@@ -211,6 +211,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
             result = add_event_to_calendar(calendar_id, event)
         except Exception as e:
             print("The following request was not successful:", event)
+            print("\n")
             raise e
         calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
