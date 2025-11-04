@@ -10,6 +10,7 @@ import python.timeutils as timeutils
 import requests
 import json
 import python.db as db
+import traceback
 
 import os
 
@@ -210,9 +211,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
         try:
             result = add_event_to_calendar(calendar_id, event)
         except Exception as e:
-            print("The following request was not successful:", event)
-            print("\n")
-            raise e
+            raise Exception(f"The following request was not successful: {event}\n{traceback.format_exc()}")
         calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
         if result:
