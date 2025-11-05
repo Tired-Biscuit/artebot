@@ -432,6 +432,9 @@ async def info(i: discord.Interaction, user: discord.User=None, display: int = 2
                 await i.followup.send(embed=nembed, ephemeral=True)
         else:    
             await i.followup.send(embed=embed)
+    except discordutils.FailureError as e:
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
+        raise e.originalError
     except Exception as e:
         await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
