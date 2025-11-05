@@ -585,6 +585,7 @@ async def cleanup(i: discord.Interaction):
     group="groupe",
     subgroup="sous-groupe"
 )
+@app_commands.choices(group=group_choices, subgroup=subgroup_choices)
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_user(i: discord.Interaction, user: discord.User, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
