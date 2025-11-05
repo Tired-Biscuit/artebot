@@ -191,8 +191,8 @@ def info(user_id: int, display: int) -> discord.Embed:
     try:
         desc = db.get_songs_message(user_id, display)
         return discordutils.information_embed(title=title, message=desc)
-    except Exception:
-        raise discordutils.FailureError
+    except Exception as e:
+        raise discordutils.FailureError(e)
 
 
 def song(song: str) -> discord.Embed:
