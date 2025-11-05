@@ -203,7 +203,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
         "attendees": [{"email": k, "comment": v} for k, v in musicians_instruments.items() if k in attendees or not attendees],
         "location": "Local",
         "creator": {"displayName": creator},
-        "organizer": {"email": song_info[4]},
+        "organizer": {"email": song_info[5]},
         "guestsCanModify": True
     }
     calendar_id = tools.get_setlist_calendar_id(song_info[0])
