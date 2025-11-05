@@ -540,21 +540,14 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
     email = run("""SELECT email FROM User WHERE uuid = ?;""", (musician_uuid,))
     email = email[0][0]
 
-    result = run("""
-        SELECT * FROM Song
-        WHERE voice LIKE :email
-        OR guitar LIKE :email
-        OR keys LIKE :email
-        OR drums LIKE :email
-        OR bass LIKE :email
-        OR violin LIKE :email
-        OR cello LIKE :email
-        OR contrabass LIKE :email
-        OR accordion LIKE :email
-        OR flute LIKE :email
-        OR saxophone LIKE :email
-        OR brass LIKE :email;
-    """, {"email":f"%{email}%"})
+    request = "SELECT * FROM Song WHERE"
+    instruments = list(tools.get_instruments_names_translation().keys())
+
+    for instrument in instruments[5:]:
+        request += f""" {instrument} LIKE :email OR"""
+    request = request[:-3] + ";"
+
+    result = run(request, {"email":f"%{email}%"})
     if not result:
         return "Aucun morceau trouvé !"
     if len(result) == 1:
