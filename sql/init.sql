@@ -3,6 +3,7 @@ CREATE TABLE Song(
     title TEXT NOT NULL DEFAULT '',
     artist TEXT NOT NULL DEFAULT '',
     length TIME NOT NULL DEFAULT 0,
+    notes TEXT NOT NULL DEFAULT '',
     supervisor TEXT NOT NULL DEFAULT '',
     voice TEXT NOT NULL DEFAULT '',
     guitar TEXT NOT NULL DEFAULT '',
@@ -15,8 +16,7 @@ CREATE TABLE Song(
     accordion TEXT NOT NULL DEFAULT '',
     flute TEXT NOT NULL DEFAULT '',
     saxophone TEXT NOT NULL DEFAULT '',
-    brass TEXT NOT NULL DEFAULT '',
-    notes TEXT NOT NULL DEFAULT ''
+    brass TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE User(

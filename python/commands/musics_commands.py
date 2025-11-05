@@ -21,7 +21,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
 
     #TODO revoir cette requête car il y a trop de problèmes possibles avec (error handling, injection...
     try:
-        song_info = db.get_song_info(song)
+        song_info = db.get_song_values(song)
     except db.SongNotFoundError:
         raise ValueError(f"Morceau « {song} » non trouvé !")
     except Exception as e:
@@ -33,7 +33,7 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
     start_time = timeutils.punctual_constraint_to_epoch(ndate + nstart)
     duration = tools.parse_duration(duration)
 
-    instruments = db.get_instruments_names()
+    instruments = db.get_song_columns_names()
 
     blocking, missing, present = list(), list(), list()
 
@@ -130,10 +130,10 @@ def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.
     evening_time = 22*3600
     try:
         # Fetch musicians' emails
-        song_info = db.get_song_info(song)
+        song_info = db.get_song_values(song)
         musicians_uuids = []
         unregistered_users = []
-        for field in song_info[4:-1]:
+        for field in song_info[5:]:
             for email in field.split(" "):
                 if len(email) > 17: # TODO valid email
                     value = db.run("""SELECT uuid FROM User WHERE email = ?;""", (email,))
