@@ -121,7 +121,7 @@ if db is None:
 #     Database operations     #
 ###############################
 
-def get_song_info(song: str) -> list | None:
+def get_song_values(song: str) -> list | None:
     """
     Returns song info for given title
     """
@@ -391,11 +391,11 @@ def get_all_musicians_uuids_for_song(song: str) -> tuple[list[int], list[str]]:
     """
     Returns a tuple containing all registered uuids and all unregistered user emails in a song.
     """
-    song_info = get_song_info(song)
+    song_info = get_song_values(song)
 
     musicians_uuids = []
     unregistered_users = []
-    for field in song_info[5:-1]:
+    for field in song_info[5:]:
         for email in field.split(" "):
             if len(email) > 17:  # TODO valid email
                 value = run("""SELECT uuid FROM User WHERE email = ?;""", (email,))
@@ -520,7 +520,7 @@ def add_setlist(setlist_id: str, rows: int):
         add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
 
 
-def get_instruments_names() -> list[str]:
+def get_song_columns_names() -> list[str]:
     """
     Returns a list of all the column names of the Song table in french (including non-instrument columns)
 
@@ -561,12 +561,12 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
         text = f"1 morceau trouvé :\n"
     else:
         text = f"{len(result)} morceaux trouvés :\n"
-    instruments_names = get_instruments_names()
+    instruments_names = get_song_columns_names()
 
     if display == 2:
         for song in result:
             text += f"### {song[1]} — {song[2]} (*{tools.get_setlist_name(song[0])}*)\n"
-            for i in range(4, len(song)-1):
+            for i in range(5, len(song)):
                 if song[i]:
                     text += "- "
                     if email in song[i]:
@@ -588,7 +588,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
                 text += f"### {song[1]} — {song[2]} (*{tools.get_setlist_name(song[0])}*)\n- "
 
             musician_list = list()
-            for i in range(4, len(song)-1):
+            for i in range(5, len(song)):
                     if song[i]:
                         musicians = song[i].split(" ")
 
@@ -619,13 +619,13 @@ def get_song_info_message(song: str) -> tuple:
     """
     Returns a summary of a song from its title
     """
-    song_info = get_song_info(song)
+    song_info = get_song_values(song)
 
-    instruments_names = get_instruments_names()
+    instruments_names = get_song_columns_names()
 
     text = f"*Setlist : {tools.get_setlist_name(song_info[0])}*\n"
 
-    for i in range(4, len(song_info)-1):
+    for i in range(5, len(song_info)):
         if song_info[i]:
             text += f"- {instruments_names[i][0].capitalize()} :"
             musicians = song_info[i].split(" ")
@@ -694,7 +694,7 @@ def get_song_musicians(song: list) -> tuple[list[int], list[int]]:
     musicians = list()
     not_in_db = list()
 
-    for inst in song[4:-1]:
+    for inst in song[5:]:
         for musician in inst.split(" "):
 
             if musician:

@@ -174,13 +174,13 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     Adds rehearsal to Google Calendar and returns if operation was successful
     """
 
-    song_info = db.get_song_info(song)
+    song_info = db.get_song_values(song)
 
-    instruments_names = db.get_instruments_names()
+    instruments_names = db.get_song_columns_names()
 
     musicians_instruments = dict()
 
-    for i in range(4, len(song_info)-1):
+    for i in range(4, len(song_info)):
         if song_info[i]:
             musicians = song_info[i].split(" ")
             for musician in musicians:
