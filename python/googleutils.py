@@ -180,7 +180,7 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
 
     musicians_instruments = dict()
 
-    for i in range(4, len(song_info)):
+    for i in range(5, len(song_info)):
         if song_info[i]:
             musicians = song_info[i].split(" ")
             for musician in musicians:
