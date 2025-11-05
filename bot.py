@@ -588,6 +588,7 @@ async def cleanup(i: discord.Interaction):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_user(i: discord.Interaction, user: discord.User, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
+    i.response.defer(ephemeral=True)
     try:
         user_group = ""
         if group:
@@ -597,10 +598,10 @@ async def add_user(i: discord.Interaction, user: discord.User, mail: str, group:
             raise Exception(f"Le groupe {user_group} est invalide, tu dois indiquer un sous-groupe si tu es en 1A ou en 2A")
         db.run("""DELETE FROM User WHERE uuid=?;""", (user.id,))
         db.add_user(user.id, tools.parse_mail(mail), mail, user_group)
-        await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+        await i.followup.send(embed=discordutils.success_embed())
 
     except Exception as e:
-        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+        await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
 
 
 @bot.tree.command(name="voir_membres", description="Consulte tous les membres inscrits")
