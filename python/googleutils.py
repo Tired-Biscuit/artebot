@@ -10,6 +10,7 @@ import python.timeutils as timeutils
 import requests
 import json
 import python.db as db
+import traceback
 
 import os
 
@@ -173,13 +174,13 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     Adds rehearsal to Google Calendar and returns if operation was successful
     """
 
-    song_info = db.get_song_info(song)
+    song_info = db.get_song_values(song)
 
-    instruments_names = db.get_instruments_names()
+    instruments_names = db.get_song_columns_names()
 
     musicians_instruments = dict()
 
-    for i in range(4, len(song_info)-1):
+    for i in range(4, len(song_info)):
         if song_info[i]:
             musicians = song_info[i].split(" ")
             for musician in musicians:
@@ -207,7 +208,10 @@ def add_rehearsal_to_calendar(song:str, attendees:list[str], creator:str, start_
     }
     calendar_id = tools.get_setlist_calendar_id(song_info[0])
     if calendar_id:
-        result = add_event_to_calendar(calendar_id, event)
+        try:
+            result = add_event_to_calendar(calendar_id, event)
+        except Exception as e:
+            raise Exception(f"The following request was not successful: {event}\n{traceback.format_exc()}")
         calendar = download_calendar(calendar_id)[1]
         db.update_calendar(calendar)
         if result:
