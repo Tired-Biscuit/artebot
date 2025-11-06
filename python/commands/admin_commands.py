@@ -40,9 +40,11 @@ def refresh(user_id: int|None, source: str, force=False) -> discord.Embed:
             raise discordutils.NotAdminError
     if source == "Spreadsheets":
         for setlist_id in tools.get_setlists_ids():
-            db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
-            db.add_setlist(setlist_id, 200)
-
+            try:
+                db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
+                db.add_setlist(setlist_id, 200)
+            except Exception as e:
+                raise discordutils.FailureError(e)
         return discordutils.success_embed(message="Setlist mise à jour")
     elif source == "School":
         groups = tools.get_groups()

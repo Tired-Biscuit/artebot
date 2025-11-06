@@ -543,8 +543,9 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
     request = "SELECT * FROM Song WHERE"
     instruments = list(tools.get_instruments_names_translation().keys())
 
-    for instrument in instruments[5:]:
-        request += f""" {instrument} LIKE :email OR"""
+    for instrument in instruments:
+        if instrument not in ["notes", "title", "artist", "length", "setlist_id"]:
+            request += f""" {instrument} LIKE :email OR"""
     request = request[:-3] + ";"
 
     result = run(request, {"email":f"%{email}%"})
@@ -642,21 +643,16 @@ def get_profile_message(musician_uuid: int) -> str:
     info = info[0]
 
     email = info[1]
-    number_of_songs = run("""
-            SELECT COUNT(*) FROM Song
-            WHERE voice LIKE :email
-            OR guitar LIKE :email
-            OR keys LIKE :email
-            OR drums LIKE :email
-            OR bass LIKE :email
-            OR violin LIKE :email
-            OR cello LIKE :email
-            OR contrabass LIKE :email
-            OR accordion LIKE :email
-            OR flute LIKE :email
-            OR saxophone LIKE :email
-            OR brass LIKE :email;
-        """, {"email":f"%{email}%"})[0][0]
+
+    request = "SELECT COUNT(*) FROM Song WHERE"
+    instruments = list(tools.get_instruments_names_translation().keys())
+
+    for instrument in instruments:
+        if instrument not in ["notes", "title", "artist", "length", "setlist_id"]:
+            request += f""" {instrument} LIKE :email OR"""
+    request = request[:-3] + ";"
+
+    number_of_songs = run(request, {"email":f"%{email}%"})[0][0]
 
     number_of_constraints = run("""SELECT COUNT(*) FROM MusicianConstraint WHERE musician_uuid = ?;""", (musician_uuid,))[0][0]
 
