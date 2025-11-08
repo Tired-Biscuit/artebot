@@ -110,7 +110,7 @@ table_choices = [app_commands.Choice(name=table, value=table) for table in table
     group=group_choices,
     subgroup=subgroup_choices
 )
-async def connection(i: discord.Interaction, mail: str, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
+async def connection(i: discord.Interaction, mail: str, group: app_commands.Choice[str], subgroup: app_commands.Choice[str] = None):
     try:
         user_group = ""
         if group:
@@ -162,7 +162,7 @@ async def mail(i: discord.Interaction, mail: str):
     group=group_choices,
     subgroup=subgroup_choices
 )
-async def group(i: discord.Interaction, group: app_commands.Choice[str] = None, subgroup: app_commands.Choice[str] = None):
+async def group(i: discord.Interaction, group: app_commands.Choice[str], subgroup: app_commands.Choice[str] = None):
     try:
         user_group = ""
         if group:
@@ -558,19 +558,21 @@ async def cleanup(i: discord.Interaction):
     await i.response.defer(ephemeral=True)
 
     try:
-        embed=admin_commands.cleanup(i.user.id)
-        if len(embed.description) > 4096:
-            nb = math.ceil(len(embed.description)/4096)
-            nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
-            await i.followup.send(embed=nembed)
-            for j in range(nb-1):
-                if 4096*(j+2) > len(embed.description):
-                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
-                else:
-                    nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
-                await i.followup.send(embed=nembed)
-        else:
-            await i.followup.send(embed=embed)
+        await bot.tree.sync(guild=bot.get_guild(1330167183141240882))
+        await i.followup.send(embed=discordutils.success_embed())
+        # embed=admin_commands.cleanup(i.user.id)
+        # if len(embed.description) > 4096:
+        #     nb = math.ceil(len(embed.description)/4096)
+        #     nembed = discordutils.information_embed(title=embed.title, message=embed.description[:4096])
+        #     await i.followup.send(embed=nembed)
+        #     for j in range(nb-1):
+        #         if 4096*(j+2) > len(embed.description):
+        #             nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+1):])
+        #         else:
+        #             nembed = discordutils.information_embed(title=embed.title, message=embed.description[4096*(j+2):])
+        #         await i.followup.send(embed=nembed)
+        # else:
+        #     await i.followup.send(embed=embed)
     except Exception as e:
         await i.followup.send(embed=discordutils.failure_embed(message=str(e)))
         raise e
@@ -852,6 +854,18 @@ async def see_owners(i: discord.Interaction, user: discord.User):
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
+@bot.tree.command(name="actualiser_commandes", description="Actualise les commandes sur le serveur")
+@app_commands.describe(password="Phrase secrète")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def refresh_commands(i: discord.Interaction, password: str):
+    try:
+        if password != "1234":
+            raise Exception("Le mot de passe est incorrect!")
+        await bot.tree.sync(guild=i.guild)
+        await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
 
 ##################################################################

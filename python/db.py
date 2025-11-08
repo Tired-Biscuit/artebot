@@ -12,6 +12,8 @@ import python.timeutils as timeutils
 
 TESTING_DATABASE = False
 
+ITERATION_LIMIT = 50
+
 database_path = os.path.join("database", "database.db")
 testing_database_path = os.path.join("database", "testing_db.db")
 init_path = os.path.join("sql", "init.sql")
@@ -412,7 +414,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
 
     (recurring, punctual)
     """
-    evening_time = 22*3600
+    evening_time = 23*3600
     # Fetch musicians' emails
 
     result = get_all_musicians_uuids_for_song(song)
@@ -429,6 +431,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
     start_time = timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time))
 
     punctual_events = [{} for i in range(7)]
+    punctual_events_keys = [[] for i in range(7)]
     recurring_events = [[] for i in range(7)]
 
     for weekdaynb in range(0, 6):
@@ -436,8 +439,13 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
             events = request_blocking_events(start_time, timeutils.DAY_DURATION, musician_uuid)
             for event in events:
                 if event[1] >= start_time:
-                    if event[1] not in list(punctual_events[weekdaynb].keys()) or event[3] == 1:
-                        punctual_events[weekdaynb][event[1]%timeutils.DAY_DURATION] = event
+                    event_key_time = event[1]
+                    i = 0
+                    while event_key_time%timeutils.DAY_DURATION in punctual_events_keys[weekdaynb] and i < ITERATION_LIMIT:
+                        event_key_time += 1
+                        i += 1
+                    punctual_events[weekdaynb][event_key_time%timeutils.DAY_DURATION] = event
+                    punctual_events_keys[weekdaynb].append(event_key_time%timeutils.DAY_DURATION)
                 else:
                     recurring_events[weekdaynb].append(event)
         start_time += timeutils.DAY_DURATION
@@ -467,14 +475,20 @@ def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tupl
     # start_time = timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time))
 
     punctual_events = {}
+    punctual_events_keys = []
     recurring_events = []
 
     for musician_uuid in musicians_uuids:
         events = request_blocking_events(start_time, timeutils.DAY_DURATION - start_time%(timeutils.DAY_DURATION), musician_uuid)
         for event in events:
             if event[1] >= start_time:
-                if event[1] not in list(punctual_events.keys()) or event[3] == 1:
-                    punctual_events[event[1]%timeutils.DAY_DURATION] = event
+                event_key_time = event[1]
+                i = 0
+                while event_key_time%timeutils.DAY_DURATION in punctual_events_keys and i < ITERATION_LIMIT:
+                    event_key_time += 1
+                    i += 1
+                punctual_events[event_key_time%timeutils.DAY_DURATION] = event
+                punctual_events_keys.append(event_key_time%timeutils.DAY_DURATION)
             else:
                 recurring_events.append(event)
     start_time += timeutils.DAY_DURATION
