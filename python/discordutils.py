@@ -594,7 +594,7 @@ class WeekSelectionView(discord.ui.View):
         result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
         # Get the message from the constraints
         message = tools.week_timetable_string_from_constraints(result[0], result[1])
-        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)} - {db.get_song_values(self.song)[1]}", message=message)
 
     def update_buttons(self):
         self.prev_button.disabled = self.week <= self.current_week
@@ -640,7 +640,7 @@ class WeekDaySelectionView(discord.ui.View):
         message = tools.week_timetable_string_from_constraints(result[0], result[1])
         if update_buttons:
             self.update_buttons_state()
-        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
+        return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)} - {db.get_song_values(self.song)[1]}", message=message)
 
     def update_buttons_state(self):
         self.monday_button.disabled = timeutils.is_day_before_today(timeutils.get_first_day_of_week(self.week))
@@ -845,7 +845,7 @@ class RehearsalTimeSelectionView(discord.ui.View):
 
     @discord.ui.button(label="Retour", style=ButtonStyle.grey, custom_id="back")
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = ConstraintsDetailsView(self.song, self.week, self.weekdaynb)
+        view = WeekDaySelectionView(self.song, self.week)
         await interaction.response.edit_message(embed=view.embed_page(), view=view)
 
     @discord.ui.button(label="Annuler", style=ButtonStyle.red, custom_id="cancel")
