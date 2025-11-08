@@ -587,8 +587,9 @@ class WeekSelectionView(discord.ui.View):
         self.song = song
         self.week = self.current_week if week is None else week
     
-    def embed_page(self, message="") -> discord.Embed:
-        self.update_buttons()
+    def embed_page(self, message="", update_buttons = True) -> discord.Embed:
+        if update_buttons:
+            self.update_buttons()
         # Fetch constraints (recurring and punctual separately)
         result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
         # Get the message from the constraints
@@ -621,7 +622,7 @@ class WeekSelectionView(discord.ui.View):
         self.next_button.disabled = True
         self.confirm_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(update_buttons=False), view=self)
 
 
 class WeekDaySelectionView(discord.ui.View):
@@ -633,11 +634,12 @@ class WeekDaySelectionView(discord.ui.View):
         self.song = song
         self.week = week
 
-    def embed_page(self, message="") -> discord.Embed:
+    def embed_page(self, message="", update_buttons = True) -> discord.Embed:
         # Fetches the constraints, builds a timetable message, and returns en embed displaying them properly
         result = db.get_week_constraints_for_rehearsal(self.song, timeutils.get_first_day_of_week(self.week))
         message = tools.week_timetable_string_from_constraints(result[0], result[1])
-        self.update_buttons_state()
+        if update_buttons:
+            self.update_buttons_state()
         return information_embed(title=f"Semaine du {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week))} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(self.week) + 6 * timeutils.DAY_DURATION)}", message=message)
 
     def update_buttons_state(self):
@@ -693,7 +695,7 @@ class WeekDaySelectionView(discord.ui.View):
         self.saturday_button.disabled = True
         self.back_button.disabled = True
         self.cancel_button.disabled = True
-        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+        await interaction.response.edit_message(embed=self.embed_page(update_buttons=False), view=self)
 
 
 class ConstraintsDetailsView(discord.ui.View):
