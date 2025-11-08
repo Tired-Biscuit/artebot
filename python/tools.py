@@ -1002,18 +1002,19 @@ def day_timetable_string_from_constraints(recurring_constraints: list[list], pun
                         else:
                             if dot is None:
                                 char = "🟣"
-                        constraint_string = f""" {dot} {time_span_to_string(punctual_constraints[key][1], punctual_constraints[key][2])} - {punctual_constraints[key][0] if punctual_constraints[key][3] != 3 else "Indisponible"}"""
+                        constraint_string = f"""{dot} {time_span_to_string(punctual_constraints[key][1], punctual_constraints[key][2])} - {punctual_constraints[key][0] if punctual_constraints[key][3] != 3 else "Indisponible"}"""
                         if constraint_string not in constraints_strings:
                             constraints_strings.append(constraint_string)
-        if char is None:
-            for value in recurring_constraints:
-                if ((i + 8) * 3600 <= value[1] and value[1] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 <= value[2] and value[2] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 >= value[1] and value[2] > (i + 8 + 1) * 3600):
-                    char = "🟥" if i != cursor_col else "🔴"
-                    constraint_string = f"""{char} {time_span_to_string(value[1], value[2])} - Indisponible"""
 
-                    if i == cursor_col:
-                        if constraint_string not in constraints_strings:
-                            constraints_strings.append(constraint_string)
+        for value in recurring_constraints:
+            if ((i + 8) * 3600 <= value[1] and value[1] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 <= value[2] and value[2] < (i + 8 + 1) * 3600) or ((i + 8) * 3600 >= value[1] and value[2] > (i + 8 + 1) * 3600):
+                if char is None:
+                    char = "🟥" if i != cursor_col else "🔴"
+                constraint_string = f"""{"🟥" if i != cursor_col else "🔴"} {time_span_to_string(value[1], value[2])} - Indisponible ({value[4] if len(value) >= 5 else ""})"""
+
+                if i == cursor_col:
+                    if constraint_string not in constraints_strings:
+                        constraints_strings.append(constraint_string)
         if char is None:
             char = "⬛" if i != cursor_col else "⚫"
 

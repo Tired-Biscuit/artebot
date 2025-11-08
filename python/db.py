@@ -447,7 +447,7 @@ def get_week_constraints_for_rehearsal(song: str, start_time: int = None) -> tup
                     punctual_events[weekdaynb][event_key_time%timeutils.DAY_DURATION] = event
                     punctual_events_keys[weekdaynb].append(event_key_time%timeutils.DAY_DURATION)
                 else:
-                    recurring_events[weekdaynb].append(event)
+                    recurring_events[weekdaynb].append(event + (musician_uuid,))
         start_time += timeutils.DAY_DURATION
     return recurring_events, punctual_events
 
@@ -490,8 +490,7 @@ def get_day_constraints_for_rehearsal(song: str, start_time: int = None) -> tupl
                 punctual_events[event_key_time%timeutils.DAY_DURATION] = event
                 punctual_events_keys.append(event_key_time%timeutils.DAY_DURATION)
             else:
-                recurring_events.append(event)
-    start_time += timeutils.DAY_DURATION
+                recurring_events.append(event + (get_user_name(musician_uuid),))
     return recurring_events, punctual_events
 
 
