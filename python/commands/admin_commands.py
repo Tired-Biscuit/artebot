@@ -1,3 +1,5 @@
+import glob
+
 import discord
 
 import python.db as db
@@ -6,6 +8,7 @@ import python.discordutils as discordutils
 import python.timeutils as timeutils
 import python.googleutils as googleutils
 import math
+
 
 def add_admin(author_id: int, user_id: int) -> discord.Embed:
     if author_id in tools.get_admins():
@@ -143,6 +146,22 @@ def delete_table(user_id: int, table: str) -> discord.Embed:
     else:
         db.run(f"""DELETE FROM {table};""")
         return discordutils.success_embed(message=f"Entrées de la table {table} supprimées")
+
+
+def send_logs(user_id: int) -> (discord.Embed, list[discord.File]):
+    if user_id not in tools.get_admins():
+        raise discordutils.NotAdminError
+    else:
+        log_files = glob.glob("logs/*")
+
+        if not log_files:
+            raise Exception("Aucun logs trouvés")
+        else:
+            discord_files = []
+            for file_path in sorted(log_files, reverse=True)[:4]:
+                discord_files.append(discord.File(file_path))
+            return discordutils.success_embed(message="Voici les logs récupérés"), discord_files
+
 
 
 ##########################
