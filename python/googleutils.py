@@ -463,7 +463,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
 
     for i in range(min(len(column_names), len(row_values))):
 
-        if column_names[i] not in translated_columns and column_names[i] not in tools.get_ignored_column_names():
+        if column_names[i] not in translated_columns:
             pass
         #     print("Attention, un instrument n’est pas enregistré dans la base de données :", column_names[i])
         else:
