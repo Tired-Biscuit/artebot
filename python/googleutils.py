@@ -423,7 +423,12 @@ def get_text_cell_content(cell_values: dict) -> str:
     if "userEnteredValue" in cell_values.keys():
         if "stringValue" in cell_values["userEnteredValue"].keys():
             result = cell_values["userEnteredValue"]["stringValue"]
-
+        
+        if "chipRuns" in cell_values.keys():
+            chip = cell_values["chipRuns"][0]["chip"]
+            if "richLinkProperties" in chip.keys():
+                result += f" ({chip['richLinkProperties']['uri']})"
+                
     return result
 
 def get_time_cell_content(cell_values: dict) -> int:
