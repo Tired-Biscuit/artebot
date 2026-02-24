@@ -863,6 +863,8 @@ def get_constraint_embed(constraints: list[list[int]], start_time) -> discord.em
     Builds a Discord Embed to display constraints
     """
     message = information_embed(title=f"Semaine du {tools.epoch_to_ddmm(start_time)} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + 6 * timeutils.DAY_DURATION)}", message=tools.get_constraints_week_description(constraints, start_time))
+    if len(message) > 4090:
+        message = message[:4090] + "…"    
     return message
 
 
