@@ -36,13 +36,19 @@ def connection(user_id: int, mail: str, group: str) -> discord.Embed:
 def change_mail(user_id: int, mail: str) -> discord.Embed:
 
     try:
-        tools.parse_mail(mail)
+        new_name = tools.parse_mail(mail)
     except:
         raise ValueError("Format de l’adresse mail incorrect !")
 
     try:
-        db.check_user(user_id)
+        current_username = db.check_user(user_id)
+        current_mail = db.run("""SELECT email FROM User WHERE uuid = ?;""", (user_id,))[0][0]
+
         db.run("UPDATE User SET email = ? WHERE uuid = ?;", (mail, user_id))
+
+        if tools.parse_mail(current_mail) == current_username:
+            db.run("UPDATE User SET username = ? WHERE uuid = ?;", (new_name, user_id))
+
     except db.UserNotFoundError:
         db.add_user(user_id, db.get_user_name_from_email(mail), mail, "")
     except:
