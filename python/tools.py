@@ -31,7 +31,7 @@ def create_data_file():
         "owners": [],
         "embed_colour": 10070709,
         "ignored_columns": ["Genre", "Statistiques"],
-        "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
+        "instruments": {"drums": ["Batterie"], "keys": ["Clavier", "Piano"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte", "Flute"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques", "Notes", "Infos"], "supervisor": ["Responsable", "Respo"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
         "groups": {
             "1A G11": "fise_1a_g11",
             "1A G12": "fise_1a_g12",
