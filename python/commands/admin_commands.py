@@ -148,7 +148,7 @@ def delete_table(user_id: int, table: str) -> discord.Embed:
         return discordutils.success_embed(message=f"Entrées de la table {table} supprimées")
 
 
-def send_logs(user_id: int) -> (discord.Embed, list[discord.File]):
+def send_logs(user_id: int) -> tuple[discord.Embed, list[discord.File]]:
     if user_id not in tools.get_admins():
         raise discordutils.NotAdminError
     else:
