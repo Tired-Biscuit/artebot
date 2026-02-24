@@ -402,7 +402,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
         message = discordutils.failure_embed(title="Erreur", message=str(e))
         await i.followup.send(embed=message)
 
-@bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
+@bot.tree.command(name="trouver_répète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
 @app_commands.describe(
     song="Nom du morceau (laisser vide si tu es dans le fil correspondant)"
 )

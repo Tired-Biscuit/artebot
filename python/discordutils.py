@@ -743,6 +743,8 @@ class ConstraintsDetailsView(discord.ui.View):
                     char = "🟪"
             message += f"""{char} {tools.time_span_to_string(event[1], event[2])} - {event[0] if event[3] != 3 else "Indisponible"}\n"""
         message += ""
+        if len(message) > 4096:
+            message = message[:4093] + "…"
         return information_embed(title=tools.get_date_string(timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION), message=message)
 
     @discord.ui.button(label="Suivant", style=ButtonStyle.green, custom_id="confirm")

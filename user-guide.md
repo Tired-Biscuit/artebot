@@ -109,7 +109,7 @@ Ici aussi les formats sont très flexibles (voir plus haut pour des exemples).
 
 ---
 
-### **/trouver\_repète**
+### **/trouver\_répète**
 * **morceau** : Nom du morceau (laisser vide si tu es dans le fil correspondant)
 
 Affiche un message interactif montrant successivement:
