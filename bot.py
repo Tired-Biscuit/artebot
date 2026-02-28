@@ -179,7 +179,7 @@ async def mail(i: discord.Interaction, mail: str):
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
-    group="Le nouveau groupe (laisser vide si extérieur)",
+    group="Le nouveau groupe",
     subgroup="Le sous-groupe de TD (laisser vide si pas de sous-groupe)"
 )
 @app_commands.rename(
