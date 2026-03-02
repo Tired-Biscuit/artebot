@@ -9,7 +9,7 @@ Ce guide est destiné aux administrateurs du bot. Il explique les commandes d'ad
 - [Gestion des calendriers](#gestion-des-calendriers)
 - [Commandes avancées](#commandes-avancées)
 - [Commandes Owner](#commandes-owner)
-
+- [Exemples d'utilisation](#exemples-dutilisation)
 ---
 
 ## Commandes de base
@@ -118,3 +118,13 @@ Actualise les commandes sur tous les serveurs.
 ### /réinit_db
 (owner-only) Réinitialise la base de données.
 
+---
+
+## Exemples d'utilisation
+
+### Ajout d'une setlist / lancement des répétitions
+
+- Ajouter la setlist avec ```ajouter_setlist```
+- Si le calendrier existe, vous pouvez utiliser ```ajouter_calendrier```, sinon faire ```créer_calendrier```
+- Vérifier que la setlist est bien ajoutée avec ```info``` par exemple (au besoin faire ```actualiser```)
+- Créer les threads avec ```créer_fils``` dans le salon créé à l'occasion
