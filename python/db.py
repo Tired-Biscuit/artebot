@@ -26,11 +26,15 @@ else:
 
 class SongNotFoundError(Exception):
     def __init__(self):
-        super().__init__("Could not find song")
+        super().__init__("Le morceau n'a pas pu être trouvé")
 
 class UserNotFoundError(Exception):
     def __init__(self):
         super().__init__("L’identifiant n’a pas pu être vérifié. Tente de t’enregistrer avec `/connexion`")
+
+class SongFetchError(Exception):
+    def __init__(self):
+        super().__init__("Des erreurs sont apparues lors du parsing")
 
 def refresh():
     """
@@ -500,7 +504,7 @@ def add_song(song: dict, db_columns: list[str]):
     """
 
     if song["title"] == "":
-        return
+        raise SongFetchError
 
     columns = "("
     values = "("
@@ -531,10 +535,12 @@ def add_setlist(setlist_id: str, rows: int):
     rows = rows[1:]
     error = False
     for row in rows:
-        if add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns) == None:
+        try:
+            add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
+        except:
             error = True
     if error:
-        raise Exception("Des erreurs ont eu lieu lors de la récupération des informations")
+        raise SongFetchError
 
 def get_song_columns_names() -> list[str]:
     """

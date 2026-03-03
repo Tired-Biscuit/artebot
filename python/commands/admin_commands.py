@@ -9,6 +9,8 @@ import python.timeutils as timeutils
 import python.googleutils as googleutils
 import math
 
+from python.db import SongFetchError
+
 
 def add_admin(author_id: int, user_id: int) -> discord.Embed:
     if author_id in tools.get_admins():
@@ -46,6 +48,8 @@ def refresh(user_id: int|None, source: str, force=False) -> discord.Embed:
             try:
                 db.run("""DELETE FROM Song WHERE setlist_id = ?;""", (setlist_id,))
                 db.add_setlist(setlist_id, 200)
+            except SongFetchError as e:
+                raise discordutils.FailureError(e)
             except Exception as e:
                 raise discordutils.FailureError(e)
         return discordutils.success_embed(message="Setlist mise à jour")
