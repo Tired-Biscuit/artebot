@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY python/ ./python/
 COPY scripts/ ./scripts/
+COPY logs/ ./logs/
 COPY sql/ ./sql/
 COPY timetables/ ./timetables/
 COPY bot.py .
