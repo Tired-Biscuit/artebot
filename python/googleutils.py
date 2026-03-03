@@ -452,7 +452,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
     """
     Parses the row values fetched from sheets and returns a dictionary compliant with the db
     """
-    song = {}
+    song = {"title":""}
 
     translation_dict = tools.get_instruments_names_translation()
 

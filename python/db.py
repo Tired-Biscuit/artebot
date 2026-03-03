@@ -529,9 +529,12 @@ def add_setlist(setlist_id: str, rows: int):
         db_columns.append(col[1])
 
     rows = rows[1:]
+    error = False
     for row in rows:
-        add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
-
+        if add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns) == None:
+            error = True
+    if error:
+        raise Exception("Des erreurs ont eu lieu lors de la récupération des informations")
 
 def get_song_columns_names() -> list[str]:
     """
