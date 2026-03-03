@@ -10,7 +10,7 @@ Sélectionner un groupe scolaire sans choisir de sous-groupe déclenche une erre
 
 **Attention**: Dans certains cas précis, l'enregistrement peut avoir eu lieu malgré une erreur, vérifier avec ```/profil``` et modifier toute valeur erronée avec la commande correspondante (```/mail```, ```/groupe```, ```/pseudo```).
 * **mail** : Ton adresse mail TN.net
-* **groupe** : Groupe scolaire auquel tu appartiens (laisser vide si extérieur)
+* **groupe** : Groupe scolaire auquel tu appartiens
 * **sous-groupe** : Sous-groupe de TD (laisser vide si pas de sous-groupe existant)
 
 ---
@@ -23,7 +23,7 @@ Change l’adresse mail associée au compte.
 
 ### **/groupe**
 Change le groupe associé au compte.
-* **groupe** : Le nouveau groupe (laisser vide si extérieur)
+* **groupe** : Le nouveau groupe
 * **sous-groupe** : Le sous-groupe de TD (laisser vide si pas de sous-groupe)
 
 ---
@@ -109,7 +109,7 @@ Ici aussi les formats sont très flexibles (voir plus haut pour des exemples).
 
 ---
 
-### **/trouver\_repète**
+### **/trouver\_répète**
 * **morceau** : Nom du morceau (laisser vide si tu es dans le fil correspondant)
 
 Affiche un message interactif montrant successivement:

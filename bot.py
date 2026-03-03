@@ -1,9 +1,13 @@
 # bot.py
+import glob
+import logging
 import os
 import time
 import traceback
 import math
 import json
+from logging.handlers import TimedRotatingFileHandler
+
 import discord
 import datetime
 from dotenv import load_dotenv
@@ -46,6 +50,30 @@ else:
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+
+
+# Setup logging
+discord.utils.setup_logging()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+
+file_handler = logging.FileHandler(filename='logs/discord.log', encoding='utf-8', mode='w')
+file_handler.setFormatter(formatter)
+
+day_handler = TimedRotatingFileHandler('logs/last-24h.log', when='midnight', interval=1, backupCount=1, encoding='utf-8')
+day_handler.setFormatter(formatter)
+
+weekly_handler = TimedRotatingFileHandler('logs/archive-hebdo.log', when='W0', interval=1, backupCount=4, encoding='utf-8')
+weekly_handler.setFormatter(formatter)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+
+logger.addHandler(day_handler)
+logger.addHandler(weekly_handler)
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 asking_refresh = {"School":False, "Google":False, "Spreadsheets":False}
 
@@ -151,7 +179,7 @@ async def mail(i: discord.Interaction, mail: str):
 
 @bot.tree.command(name="groupe", description="Changer le groupe associé à son compte")
 @app_commands.describe(
-    group="Le nouveau groupe (laisser vide si extérieur)",
+    group="Le nouveau groupe",
     subgroup="Le sous-groupe de TD (laisser vide si pas de sous-groupe)"
 )
 @app_commands.rename(
@@ -374,7 +402,7 @@ async def add_rehearsal(i:discord.Interaction, day: str, start: str, duration: s
         message = discordutils.failure_embed(title="Erreur", message=str(e))
         await i.followup.send(embed=message)
 
-@bot.tree.command(name="trouver_repète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
+@bot.tree.command(name="trouver_répète", description="Montre un emploi du temps prenant en compte toutes les disponibilités des musicens.")
 @app_commands.describe(
     song="Nom du morceau (laisser vide si tu es dans le fil correspondant)"
 )
@@ -595,7 +623,7 @@ async def cleanup(i: discord.Interaction):
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
 async def add_user(i: discord.Interaction, user: discord.User, mail: str, group: app_commands.Choice[str], subgroup: app_commands.Choice[str] = None):
-    i.response.defer(ephemeral=True)
+    await i.response.defer(ephemeral=True)
     try:
         user_group = ""
         if group:
@@ -841,7 +869,6 @@ async def delete_table(i: discord.Interaction, table: app_commands.Choice[str]):
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
-
 @bot.tree.command(name="voir_owners", description="Voir les owners")
 @discord.app_commands.guild_only()
 @discord.app_commands.default_permissions(administrator=True)
@@ -862,6 +889,17 @@ async def refresh_commands(i: discord.Interaction, password: str):
             raise Exception("Le mot de passe est incorrect!")
         await bot.tree.sync(guild=None)
         await i.response.send_message(embed=discordutils.success_embed(), ephemeral=True)
+    except Exception as e:
+        await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
+
+
+@bot.tree.command(name="voir_logs", description="Envoie les logs des 4 dernières semaines")
+@discord.app_commands.guild_only()
+@discord.app_commands.default_permissions(administrator=True)
+async def send_logs(i: discord.Interaction):
+    try:
+        result = admin_commands.send_logs(i.user.id)
+        await i.response.send_message(embed=result[0], files=result[1], ephemeral=True)
     except Exception as e:
         await i.response.send_message(embed=discordutils.failure_embed(message=str(e)), ephemeral=True)
 
@@ -958,4 +996,4 @@ async def on_ready():
     if not bot.scheduled_update.is_running():
         await bot.scheduled_update.start()
 
-bot.run(TOKEN)
+bot.run(TOKEN, log_handler=None)

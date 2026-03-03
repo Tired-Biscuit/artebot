@@ -423,7 +423,12 @@ def get_text_cell_content(cell_values: dict) -> str:
     if "userEnteredValue" in cell_values.keys():
         if "stringValue" in cell_values["userEnteredValue"].keys():
             result = cell_values["userEnteredValue"]["stringValue"]
-
+        
+        if "chipRuns" in cell_values.keys():
+            chip = cell_values["chipRuns"][0]["chip"]
+            if "richLinkProperties" in chip.keys():
+                result += f" ({chip['richLinkProperties']['uri']})"
+                
     return result
 
 def get_time_cell_content(cell_values: dict) -> int:
@@ -447,7 +452,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
     """
     Parses the row values fetched from sheets and returns a dictionary compliant with the db
     """
-    song = {}
+    song = {"title":""}
 
     translation_dict = tools.get_instruments_names_translation()
 
@@ -458,7 +463,7 @@ def get_song_info_from_row_values(row_values: dict, setlist_id: str, column_name
 
     for i in range(min(len(column_names), len(row_values))):
 
-        if column_names[i] not in translated_columns and column_names[i] not in tools.get_ignored_column_names():
+        if column_names[i] not in translated_columns:
             pass
         #     print("Attention, un instrument n’est pas enregistré dans la base de données :", column_names[i])
         else:

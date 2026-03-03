@@ -30,8 +30,7 @@ def create_data_file():
         "admins": [],
         "owners": [],
         "embed_colour": 10070709,
-        "ignored_columns": ["Genre", "Statistiques"],
-        "instruments": {"drums": ["Batterie"], "keys": ["Clavier"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques"], "supervisor": ["Responsable"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
+        "instruments": {"drums": ["Batterie"], "keys": ["Clavier", "Piano"], "guitar": ["Guitare"], "bass": ["Basse"], "violin": ["Violon"], "voice": ["Voix", "Chant"], "cello": ["Violoncelle"], "contrabass": ["Contrebasse"], "accordion": ["Accord\u00e9on"], "flute": ["Fl\u00fbte", "Flute"], "saxophone": ["Saxophone"], "brass": ["Cuivre"], "notes": ["Remarques", "Notes", "Infos"], "supervisor": ["Responsable", "Respo"], "title": ["Titre"], "artist": ["Artiste"], "length": ["Dur\u00e9e"], "setlist_id": ["''"]},
         "groups": {
             "1A G11": "fise_1a_g11",
             "1A G12": "fise_1a_g12",
@@ -55,17 +54,18 @@ def create_data_file():
             "2A G52": "fise_2a_g52",
             "2A IAMD0": "fise_2a_iamd0",
             "2A IL0": "fise_2a_il0",
-            "2A LE0": "fise_2a_le0",
+            "2A SLE0": "fise_2a_le0",
             "2A SIE0": "fise_2a_sie0",
             "2A ISS0": "fise_2a_iss0",
             "3A IAMD0": "fise_3a_iamd0",
             "3A IL0": "fise_3a_il0",
-            "3A LE0": "fise_3a_le0",
+            "3A SLE0": "fise_3a_le0",
             "3A SIE0": "fise_3a_sie0",
             "3A ISS0": "fise_3a_iss0",
             "FISA 1A0": "fisa_1a0",
             "FISA 2A0": "fisa_2a0",
             "FISA 3A0": "fisa_3a0",
+            "FISEA 2A0": "fisea_2a0",
             "EXTERNE0": "externe0"
         }
     }
@@ -370,47 +370,6 @@ def get_instruments_names_translation() -> dict:
 
     return instruments_file
 
-def get_ignored_column_names() -> dict:
-    """
-    Returns a list of ignored spreadsheet columns' names
-
-    @flag data
-    """
-    data = {}
-    if os.path.exists(datafile_path):
-        with open(datafile_path, "r", encoding="utf-8") as f:
-            data = json.load(f)["ignored_columns"]
-
-    return data
-
-def add_ignored_column(column: str):
-    """
-    Adds a column name to the list of ignored columns in the data.json file
-
-    @flag data
-    """
-    create_data_file()
-    with open(datafile_path, "r") as f:
-        data = json.loads(f.read())
-    if data != None and column not in data["ignored_columns"]:
-        with open(datafile_path, "w") as f:
-            data["ignored_columns"].append(column)
-            f.write(json.dumps(data))
-
-def remove_ignored_column(column: str): #TODO integrate command
-    """
-    Removes a column name from the list of ignored columns in the data.json file
-
-    @flag data
-    """
-    create_data_file()
-    with open(datafile_path, "r") as f:
-        data = json.loads(f.read())
-    if data != None:
-        with open(datafile_path, "w") as f:
-            data["ignored_columns"].remove(column)
-            f.write(json.dumps(data))
-
 def add_instrument_translation(instrument: str, translation: str):
     """
     Adds an instrument translation to the data.json file
@@ -614,6 +573,11 @@ accent_data = {"Clement": "Clément",
                "Andre": "André",
                "Noe": "Noé",
                "Cedric": "Cédric",
+               "Sebastien": "Sébastien",
+               "Eric": "Éric",
+               "Jerome": "Jérôme",
+               "Leo": "Léo",
+               "Gregoire": "Grégoire",
                "LIENARD": "LIÉNARD",
                "ESCUDE--COTINAT": "ESCUDE–COTINAT",
                "JIMENEZ--PIQUEMAL": "JIMENEZ–PIQUEMAL"

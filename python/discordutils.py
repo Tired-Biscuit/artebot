@@ -743,6 +743,8 @@ class ConstraintsDetailsView(discord.ui.View):
                     char = "🟪"
             message += f"""{char} {tools.time_span_to_string(event[1], event[2])} - {event[0] if event[3] != 3 else "Indisponible"}\n"""
         message += ""
+        if len(message) > 4096:
+            message = message[:4093] + "…"
         return information_embed(title=tools.get_date_string(timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION), message=message)
 
     @discord.ui.button(label="Suivant", style=ButtonStyle.green, custom_id="confirm")
@@ -863,8 +865,75 @@ def get_constraint_embed(constraints: list[list[int]], start_time) -> discord.em
     Builds a Discord Embed to display constraints
     """
     message = information_embed(title=f"Semaine du {tools.epoch_to_ddmm(start_time)} au {tools.epoch_to_ddmm(timeutils.get_first_day_of_week(timeutils.get_nbweeks(start_time)) + 6 * timeutils.DAY_DURATION)}", message=tools.get_constraints_week_description(constraints, start_time))
+    if len(message) > 4090:
+        message = message[:4090] + "…"    
     return message
 
+
+class TableChoiceForDeletion(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__()
+        self.user_id = user_id
+        self.setlists_ids = setlists_ids
+        self.setlists_names = []
+        self.calendar_id = calendar_id
+
+        for setlist_id in self.setlists_ids:
+            self.setlists_names.append(tools.get_setlist_name(setlist_id))
+
+    @discord.ui.button(label="⬆", style=ButtonStyle.blurple, custom_id="prev", disabled=True)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="⬇", style=ButtonStyle.blurple, custom_id="next")
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # if self.page < len(self.pages) - 1:
+        self.page += 1
+        await interaction.response.edit_message(embed=self.embed_page(), view=self)
+
+    @discord.ui.button(label="Sélectionner", style=ButtonStyle.green, custom_id="confirm")
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.confirm_button.disabled = True
+        await interaction.response.defer()
+        try:
+            tools.add_calendar(self.calendar_id)
+            tools.add_calendar_to_setlist(self.setlists_ids[self.page], self.calendar_id)
+            await interaction.followup.send(embed=success_embed(), view=self)
+        except Exception as e:
+            await interaction.followup.send(embed=failure_embed(message=str(e)))
+
+    @discord.ui.button(label="Terminer", style=ButtonStyle.grey, custom_id="end")
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.prev_button.disabled = True
+        self.next_button.disabled = True
+        self.cancel_button.disabled = True
+        self.confirm_button.disabled = True
+        await interaction.response.edit_message(embed=discord.Embed(title="Opération terminée"), view=self)
+
+    def check_buttons_availability(self):
+        self.prev_button.disabled = self.page <= 0
+        self.next_button.disabled  = self.page >= len(self.setlists_names) - 1
+
+    def embed_page(self) -> discord.Embed:
+        if len(self.setlists_names) == 0:
+            self.confirm_button.disabled = True
+            self.cancel_button.disabled = True
+            return discord.Embed(title="Aucune setlist ajoutée")
+        text = ""
+        for i in range(len(self.setlists_names)):
+            if i == self.page:
+                text += "**"
+            text += self.setlists_names[i]
+            if i == self.page:
+                text += "**"
+            text += "\n"
+        self.check_buttons_availability()
+        return information_embed(title="Choisis une setlist à lier au calendrier", message=text)
 
 
 ##########################

@@ -529,9 +529,12 @@ def add_setlist(setlist_id: str, rows: int):
         db_columns.append(col[1])
 
     rows = rows[1:]
+    error = False
     for row in rows:
-        add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
-
+        if add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns) == None:
+            error = True
+    if error:
+        raise Exception("Des erreurs ont eu lieu lors de la récupération des informations")
 
 def get_song_columns_names() -> list[str]:
     """
@@ -586,6 +589,7 @@ def get_songs_message(musician_uuid: int, display:int) -> str:
                         text += f" {get_user_name_from_email(musician)},"
                     text = text[:-1]
                     text += "\n"
+            text += f"Notes : « {song[4]} »\n" if song[4] else ""
 
     else:
         for song in result:
@@ -640,6 +644,8 @@ def get_song_info_message(song: str) -> tuple:
                 text += f" {get_user_name_from_email(musician)},"
             text = text[:-1]
             text += "\n"
+    
+    text += f"\nNotes : « {song_info[4]} »" if song_info[4] else ""
 
     return f"{song_info[1]} — {song_info[2]}", text
 
