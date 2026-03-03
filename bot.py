@@ -7,6 +7,7 @@ import traceback
 import math
 import json
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 import discord
 import datetime
@@ -25,7 +26,10 @@ import python.commands.musics_commands as music_commands
 import python.commands.admin_commands as admin_commands
 from python.discordutils import information_embed
 
-
+def check_file(path: str):
+    file = Path(path)
+    if not file.exists():
+        file.touch()
 
 # db.reset()
 # db.init()
@@ -58,13 +62,21 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
 
-file_handler = logging.FileHandler(filename='logs/discord.log', encoding='utf-8', mode='w')
+CURRENT_LOG = os.path.join('logs', 'discord.log')
+DAILY_LOG = os.path.join('logs', 'last-24h.log')
+WEEKLY_LOG = os.path.join('logs', 'archive-hebdo.log')
+
+check_file(CURRENT_LOG)
+check_file(DAILY_LOG)
+check_file(WEEKLY_LOG)
+
+file_handler = logging.FileHandler(CURRENT_LOG, encoding='utf-8', mode='w')
 file_handler.setFormatter(formatter)
 
-day_handler = TimedRotatingFileHandler('logs/last-24h.log', when='midnight', interval=1, backupCount=1, encoding='utf-8')
+day_handler = TimedRotatingFileHandler(DAILY_LOG, when='midnight', interval=1, backupCount=1, encoding='utf-8')
 day_handler.setFormatter(formatter)
 
-weekly_handler = TimedRotatingFileHandler('logs/archive-hebdo.log', when='W0', interval=1, backupCount=4, encoding='utf-8')
+weekly_handler = TimedRotatingFileHandler(WEEKLY_LOG, when='W0', interval=1, backupCount=4, encoding='utf-8')
 weekly_handler.setFormatter(formatter)
 
 console_handler = logging.StreamHandler()
