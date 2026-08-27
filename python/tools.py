@@ -71,7 +71,7 @@ def create_data_file():
     }
 
     if not os.path.exists(datafile_path):
-        print("Creating file")
+        print("Creating file", flush=True)
         # data = {"calendar_ids":[], "setlists":[], "admins":[], "owners":[], "embed_colour":10070709}
         with open(datafile_path, "w") as f:
             f.write(json.dumps(val))
@@ -82,7 +82,7 @@ def create_data_file():
         if data == "":
             data = val#{"calendar_ids": [], "setlists": [], "admins": [], "owners": [], "embed_colour":10070709}
             with open(datafile_path, "w") as f:
-                print("Data corrupted, resetting data file")
+                print("Data corrupted, resetting data file", flush=True)
                 f.write(json.dumps(data))
 
 def get_groups() -> dict:

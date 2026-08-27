@@ -56,12 +56,6 @@ intents.message_content = True
 intents.members = True
 
 
-# Setup logging
-discord.utils.setup_logging()
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
-
 CURRENT_LOG = os.path.join('logs', 'discord.log')
 DAILY_LOG = os.path.join('logs', 'last-24h.log')
 WEEKLY_LOG = os.path.join('logs', 'archive-hebdo.log')
@@ -70,7 +64,18 @@ check_file(CURRENT_LOG)
 check_file(DAILY_LOG)
 check_file(WEEKLY_LOG)
 
-file_handler = logging.FileHandler(CURRENT_LOG, encoding='utf-8', mode='w')
+# Récupérer le logger racine
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+
+# Clear les handlers existants au cas où discord.py en aurait déjà mis
+if logger.hasHandlers():
+    logger.handlers.clear()
+
+# Handlers Fichiers
+file_handler = logging.FileHandler(filename='logs/discord.log', encoding='utf-8', mode='w')
 file_handler.setFormatter(formatter)
 
 day_handler = TimedRotatingFileHandler(DAILY_LOG, when='midnight', interval=1, backupCount=1, encoding='utf-8')
@@ -79,9 +84,11 @@ day_handler.setFormatter(formatter)
 weekly_handler = TimedRotatingFileHandler(WEEKLY_LOG, when='W0', interval=1, backupCount=4, encoding='utf-8')
 weekly_handler.setFormatter(formatter)
 
+# Handler Console (pour docker logs)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 
+# Ajout de tous les handlers
 logger.addHandler(day_handler)
 logger.addHandler(weekly_handler)
 logger.addHandler(file_handler)
