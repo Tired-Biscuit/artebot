@@ -70,7 +70,7 @@ def execute_api_function(function_name: str, opt_param=None) -> tuple[bool, str]
         
         script_id = os.getenv("SCRIPT_ID")
 
-        print("Script id:", script_id)
+        # print("Script id:", script_id)
 
         request = {
             "function": function_name,
@@ -388,7 +388,7 @@ def print_data_info(data: dict, setlist_id: str):
     data = data["sheets"][0]["data"][0]
     rows = data["rowData"]
     for row in rows:
-        print(json.dumps(get_song_info_from_row_values(row["values"], setlist_id), sort_keys=False, indent=4))
+        print(json.dumps(get_song_info_from_row_values(row["values"], setlist_id), sort_keys=False, indent=4), flush=True)
 
 def get_chip_emails_from_cell_values(cell_values: dict) -> list[str]:
     """

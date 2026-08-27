@@ -143,7 +143,7 @@ def update_timetables():
     Updates the database with the latest timetables from .ics files in ./timetables.
     """
     if not os.path.exists("timetables"):
-        print("Timetables directory does not exist. Please create it and add .ics files.")
+        print("Timetables directory does not exist. Please create it and add .ics files.", flush=True)
         return False
 
     data = []
@@ -177,7 +177,7 @@ def update_timetables():
                                 if subgroups == 0:
                                     data.append((event['uuid'], group+"0", event['start_time'], event['end_time'], (event['end_time'] - event['start_time'])/60, event['name']))
                             else:
-                                print("Incomplete event data, skipping insertion.")
+                                print("Incomplete event data, skipping insertion.", flush=True)
                         subgroups = 0
 
                     elif line.startswith("DESCRIPTION:"):
@@ -231,7 +231,7 @@ def update_calendar(calendar):
             for field_name in field_names:
                 if field_name not in keys:
                     missing_fields += " "+field_name
-            print(f"Incomplete event data, skipping insertion. Missing fields:{missing_fields}")
+            print(f"Incomplete event data, skipping insertion. Missing fields:{missing_fields}", flush=True)
 
     command = "INSERT OR REPLACE INTO GoogleEvent VALUES(?,?,?,?,?,?);"
     return run_many(command, data)
@@ -248,9 +248,9 @@ def update_calendars():
         i+=1
         result = googleutils.download_calendar(calendar_id)
         if result[0] and len(result[1]) > 0:
-            print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}")
+            print(f"Calendar update ({i}/{len(calendar_ids)}): {'Success' if (val := update_calendar(result[1])) in [[], None] else val}", flush=True)
         else:
-            print(f"No event in calendar {i}.")
+            print(f"No event in calendar {i}.", flush=True)
 
 
 def add_user(uuid: int, username: str, email: str, group_id: str, *, commit=False):
@@ -504,7 +504,7 @@ def add_song(song: dict, db_columns: list[str]):
     """
 
     if song["title"] == "":
-        raise SongFetchError
+        return ""
 
     columns = "("
     values = "("
@@ -534,13 +534,20 @@ def add_setlist(setlist_id: str, rows: int):
 
     rows = rows[1:]
     error = False
+
+    songs = 0
     for row in rows:
         try:
             add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
         except:
             error = True
+        else:
+            songs += 1
     if error:
         raise SongFetchError
+
+    return songs
+
 
 def get_song_columns_names() -> list[str]:
     """

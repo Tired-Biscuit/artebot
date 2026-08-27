@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import calendar
 
@@ -94,7 +94,8 @@ def epoch_to_gcal(epoch: int) -> str:
     @flag google_calendar
     @flag epoch
     """
-    dt = datetime.fromtimestamp(int(epoch))
+    tz_paris = ZoneInfo("Europe/Paris")
+    dt = datetime.fromtimestamp(int(epoch), tz=timezone.utc).replace(tzinfo=tz_paris)
     return dt.isoformat()
 
 def add_duration_to_time(hhmm: str, duration: int) -> str:
@@ -137,7 +138,7 @@ def gcal_to_epoch(gcal_time: str) -> int:
     if "Z" not in gcal_time:
         return local_datetime_as_epoch(gcal_to_datetime(gcal_time))
     else:
-        print("Wrong calendar timezone")
+        print("Wrong calendar timezone", flush=True)
         raise Exception("Wrong calendar timezone!")
 
 

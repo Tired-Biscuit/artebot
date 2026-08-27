@@ -155,7 +155,7 @@ def find_rehearsal(song: str, start_time: int = None, length: int = 7*timeutils.
                 if len(db.request_blocking_events(rehearsal_time, 3600, musician_uuid)) == 0:
                     rehearsals[day_of_week].append(rehearsal_time)
                 else:
-                    print(f"""{time.strftime("%d/%m %H:%M", time.gmtime(rehearsal_time))} ({rehearsal_time%timeutils.DAY_DURATION}) : Impossible : {db.request_blocking_events(rehearsal_time, 3600, musician_uuid)}""")
+                    print(f"""{time.strftime("%d/%m %H:%M", time.gmtime(rehearsal_time))} ({rehearsal_time%timeutils.DAY_DURATION}) : Impossible : {db.request_blocking_events(rehearsal_time, 3600, musician_uuid)}""", flush=True)
                     event_start_time = db.request_blocking_events(rehearsal_time, 3600, musician_uuid)[0][1]
                     event_end_time = db.request_blocking_events(rehearsal_time, 3600, musician_uuid)[0][2]
                     timestamp = rehearsal_time

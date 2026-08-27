@@ -69,8 +69,8 @@ class PaginationView(discord.ui.View):
             await interaction.response.edit_message(embed=self.embed_page(), view=self)
 
     def check_buttons_availability(self):
-        print("page:", self.page, "prev_button.disabled", self.page <= 0,
-        "next_button.disabled", self.page >= len(self.pages) - 1)
+        # print("page:", self.page, "prev_button.disabled", self.page <= 0,
+        # "next_button.disabled", self.page >= len(self.pages) - 1)
         self.prev_button.disabled = self.page <= 0
         self.next_button.disabled  = self.page >= len(self.pages) - 1
 
@@ -820,12 +820,13 @@ class RehearsalTimeSelectionView(discord.ui.View):
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         day_epoch = timeutils.get_first_day_of_week(self.week) + (self.weekdaynb - 1)*timeutils.DAY_DURATION
-        starttime = day_epoch + (self.time + 7) * 3600
-        endtime = day_epoch + (self.time + 8) * 3600
+        starttime = day_epoch + (self.time + 8) * 3600
+        endtime = day_epoch + (self.time + 9) * 3600
 
         try:
             await interaction.response.defer()
-            print(timeutils.epoch_to_gcal(starttime))
+            #print(timeutils.epoch_to_gcal(starttime))
+            print(starttime, day_epoch, (self.time + 8) * 3600, flush=True)
             success = googleutils.add_rehearsal_to_calendar(self.song, [], "", timeutils.epoch_to_gcal(starttime), timeutils.epoch_to_gcal(endtime))
 
             summary_message = success_embed(
@@ -941,13 +942,13 @@ class TableChoiceForDeletion(discord.ui.View):
 ##########################
 
 def success_embed(title: str = "Opération réussie", message: str = "") -> discord.Embed:
-    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+    return discord.Embed(title=title, description=message, colour=discord.Colour.green())
 
 def warning_embed(title: str = "Attention", message: str = "Un léger problème est survenu") -> discord.Embed:
-    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+    return discord.Embed(title=title, description=message, colour=discord.Colour.orange())
 
 def failure_embed(title: str = "Erreur", message: str = "Une erreur est survenue") -> discord.Embed:
-    return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
+    return discord.Embed(title=title, description=message, colour=discord.Colour.red())
 
 def information_embed(title: str = "", message: str = "") -> discord.Embed:
     return discord.Embed(title=title, description=message, colour=tools.get_embed_colour())
