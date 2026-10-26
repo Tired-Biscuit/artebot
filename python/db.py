@@ -537,9 +537,13 @@ def add_setlist(setlist_id: str, rows: int):
 
     songs = 0
     for row in rows:
+        if "values" not in row.keys() or len(row["values"]) == 0 or len(row["values"][0]) == 0:
+            continue
         try:
             add_song(googleutils.get_song_info_from_row_values(row["values"], setlist_id, column_names, db_columns), db_columns)
-        except:
+        except Exception:
+            import traceback
+            traceback.print_exc()
             error = True
         else:
             songs += 1
