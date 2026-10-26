@@ -96,7 +96,10 @@ def add_rehearsal(user_id: int, day: str, start: str, duration: str, song: str =
         if len(present)+len(missing) > 1:
             view = discordutils.ConfirmView()
         else:
-            view = discordutils.ConfirmViewImpossible()
+            blocking_message.add_field(name="Personne de disponible, mais tout le monde peut être considéré comme présent")
+            present = blocking
+            blocking = list()
+            view = discordutils.ConfirmView()
         # await i.response.send_message(embed=message, view=view)
         # await view.wait()
         # if not view.value:
