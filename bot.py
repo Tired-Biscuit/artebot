@@ -108,14 +108,17 @@ class ArteBot(commands.Bot):
             if asking_refresh[key]:
                 admin_commands.refresh(None, key, True)
                 asking_refresh[key] = False
-        self.last_update_call = time.time()
 
     @scheduled_update.before_loop
     async def before_scheduled_update(self):
         await self.wait_until_ready()
 
     def get_next_scheduled_update_time(self) -> int:
-        return int(math.ceil((self.scheduled_update.minutes*60 + self.last_update_call - time.time())/60))
+        if self.scheduled_update.next_iteration:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            delta = self.scheduled_update.next_iteration - now
+            return max(0, math.ceil(delta.total_seconds() / 60))
+        return 0
 
 # Set command prefix
 if DEBUG:
